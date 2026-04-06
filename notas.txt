@@ -1,6 +1,41 @@
 # Notas del Proyecto Get Access
 
-## Fecha Última Actualización: Martes 31 de Marzo de 2026 - 17:30
+## Fecha Última Actualización: Lunes 6 de Abril de 2026 - 19:40
+
+---
+
+## GIT - Control de Versiones
+
+### Repositorio
+- **GitHub**: https://github.com/SupportGetAccess/GetAccess
+- **Rama actual**: main
+- **Estado**: al día con origin/main
+
+### Comandos útiles
+```bash
+# Ver estado
+git status
+
+# Ver historial
+git log --oneline
+
+# Ver ramas
+git branch
+
+# Agregar y hacer commit
+git add .
+git commit -m "mensaje"
+
+# Subir a GitHub
+git push
+
+# Ver un commit específico
+git show HASH
+
+# Crear tag de versión
+git tag v1.0.0 -m "Versión 1.0"
+git push origin v1.0.0
+```
 
 ---
 

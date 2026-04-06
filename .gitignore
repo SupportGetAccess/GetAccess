@@ -1,0 +1,36 @@
+# Base de datos
+*.db
+*.sqlite
+*.sqlite3
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+dist/
+build/
+*.egg
+
+# Entorno virtual
+venv/
+env/
+.venv/
+
+# Certificados y claves (sensibles)
+*.pem
+*.key
+*.crt
+*.p12
+
+# Archivos temporales
+*.log
+*.tmp
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
