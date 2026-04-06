@@ -1,0 +1,327 @@
+# Notas del Proyecto Get Access
+
+## Fecha Última Actualización: Martes 31 de Marzo de 2026 - 17:30
+
+---
+
+## ESTADO ACTUAL DEL PROYECTO
+
+### 🔧 Bug Fix - Error 500 en Mis Entradas
+
+**Problema:** Errores 500 Internal Server Error al navegar a "Mis Entradas"
+- GET /api/entradas/ devolvía 500
+- GET /api/transferencias/pendientes devolvía 500
+
+**Causa:** Error de threading de SQLite
+- Mensaje: "SQLite objects created in a thread can only be used in that same thread"
+- Uvicorn usa múltiples hilos para manejar requests
+
+**Solución:** Agregar `check_same_thread=False` a la conexión SQLite
+```python
+def get_db():
+    conn = sqlite3.connect(DATABASE_URL, check_same_thread=False)
+    conn.row_factory = sqlite3.Row
+    try:
+        yield conn
+    finally:
+        conn.close()
+```
+
+---
+
+## 📌 PRÓXIMA TAREA
+
+- **Quitar código de entrada** al buscar entradas por email (ocultar el código en el resultado)
+
+---
+
+### ✅ Implementado y Funcional
+
+#### 🔄 Sistema de Transferencia de Entradas
+**Funcionalidades:**
+- Transferir entrada a otro email
+- Confirmación de seguridad antes de transferir (2 pasos)
+- El destinatario recibe un email con código de transferencia
+- La entrada desaparece del transferidor hasta que se acepte
+- Banner amarillo en Mis Entradas si hay transferencias pendientes
+- Aceptar transferencia con código
+- Vista dedicada para aceptar transferencias
+
+**APIs:**
+- POST /api/entradas/{id}/transferir → Iniciar transferencia
+- POST /api/entradas/aceptar-transferencia → Aceptar con token
+- GET /api/entradas/{id}/transferencias → Ver historial
+- GET /api/transferencias/pendientes → Ver transferencias para aceptar
+
+**Tablas:**
+- transferencias: id, entrada_id, usuario_origen, usuario_destino, token, estado, created_at, accepted_at
+- entradas: columna "transferida" (0 o 1)
+
+---
+
+#### 📴 Modo Offline Scanner
+**Funcionalidades:**
+- Detecta conexión online/offline automáticamente
+- Cachea códigos válidos del evento
+- Valida sin conexión usando caché
+- Cola de validaciones offline
+- Sincroniza cuando vuelve la conexión
+- Indicador visual de estado en header
+
+**APIs:**
+- GET /api/eventos/{id}/codigos-validos → Códigos para offline
+
+---
+
+#### 📊 Analytics Avanzado
+**Funcionalidades:**
+- Dashboard con métricas globales
+- Ventas por categoría (gráfico)
+- Top eventos por ventas
+- Tendencia de ventas por día
+- Proyección de ventas (probabilidad de agotar, tendencia)
+- Selector de evento específico o todos
+
+**APIs:**
+- GET /api/analytics/todos → Métricas globales
+- GET /api/analytics/evento/{id} → Métricas por evento
+
+---
+
+#### Sistema de Validación de Entradas (Scanner QR)
+**Funcionalidades:**
+- Escanear QR con la cámara del dispositivo
+- Subir imagen QR como alternativa a la cámara
+- Validar si la entrada es real y no ha sido usada
+- Mostrar estados: ✅ Válida, ❌ Ya usada, ⚠️ Inválida
+- Estadísticas en Tiempo Real
+- Historial de escaneos (últimos 7 días)
+- Entrada manual de código
+
+**APIs:**
+- POST /api/validar-entrada → Valida y marca como usada
+- GET /api/validar/{codigo} → Solo consulta sin marcar
+- GET /api/eventos/{id}/estadisticas → Entradas usadas/disponibles
+- GET /api/validaciones/historial → Historial de escaneos (7 días)
+
+---
+
+## 📋 SCANNER QR - ESTADO ACTUAL
+
+### URLs de acceso:
+- **PC (HTTP)**: http://localhost:3000/scanner.html
+- **Celular (HTTPS)**: https://192.168.1.40:3443/scanner.html
+- **Backend HTTP**: http://localhost:8000
+- **Backend HTTPS**: https://192.168.1.40:8443
+
+### Funcionalidades del Scanner:
+- ✅ Selección manual de evento (obligatoria)
+- ✅ Estadísticas del evento seleccionado
+- ✅ Historial de validaciones (7 días)
+- ✅ Cámara (html5-qrcode)
+- ✅ Subir imagen QR
+- ✅ Entrada manual de código
+- ✅ QRbox dinámico (70% del viewfinder)
+- ✅ Diseño visual mejorado con resultado en paralelo al scanner
+- ✅ Modo Offline con sincronización
+
+---
+
+## 🏗️ ESTRUCTURA DEL PROYECTO
+
+```
+C:\Users\guill\eventos_tickets_full\
+├── backend/
+│   ├── main.py              # API FastAPI
+│   ├── access_on.db         # Base de datos SQLite
+│   ├── serve_https.py       # Servidor HTTPS
+│   └── crear_y_enviar_ticket.py  # Script para crear y enviar tickets
+├── frontend/
+│   ├── index.html          # App web principal
+│   ├── scanner.html         # App de validación QR
+│   ├── serve.py            # Servidor HTTP + HTTPS
+│   ├── cert.pem            # Certificado SSL
+│   └── key.pem             # Clave SSL
+├── notas.txt               # Este archivo
+├── AGENTS.md              # Reglas para agentes IA
+└── DER_GetAccess.jpg      # Diagrama entidad-relación
+```
+
+---
+
+## 🔌 APIs DISPONIBLES
+
+### Autenticación
+- POST /api/auth/registro - Registro
+- POST /api/auth/login - Login
+- POST /api/auth/verificar - Verificar email
+- GET /api/auth/me - Datos del usuario actual
+- POST /api/auth/solicitar-reset - Solicitar recuperación password
+- POST /api/auth/reset-password - Recuperar password
+
+### Eventos
+- GET /api/eventos/ - Listar eventos
+- GET /api/eventos/{id} - Detalle de evento
+- GET /api/eventos/categorias - Categorías
+- POST /api/eventos/ - Crear evento (admin)
+
+### Entradas
+- POST /api/entradas/ - Comprar entrada
+- GET /api/entradas/ - Mis entradas (excluye transferidas)
+- POST /api/entradas/{id}/transferir - Transferir entrada
+- POST /api/entradas/aceptar-transferencia - Aceptar transferencia
+
+### Transferencias
+- GET /api/transferencias/pendientes - Ver transferencias por aceptar
+
+### Validación
+- POST /api/validar-entrada - Validar entrada (marca como usada)
+- GET /api/validar/{codigo} - Consultar estado
+- GET /api/eventos/{id}/estadisticas - Estadísticas
+- GET /api/validaciones/historial - Historial
+- GET /api/eventos/{id}/codigos-validos - Códigos para offline
+
+### Analytics
+- GET /api/analytics/todos - Métricas globales
+- GET /api/analytics/evento/{id} - Métricas por evento
+
+### Pagos
+- POST /api/pagos/crear-preferencia - Crear preferencia MP
+- POST /api/pagos/webhook - Webhook MercadoPago
+
+### Email
+- POST /api/email/enviar-ticket - Reenviar ticket por email
+
+---
+
+## 🗄️ BASE DE DATOS
+
+### Tablas:
+- **usuarios**: id, email, nombre, apellido, password, verificado, codigo_verificacion, rol
+- **eventos**: id, nombre, descripcion, fecha, lugar, precio, capacidad, vendidos, imagen, categoria
+- **entradas**: id, evento_id, usuario_id, cantidad, total, estado, preference_id, payment_id, creada_en, usada, transferida
+- **evento_imagenes**: id, evento_id, url, orden
+- **validaciones**: id, entrada_id, scanner_id, cantidad_original, timestamp
+- **transferencias**: id, entrada_id, usuario_origen, usuario_destino, token, estado, created_at, accepted_at
+- **password_reset**: id, email, token, usado, expires_at
+
+---
+
+## 🚀 COMANDOS
+
+### Iniciar todos los servicios:
+```powershell
+powershell -Command "Stop-Process -Name python -Force -ErrorAction SilentlyContinue"
+powershell -Command "Start-Process python -ArgumentList '-m','uvicorn','main:app','--host','0.0.0.0','--port','8000' -WorkingDirectory 'C:\Users\guill\eventos_tickets_full\backend'"
+powershell -Command "Start-Process python -ArgumentList 'C:/Users/guill/eventos_tickets_full/frontend/serve.py'"
+```
+
+### Verificar servicios:
+```powershell
+powershell -Command "Invoke-WebRequest -Uri 'http://localhost:8000/health' -UseBasicParsing | Select-Object -ExpandProperty StatusCode"
+powershell -Command "Invoke-WebRequest -Uri 'http://localhost:3000/' -UseBasicParsing | Select-Object -ExpandProperty StatusCode"
+```
+
+---
+
+## PENDIENTE / MEJORAS
+
+1. ✅ Sistema de validación QR - IMPLEMENTADO
+2. ✅ Historial de validaciones - IMPLEMENTADO
+3. ✅ Acceso desde celular (HTTPS) - IMPLEMENTADO
+4. ✅ Transferencia de entradas - IMPLEMENTADO
+5. ✅ Modo offline scanner - IMPLEMENTADO
+6. ✅ Analytics avanzado - IMPLEMENTADO
+7. ✅ Seguridad - Secrets en variables de entorno - IMPLEMENTADO
+8. ✅ CORS restringido a orígenes permitidos - IMPLEMENTADO
+
+---
+
+## 🔧 VARIABLES DE ENTORNO
+
+Para ejecutar el backend con variables de entorno configuradas:
+
+```powershell
+$env:SECRET_KEY = "tu_secret_key_aqui"
+$env:BREVO_API_KEY = "tu_brevo_api_key"
+$env:BREVO_SENDER_EMAIL = "tu_email@ejemplo.com"
+$env:MERCADO_PAGO_ACCESS_TOKEN = "tu_mp_access_token"
+$env:MERCADO_PAGO_WEBHOOK_SECRET = "tu_webhook_secret"
+$env:ALLOWED_ORIGINS = "http://localhost:3000,https://192.168.1.40:3443"
+
+python -m uvicorn main:app --host 0.0.0.0 --port 8000
+```
+
+Valores por defecto (fallback) incluidos en el código para desarrollo.
+
+---
+
+## 👤 CREDENCIALES
+
+- **Admin**: admin@getaccess.com / admin123
+- **Usuario prueba**: guilles10@yahoo.com.ar / guille123
+
+---
+
+## NOTAS IMPORTANTES
+
+- **REGLA AGENTS.MD**: Cada vez que se modifique el frontend, se deben reiniciar TODOS los servicios
+- El scanner requiere seleccionar un evento manualmente
+- Las estadísticas muestran solo el evento seleccionado
+- Historial muestra últimos 7 días
+- Las entradas transferidas no aparecen en "Mis Entradas" hasta que se aceptan
+- El código de transferencia se envía por email al destinatario
+
+---
+
+## 🚀 ROADMAP - FUNCIONALIDADES PARA SUPERAR COMPETENCIA
+
+### Funcionalidades PRIORITARIAS (Alto Impacto UX)
+
+| # | Funcionalidad | Estado | Prioridad |
+|---|---------------|--------|-----------|
+| 1 | **Búsqueda de entradas por email/DNI** (sin login) | ⬜ | 🔥🔥🔥 |
+| 2 | **Carrito de compras** (múltiples eventos) | ⬜ | 🔥🔥🔥 |
+| 3 | **Wallet/credits** (crédito prepagado) | ⬜ | 🔥🔥 |
+| 4 | **Lotes de precio dinámico** (early bird, VIP) | ⬜ | 🔥🔥 |
+| 5 | **Gift cards / Regalos** | ⬜ | 🔥🔥 |
+
+### Funcionalidades de ENGAGEMENT
+
+| # | Funcionalidad | Estado |
+|---|---------------|--------|
+| 6 | **Guardar eventos favoritos** | ⬜ |
+| 7 | **Wishlist con alertas** | ⬜ |
+| 8 | **Historial de eventos asistidos** | ⬜ |
+| 9 | **Recomendaciones personalizadas** | ⬜ |
+| 10 | **Notificaciones push** | ⬜ |
+
+### Funcionalidades para ORGANIZADORES
+
+| # | Funcionalidad |
+|---|---------------|
+| 11 | **Invitar colaboradores con roles** |
+| 12 | **Mapas interactivos de asientos** |
+| 13 | **Código QR con branding del evento** |
+
+---
+
+### 🗓️ Roadmap Sugerido
+
+**Fase 1 (Inmediata):**
+- ✅ Búsqueda de entradas por email/DNI sin login - IMPLEMENTADO
+- ✅ Carrito de compras - IMPLEMENTADO
+
+**Fase 2:**
+- Gift cards / Regalos
+- Guardar favoritos
+- Notificaciones push
+
+**Fase 3:**
+- Lotes de precio dinámico
+- Mapas de asientos
+- Wallet digital
+
+---
+
+*Para más detalles ver análisis de competidores en las notas de sesión.*

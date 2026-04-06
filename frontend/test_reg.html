@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Registro</title>
+</head>
+<body>
+    <h1>Test Registro</h1>
+    <button onclick="registrar()">Registrar</button>
+    <div id="result"></div>
+    <script>
+        async function registrar() {
+            const form = {
+                'email': 'guilles10@yahoo.com.ar',
+                'nombre': 'Willy',
+                'apellido': 'Test',
+                'password': 'Test1234!'
+            };
+            
+            document.getElementById('result').innerText = 'Enviando...';
+            
+            try {
+                const res = await fetch('http://127.0.0.1:8000/api/auth/registro', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(form)
+                });
+                const data = await res.json();
+                document.getElementById('result').innerText = 'Status: ' + res.status + ' | ' + JSON.stringify(data);
+            } catch (e) {
+                document.getElementById('result').innerText = 'Error: ' + e;
+            }
+        }
+    </script>
+</body>
+</html>

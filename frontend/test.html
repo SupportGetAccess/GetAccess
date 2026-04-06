@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Test de Compra</title>
+    <style>
+        body { font-family: Arial; padding: 20px; background: #1a1a2e; color: #fff; }
+        button { padding: 10px 20px; margin: 10px; cursor: pointer; background: #e94560; color: white; border: none; border-radius: 5px; }
+        #log { background: #000; padding: 10px; margin-top: 20px; white-space: pre-wrap; font-family: monospace; }
+    </style>
+</head>
+<body>
+    <h1>🧪 Test de Compra</h1>
+    <button onclick="testCompra()">Probar Compra</button>
+    <div id="log"></div>
+    
+    <script>
+        const API_URL = 'http://localhost:8000';
+        const log = document.getElementById('log');
+        
+        function msg(t) { log.textContent += t + '\n'; console.log(t); }
+        
+        async function testCompra() {
+            log.textContent = '';
+            msg('1. Registrando usuario...');
+            
+            try {
+                // Registro
+                const regRes = await fetch(API_URL + '/api/auth/registro', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        email: 'compra' + Date.now() + '@test.com', 
+                        nombre: 'Test', 
+                        apellido: 'User', 
+                        password: '123456' 
+                    })
+                });
+                
+                if (!regRes.ok) {
+                    msg('ERROR en registro: ' + regRes.status + ' ' + regRes.statusText);
+                    const e = await regRes.text();
+                    msg('Detalle: ' + e);
+                    return;
+                }
+                
+                const regData = await regRes.json();
+                const token = regData.access_token;
+                msg('✅ Registro OK. Token: ' + token.substring(0, 20) + '...');
+                
+                // Comprar entrada
+                msg('\n2. Comprando entrada...');
+                const compraRes = await fetch(API_URL + '/api/entradas/', {
+                    method: 'POST',
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + token
+                    },
+                    body: JSON.stringify({ evento_id: 1, cantidad: 1 })
+                });
+                
+                if (!compraRes.ok) {
+                    msg('ERROR en compra: ' + compraRes.status);
+                    const e = await compraRes.text();
+                    msg('Detalle: ' + e);
+                    return;
+                }
+                
+                const compraData = await compraRes.json();
+                msg('✅ Compra OK. Entrada ID: ' + compraData.id + ', Total: $' + compraData.total);
+                
+                // Crear pago
+                msg('\n3. Creando pago MercadoPago...');
+                const pagoRes = await fetch(API_URL + '/api/pagos/crear-preferencia', {
+                    method: 'POST',
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + token
+                    },
+                    body: JSON.stringify({ entrada_id: compraData.id })
+                });
+                
+                if (!pagoRes.ok) {
+                    msg('ERROR en pago: ' + pagoRes.status);
+                    return;
+                }
+                
+                const pagoData = await pagoRes.json();
+                msg('✅ Pago creado!');
+                msg('URL: ' + pagoData.init_point);
+                msg('\n🎉 TODO OK! Podes copiar la URL y probarla.');
+                
+            } catch (err) {
+                msg('❌ ERROR DE CONEXIÓN: ' + err.message);
+                msg('Type: ' + err.type);
+            }
+        }
+    </script>
+</body>
+</html>

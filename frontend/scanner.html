@@ -1,0 +1,1145 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Get Access - Scanner QR</title>
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0%25' y1='0%25' x2='100%25' y2='100%25'%3E%3Cstop offset='0%25' style='stop-color:%236366f1'/%3E%3Cstop offset='100%25' style='stop-color:%23ec4899'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect x='10' y='25' width='80' height='55' rx='8' fill='url(%23g)'/%3E%3Ccircle cx='30' cy='52' r='8' fill='white'/%3E%3Ccircle cx='70' cy='52' r='8' fill='white'/%3E%3Crect x='38' y='48' width='24' height='8' fill='white' rx='2'/%3E%3Crect x='35' y='15' width='30' height='15' rx='4' fill='url(%23g)'/%3E%3C/svg%3E">
+    <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
+        :root { 
+            --primary: #6366f1; --primary-dark: #4f46e5; --primary-light: #818cf8;
+            --secondary: #ec4899; --accent: #10b981;
+            --bg-dark: #1a1a2e; --bg-card: #252542; --bg-card-hover: #2f2f52;
+            --text: #f8fafc; --text-muted: #94a3b8; --text-dim: #64748b;
+            --success: #10b981; --error: #ef4444; --warning: #f59e0b;
+            --gradient: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            --glow: 0 0 30px rgba(99, 102, 241, 0.3);
+        }
+        body { 
+            background: linear-gradient(180deg, #1e1e3f 0%, #16213e 50%, #1a1a35 100%); 
+            min-height: 100vh; 
+            color: var(--text);
+            background-attachment: fixed;
+        }
+        
+        header { 
+            background: rgba(30, 30, 63, 0.85); 
+            padding: 1rem 2rem; 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            position: sticky; 
+            top: 0; 
+            z-index: 100; 
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(99, 102, 241, 0.2);
+        }
+        .logo { 
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+        }
+        .logo svg { filter: drop-shadow(0 0 10px rgba(99,102,241,0.5)); }
+        .logo-text {
+            font-weight: 700;
+            font-size: 1.3rem;
+            letter-spacing: -0.5px;
+            background: linear-gradient(135deg, #6366f1, #ec4899);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .header-btn { 
+            background: rgba(255,255,255,0.1); 
+            border: 2px solid transparent;
+            color: var(--text-muted); 
+            padding: 0.6rem 1.2rem; 
+            border-radius: 12px; 
+            cursor: pointer; 
+            font-size: 0.9rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+        .header-btn:hover { 
+            color: var(--text);
+            background: rgba(99, 102, 241, 0.1);
+            border-color: rgba(99, 102, 241, 0.3);
+        }
+        
+        .container { max-width: 800px; margin: 0 auto; padding: 2rem; }
+        
+        .hero {
+            text-align: center;
+            padding: 2rem 1rem;
+            margin-bottom: 2rem;
+            position: relative;
+        }
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 300px;
+            height: 300px;
+            background: radial-gradient(circle, rgba(99, 102, 241, 0.15) 0%, transparent 70%);
+            z-index: -1;
+        }
+        .hero-icon {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+            animation: scaleIn 0.6s ease-out;
+        }
+        .hero h1 { 
+            font-size: 2rem; 
+            font-weight: 800;
+            margin-bottom: 0.5rem;
+            background: linear-gradient(135deg, #fff 0%, var(--primary-light) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            animation: slideDown 0.8s ease-out;
+        }
+        .hero p { 
+            color: var(--text-muted); 
+            font-size: 1rem; 
+            animation: fadeIn 1s ease-out 0.3s both; 
+        }
+        
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        @keyframes scaleIn {
+            from { opacity: 0; transform: scale(0.8); }
+            to { opacity: 1; transform: scale(1); }
+        }
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .stats-grid { 
+            display: grid; 
+            grid-template-columns: repeat(3, 1fr); 
+            gap: 1rem; 
+            margin-bottom: 2rem;
+        }
+        .stat-card { 
+            background: var(--bg-card); 
+            border-radius: 20px; 
+            padding: 1.5rem; 
+            text-align: center; 
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            transition: all 0.3s ease;
+        }
+        .stat-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 10px 30px rgba(99, 102, 241, 0.15);
+            border-color: rgba(99, 102, 241, 0.2);
+        }
+        .stat-icon { font-size: 2rem; margin-bottom: 0.5rem; }
+        .stat-number { 
+            font-size: 2.5rem; 
+            font-weight: 800; 
+            background: var(--gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .stat-label { 
+            font-size: 0.85rem; 
+            color: var(--text-muted); 
+            text-transform: uppercase; 
+            letter-spacing: 1px;
+            font-weight: 600;
+        }
+        
+        .event-selector { 
+            background: var(--bg-card); 
+            border-radius: 20px; 
+            padding: 1.5rem; 
+            margin-bottom: 2rem; 
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        .event-selector label { 
+            display: block; 
+            font-size: 0.9rem; 
+            color: var(--text-muted); 
+            margin-bottom: 0.75rem;
+            font-weight: 600;
+        }
+        .event-selector select { 
+            width: 100%; 
+            padding: 1rem 1.2rem; 
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            background: rgba(0, 0, 0, 0.3); 
+            color: white; 
+            border-radius: 14px; 
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+        .event-selector select:focus { 
+            outline: none; 
+            border-color: var(--primary);
+            box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1);
+        }
+        
+        .scanner-card { 
+            background: var(--bg-card); 
+            border-radius: 24px; 
+            padding: 2rem; 
+            margin-bottom: 2rem; 
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            animation: slideUp 0.6s ease-out 0.2s both;
+        }
+        
+        .scanner-result-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        @media (max-width: 900px) {
+            .scanner-result-container {
+                grid-template-columns: 1fr;
+            }
+        }
+        .scanner-header { 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            margin-bottom: 1.5rem; 
+        }
+        .scanner-title { 
+            font-size: 1.2rem; 
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .scan-btn { 
+            background: var(--gradient); 
+            border: none; 
+            color: white; 
+            padding: 0.8rem 1.5rem; 
+            border-radius: 14px; 
+            cursor: pointer; 
+            font-weight: 700;
+            font-size: 0.95rem;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(99, 102, 241, 0.3);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .scan-btn:hover { 
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(99, 102, 241, 0.4);
+        }
+        .scan-btn:disabled { 
+            opacity: 0.6; 
+            cursor: not-allowed;
+            transform: none;
+        }
+        .scan-btn.scanning { 
+            background: linear-gradient(135deg, var(--error), #dc2626);
+            box-shadow: 0 4px 15px rgba(239, 68, 68, 0.3);
+        }
+        
+        #qr-reader { 
+            width: 100%; 
+            border-radius: 16px; 
+            overflow: hidden;
+            background: #000;
+            min-height: 300px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        #qr-reader video { border-radius: 16px; }
+        
+        .input-section {
+            margin-top: 1.5rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        .input-section h4 {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            margin-bottom: 1rem;
+            font-weight: 600;
+        }
+        
+        .manual-input { margin-bottom: 1rem; }
+        .input-group { display: flex; gap: 0.75rem; }
+        .manual-input input { 
+            flex: 1; 
+            padding: 1rem 1.2rem; 
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            background: rgba(0, 0, 0, 0.3); 
+            color: white; 
+            border-radius: 14px; 
+            font-size: 1rem;
+            font-family: monospace;
+            transition: all 0.3s ease;
+        }
+        .manual-input input:focus { 
+            outline: none; 
+            border-color: var(--primary);
+            box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1);
+        }
+        .manual-input button { 
+            background: var(--primary); 
+            border: none; 
+            color: white; 
+            padding: 1rem 1.5rem; 
+            border-radius: 14px; 
+            cursor: pointer; 
+            font-weight: 700;
+            transition: all 0.3s ease;
+        }
+        .manual-input button:hover {
+            background: var(--primary-dark);
+            transform: translateY(-2px);
+        }
+        
+        .image-upload { margin-top: 1rem; }
+        .image-upload label { 
+            display: flex; 
+            align-items: center; 
+            justify-content: center;
+            gap: 0.75rem;
+            padding: 1.25rem; 
+            background: rgba(0, 0, 0, 0.2); 
+            border: 2px dashed rgba(99, 102, 241, 0.4); 
+            border-radius: 14px; 
+            cursor: pointer; 
+            transition: all 0.3s ease;
+            color: var(--text-muted);
+            font-weight: 600;
+        }
+        .image-upload label:hover { 
+            border-color: var(--primary); 
+            background: rgba(99, 102, 241, 0.1);
+            color: var(--text);
+        }
+        .image-upload input { display: none; }
+        .image-upload-icon { font-size: 1.5rem; }
+        
+        .image-preview { 
+            margin-top: 1rem; 
+            position: relative; 
+            border-radius: 14px;
+            overflow: hidden;
+        }
+        .image-preview img { 
+            width: 100%; 
+            max-height: 250px; 
+            object-fit: contain; 
+            background: #000;
+            border-radius: 14px;
+        }
+        .image-preview .loading-overlay { 
+            position: absolute; 
+            top: 0; 
+            left: 0; 
+            right: 0; 
+            bottom: 0; 
+            background: rgba(0,0,0,0.7); 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            border-radius: 14px;
+        }
+        
+        .result-card { 
+            background: var(--bg-card); 
+            border-radius: 24px; 
+            padding: 2rem; 
+            margin-bottom: 2rem; 
+            animation: scaleIn 0.4s ease-out;
+            border: 2px solid transparent;
+        }
+        .result-aceptada { 
+            border-color: var(--success); 
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.1), rgba(16, 185, 129, 0.05));
+        }
+        .result-rechazada { 
+            border-color: var(--error); 
+            background: linear-gradient(135deg, rgba(239, 68, 68, 0.1), rgba(239, 68, 68, 0.05));
+        }
+        .result-ya-usada { 
+            border-color: var(--warning); 
+            background: linear-gradient(135deg, rgba(245, 158, 11, 0.1), rgba(245, 158, 11, 0.05));
+        }
+        .result-icon { 
+            font-size: 5rem; 
+            margin-bottom: 1rem;
+            animation: scaleIn 0.5s ease-out;
+        }
+        .result-status { 
+            font-size: 2rem; 
+            font-weight: 800; 
+            margin-bottom: 0.5rem;
+        }
+        .result-aceptada .result-status { color: var(--success); }
+        .result-rechazada .result-status { color: var(--error); }
+        .result-ya-usada .result-status { color: var(--warning); }
+        .result-message { 
+            color: var(--text-muted); 
+            font-size: 1rem;
+            margin-bottom: 1.5rem;
+        }
+        .result-details { 
+            background: rgba(0,0,0,0.2); 
+            border-radius: 16px; 
+            padding: 1.25rem;
+            margin-top: 1.5rem;
+        }
+        .result-content {
+            text-align: center;
+        }
+        .result-row { 
+            padding: 0.5rem 0; 
+            border-bottom: 1px solid rgba(255,255,255,0.05); 
+        }
+        .result-row:last-child { border-bottom: none; }
+        .result-row .label { color: var(--text-muted); }
+        .result-row .value { 
+            font-weight: 700;
+            color: var(--text);
+        }
+        
+        .history-section { 
+            background: var(--bg-card); 
+            border-radius: 24px; 
+            padding: 2rem; 
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            animation: slideUp 0.6s ease-out 0.4s both;
+        }
+        .history-header { 
+            display: flex; 
+            align-items: center; 
+            gap: 0.75rem; 
+            margin-bottom: 1.5rem;
+        }
+        .history-title { 
+            font-size: 1.2rem; 
+            font-weight: 700;
+        }
+        .history-list { 
+            max-height: 350px; 
+            overflow-y: auto;
+        }
+        .history-item { 
+            padding: 1rem; 
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05); 
+            display: flex; 
+            align-items: center; 
+            gap: 1rem;
+            transition: background 0.2s;
+            border-radius: 12px;
+        }
+        .history-item:hover { background: rgba(99, 102, 241, 0.05); }
+        .history-item:last-child { border-bottom: none; }
+        .history-icon { font-size: 1.75rem; }
+        .history-info { flex: 1; }
+        .history-user { font-weight: 700; color: var(--text); }
+        .history-event { font-size: 0.9rem; color: var(--text-muted); margin-top: 0.25rem; }
+        .history-time { font-size: 0.8rem; color: var(--text-dim); margin-top: 0.25rem; }
+        
+        .loading { 
+            text-align: center; 
+            padding: 3rem; 
+            color: var(--text-muted);
+        }
+        .spinner { 
+            display: inline-block;
+            width: 24px; 
+            height: 24px; 
+            border: 3px solid rgba(255,255,255,0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        
+        .qr-detected {
+            animation: qrPulse 0.5s ease-out;
+        }
+        @keyframes qrPulse {
+            0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+            50% { box-shadow: 0 0 0 30px rgba(16, 185, 129, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+        }
+
+        
+        .login-screen { 
+            min-height: 100vh; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            padding: 2rem;
+        }
+        .login-box { 
+            background: var(--bg-card); 
+            border-radius: 24px; 
+            padding: 2.5rem; 
+            width: 100%; 
+            max-width: 420px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            animation: scaleIn 0.5s ease-out;
+        }
+        .login-box .logo-container {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+        .login-box .logo-container svg {
+            width: 80px;
+            height: 80px;
+            filter: drop-shadow(0 0 20px rgba(99,102,241,0.4));
+        }
+        .login-box h2 { 
+            text-align: center;
+            margin-bottom: 1.5rem;
+            font-size: 1.5rem;
+            background: linear-gradient(135deg, #fff 0%, var(--primary-light) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .login-box input { 
+            width: 100%; 
+            padding: 1rem 1.2rem; 
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            background: rgba(0, 0, 0, 0.3); 
+            color: white; 
+            border-radius: 14px; 
+            font-size: 1rem;
+            margin-bottom: 1rem;
+            transition: all 0.3s ease;
+        }
+        .login-box input:focus { 
+            outline: none; 
+            border-color: var(--primary);
+            box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1);
+        }
+        .login-box button { 
+            width: 100%; 
+            padding: 1rem;
+            background: var(--gradient); 
+            border: none; 
+            color: white; 
+            border-radius: 14px; 
+            font-size: 1rem; 
+            font-weight: 700; 
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(99, 102, 241, 0.3);
+        }
+        .login-box button:hover { 
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(99, 102, 241, 0.4);
+        }
+        .login-box .api-info {
+            margin-top: 1.5rem;
+            text-align: center;
+            font-size: 0.8rem;
+            color: var(--text-dim);
+            padding: 0.75rem;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 10px;
+        }
+        
+        .toast { 
+            position: fixed; 
+            top: 90px; 
+            right: 20px; 
+            padding: 1rem 1.5rem; 
+            border-radius: 16px; 
+            font-weight: 700; 
+            z-index: 2000; 
+            animation: slideInRight 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+            color: white;
+        }
+        .toast.success { background: var(--success); }
+        .toast.error { background: var(--error); }
+        .toast.warning { background: var(--warning); }
+        @keyframes slideInRight { 
+            from { transform: translateX(400px); opacity: 0; } 
+            to { transform: translateX(0); opacity: 1; } 
+        }
+        
+        .empty-history {
+            text-align: center;
+            padding: 2rem;
+            color: var(--text-muted);
+        }
+        .empty-history span { font-size: 3rem; display: block; margin-bottom: 0.5rem; }
+        
+        @media (max-width: 600px) {
+            .stats-grid { grid-template-columns: repeat(3, 1fr); gap: 0.75rem; }
+            .stat-number { font-size: 1.8rem; }
+            .stat-label { font-size: 0.7rem; }
+            .input-group { flex-direction: column; }
+            .hero h1 { font-size: 1.5rem; }
+            .container { padding: 1rem; }
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+    <script type="text/babel">
+        const API_URL = window.location.protocol === 'https:' 
+            ? `https://${window.location.hostname}:8443` 
+            : (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
+                ? 'http://localhost:8000' 
+                : `http://${window.location.hostname}:8000`);
+        
+        function App() {
+            const [user, setUser] = React.useState(null);
+            const [token, setToken] = React.useState(sessionStorage.getItem('token'));
+            const [eventos, setEventos] = React.useState([]);
+            const [eventoId, setEventoId] = React.useState('');
+            const [stats, setStats] = React.useState({ total_entradas: 0, validadas: 0, pendientes: 0 });
+            const [resultado, setResultado] = React.useState(null);
+            const [historial, setHistorial] = React.useState([]);
+            const [scanning, setScanning] = React.useState(false);
+            const [manualCode, setManualCode] = React.useState('');
+            const [toast, setToast] = React.useState(null);
+            const [loading, setLoading] = React.useState(true);
+            const [imagePreview, setImagePreview] = React.useState(null);
+            const [scanningImage, setScanningImage] = React.useState(false);
+            const [isOnline, setIsOnline] = React.useState(navigator.onLine);
+            const [cachedCodes, setCachedCodes] = React.useState([]);
+            const [pendingValidations, setPendingValidations] = React.useState([]);
+            
+            const html5QrCodeScannerRef = React.useRef(null);
+            
+            React.useEffect(() => {
+                const handleOnline = () => { setIsOnline(true); sincronizarValidaciones(); };
+                const handleOffline = () => { setIsOnline(false); };
+                window.addEventListener('online', handleOnline);
+                window.addEventListener('offline', handleOffline);
+                return () => {
+                    window.removeEventListener('online', handleOnline);
+                    window.removeEventListener('offline', handleOffline);
+                };
+            }, []);
+            
+            React.useEffect(() => {
+                if (isOnline && token && eventoId) {
+                    cargarCodigosParaOffline();
+                    sincronizarValidaciones();
+                }
+            }, [isOnline, eventoId, token]);
+            
+            async function cargarCodigosParaOffline() {
+                if (!eventoId || !token) return;
+                try {
+                    const res = await fetch(`${API_URL}/api/eventos/${eventoId}/codigos-validos`, { headers: { Authorization: `Bearer ${token}` } });
+                    if (res.ok) {
+                        const data = await res.json();
+                        setCachedCodes(data.codigos || []);
+                        localStorage.setItem('cached_codes_' + eventoId, JSON.stringify(data.codigos || []));
+                    }
+                } catch {}
+            }
+            
+            async function sincronizarValidaciones() {
+                const pendientes = JSON.parse(localStorage.getItem('pending_validations') || '[]');
+                if (pendientes.length === 0 || !token) return;
+                for (const v of pendientes) {
+                    try {
+                        await fetch(`${API_URL}/api/validar-entrada`, {
+                            method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+                            body: JSON.stringify({ codigo: v.codigo, evento_id: v.evento_id, offline: true })
+                        });
+                    } catch {}
+                }
+                localStorage.setItem('pending_validations', '[]');
+                setPendingValidations([]);
+                showToast('Validaciones offline sincronizadas', 'success');
+            }
+            
+            React.useEffect(() => {
+                if (token) verificarToken();
+                else setLoading(false);
+                cargarEventos();
+            }, []);
+            
+            React.useEffect(() => {
+                if (eventoId) {
+                    cargarEstadisticas();
+                    cargarHistorial();
+                } else {
+                    setStats({ total_entradas: 0, validadas: 0, pendientes: 0 });
+                    setHistorial([]);
+                }
+            }, [eventoId]);
+            
+            async function verificarToken() {
+                try {
+                    const res = await fetch(`${API_URL}/api/auth/me`, { headers: { Authorization: `Bearer ${token}` } });
+                    if (res.ok) {
+                        const data = await res.json();
+                        if (data.rol === 'admin') setUser(data);
+                        else logout();
+                    } else logout();
+                } catch { logout(); }
+                setLoading(false);
+            }
+            
+            async function login(e) {
+                e.preventDefault();
+                const email = e.target.email.value;
+                const password = e.target.password.value;
+                try {
+                    const res = await fetch(`${API_URL}/api/auth/login`, {
+                        method: 'POST', headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ email, password })
+                    });
+                    const data = await res.json();
+                    if (res.ok) {
+                        sessionStorage.setItem('token', data.access_token);
+                        setToken(data.access_token);
+                        setUser(data.user);
+                    } else {
+                        showToast(data.detail || 'Error', 'error');
+                    }
+                } catch (err) { 
+                    showToast('Error de conexion', 'error'); 
+                }
+            }
+            
+            function logout() {
+                stopCamera();
+                sessionStorage.removeItem('token');
+                setToken(null);
+                setUser(null);
+            }
+            
+            async function cargarEventos() {
+                try {
+                    const res = await fetch(`${API_URL}/api/eventos/`);
+                    const data = await res.json();
+                    setEventos(data);
+                } catch (e) { console.error(e); }
+            }
+            
+            async function cargarEstadisticas() {
+                if (!eventoId) return;
+                try {
+                    const res = await fetch(`${API_URL}/api/eventos/${eventoId}/estadisticas`);
+                    if (res.ok) setStats(await res.json());
+                } catch (e) { console.error(e); }
+            }
+            
+            async function cargarHistorial() {
+                try {
+                    const url = eventoId 
+                        ? `${API_URL}/api/validaciones/historial?evento_id=${eventoId}`
+                        : `${API_URL}/api/validaciones/historial`;
+                    const res = await fetch(url);
+                    if (res.ok) setHistorial(await res.json());
+                } catch (e) { console.error(e); }
+            }
+            
+            async function validarCodigo(codigo) {
+                setResultado(null);
+                
+                if (!isOnline) {
+                    const codigoValido = cachedCodes.find(c => c.codigo === codigo);
+                    if (!codigoValido) {
+                        setResultado({ valida: false, mensaje: 'Código no encontrado (offline)', offline: true });
+                        playSound(false);
+                        return;
+                    }
+                    
+                    if (codigoValido.usada) {
+                        setResultado({ valida: false, mensaje: 'Entrada ya utilizada', offline: true });
+                        playSound(false);
+                        return;
+                    }
+                    
+                    const pendiente = { codigo, evento_id: parseInt(eventoId), timestamp: new Date().toISOString() };
+                    const actuales = JSON.parse(localStorage.getItem('pending_validations') || '[]');
+                    localStorage.setItem('pending_validations', JSON.stringify([...actuales, pendiente]));
+                    setPendingValidations([...actuales, pendiente]);
+                    
+                    setResultado({ valida: true, mensaje: 'Validado (offline) - se sincronizará luego', offline: true });
+                    playSound(true);
+                    showToast('Validado sin conexión', 'success');
+                    return;
+                }
+                
+                try {
+                    const res = await fetch(`${API_URL}/api/validar-entrada`, {
+                        method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+                        body: JSON.stringify({ codigo, evento_id: eventoId ? parseInt(eventoId) : null })
+                    });
+                    const data = await res.json();
+                    setResultado(data);
+                    if (data.valida) { playSound(true); cargarEstadisticas(); cargarHistorial(); cargarCodigosParaOffline(); }
+                    else playSound(false);
+                } catch { 
+                    const codigoValido = cachedCodes.find(c => c.codigo === codigo);
+                    if (codigoValido && !codigoValido.usada) {
+                        const pendiente = { codigo, evento_id: parseInt(eventoId), timestamp: new Date().toISOString() };
+                        const actuales = JSON.parse(localStorage.getItem('pending_validations') || '[]');
+                        localStorage.setItem('pending_validations', JSON.stringify([...actuales, pendiente]));
+                        setResultado({ valida: true, mensaje: 'Validado sin conexión', offline: true });
+                        playSound(true);
+                        showToast('Validado offline', 'success');
+                    } else {
+                        showToast('Error de conexion', 'error'); 
+                    }
+                }
+            }
+            
+            function playSound(success) {
+                const ctx = new (window.AudioContext || window.webkitAudioContext)();
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                osc.frequency.value = success ? 880 : 220;
+                osc.type = 'sine';
+                gain.gain.setValueAtTime(0.3, ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
+                osc.start();
+                osc.stop(ctx.currentTime + 0.3);
+            }
+            
+            function showToast(msg, type = 'success') {
+                setToast({ message: msg, type });
+                setTimeout(() => setToast(null), 3000);
+            }
+            
+            function startCamera() {
+                setScanning(true);
+                setResultado(null);
+                
+                if (typeof Html5Qrcode === 'undefined') {
+                    showToast('Error: Biblioteca de scanner no cargo', 'error');
+                    setScanning(false);
+                    return;
+                }
+                
+                const html5QrCode = new Html5Qrcode("qr-reader");
+                html5QrCodeScannerRef.current = html5QrCode;
+                
+                Html5Qrcode.getCameras().then(cameras => {
+                    if (cameras && cameras.length) {
+                        const cameraId = cameras[cameras.length - 1].id;
+                        html5QrCode.start(
+                            cameraId,
+                            { 
+                                fps: 10, 
+                                qrbox: function(viewfinderWidth, viewfinderHeight) {
+                                    const minEdge = Math.min(viewfinderWidth, viewfinderHeight);
+                                    return { width: minEdge * 0.7, height: minEdge * 0.7 };
+                                },
+                                aspectRatio: 1.0 
+                            },
+                            (decodedText) => {
+                                html5QrCode.stop().then(() => {
+                                    setScanning(false);
+                                    validarCodigo(decodedText);
+                                });
+                            },
+                            () => {}
+                        ).catch((err) => {
+                            showToast('Error al iniciar camara: ' + err, 'error');
+                            setScanning(false);
+                        });
+                    } else {
+                        showToast('No se encontraron camaras', 'error');
+                        setScanning(false);
+                    }
+                }).catch((err) => {
+                    showToast('Error al buscar camaras: ' + err, 'error');
+                    setScanning(false);
+                });
+            }
+            
+            function stopCamera() {
+                setScanning(false);
+                if (html5QrCodeScannerRef.current) {
+                    try {
+                        html5QrCodeScannerRef.current.stop().then(() => {
+                            html5QrCodeScannerRef.current = null;
+                        }).catch(() => {
+                            html5QrCodeScannerRef.current = null;
+                        });
+                    } catch (e) {
+                        html5QrCodeScannerRef.current = null;
+                    }
+                }
+            }
+            
+            function handleManualSubmit(e) {
+                e.preventDefault();
+                if (manualCode.trim()) validarCodigo(manualCode.trim());
+            }
+            
+            async function handleImageUpload(e) {
+                const file = e.target.files[0];
+                if (!file) return;
+                
+                setImagePreview(URL.createObjectURL(file));
+                setScanningImage(true);
+                
+                try {
+                    if (typeof Html5Qrcode === 'undefined') {
+                        showToast('Error: Biblioteca no cargada', 'error');
+                        return;
+                    }
+                    
+                    const html5QrCode = new Html5Qrcode("image-qr-reader");
+                    const result = await html5QrCode.scanFile(file, true);
+                    setScanningImage(false);
+                    setImagePreview(null);
+                    validarCodigo(result);
+                } catch (err) {
+                    setScanningImage(false);
+                    if (err?.message?.includes('No MultiFormat Readers')) {
+                        showToast('No se detecto QR en la imagen', 'warning');
+                    } else {
+                        showToast('Error al escanear imagen', 'error');
+                    }
+                }
+            }
+            
+            function formatTime(ts) {
+                const d = new Date(ts);
+                return d.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' });
+            }
+            
+            function getResultClass() {
+                if (!resultado) return '';
+                if (resultado.valida) return 'result-aceptada';
+                if (resultado.estado === 'ya_usada') return 'result-ya-usada';
+                return 'result-rechazada';
+            }
+            
+            function getResultIcon() {
+                if (!resultado) return '';
+                if (resultado.valida) return '✅';
+                if (resultado.estado === 'ya_usada') return '⚠️';
+                return '❌';
+            }
+            
+            if (loading) return (
+                <div className="login-screen">
+                    <div className="loading"><div className="spinner"></div></div>
+                </div>
+            );
+            
+            if (!user) return (
+                <div className="login-screen">
+                    <div className="login-box">
+                        <div className="logo-container">
+                            <svg viewBox="0 0 100 100">
+                                <defs>
+                                    <linearGradient id="loginGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                                        <stop offset="0%" stopColor="#6366f1"/>
+                                        <stop offset="100%" stopColor="#ec4899"/>
+                                    </linearGradient>
+                                </defs>
+                                <rect x="10" y="25" width="80" height="55" rx="8" fill="url(#loginGrad)"/>
+                                <circle cx="30" cy="52" r="8" fill="white"/>
+                                <circle cx="70" cy="52" r="8" fill="white"/>
+                                <rect x="38" y="48" width="24" height="8" fill="white" rx="2"/>
+                                <rect x="35" y="15" width="30" height="15" rx="4" fill="url(#loginGrad)"/>
+                            </svg>
+                        </div>
+                        <h2>Get Access - Scanner QR</h2>
+                        <form onSubmit={login}>
+                            <input name="email" type="email" placeholder="Email" required />
+                            <input name="password" type="password" placeholder="Contraseña" required />
+                            <button type="submit">Iniciar Sesion</button>
+                        </form>
+                    </div>
+                </div>
+            );
+            
+            return (
+                <div>
+                    <header>
+                        <div className="logo">
+                            <svg width="40" height="40" viewBox="0 0 100 100">
+                                <defs>
+                                    <linearGradient id="headerGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                                        <stop offset="0%" stopColor="#6366f1"/>
+                                        <stop offset="100%" stopColor="#ec4899"/>
+                                    </linearGradient>
+                                </defs>
+                                <rect x="10" y="25" width="80" height="55" rx="8" fill="url(#headerGrad)"/>
+                                <circle cx="30" cy="52" r="8" fill="white"/>
+                                <circle cx="70" cy="52" r="8" fill="white"/>
+                                <rect x="38" y="48" width="24" height="8" fill="white" rx="2"/>
+                                <rect x="35" y="15" width="30" height="15" rx="4" fill="url(#headerGrad)"/>
+                            </svg>
+                            <span className="logo-text">Get Access</span>
+                        </div>
+                        <div style={{display: 'flex', alignItems: 'center', gap: '10px'}}>
+                            {pendingValidations.length > 0 && <span style={{fontSize: '12px', color: '#f59e0b'}}>{pendingValidations.length} pendientes</span>}
+                            <span style={{display: 'flex', alignItems: 'center', gap: '5px', fontSize: '12px', padding: '4px 8px', borderRadius: '20px', background: isOnline ? 'rgba(16,185,129,0.2)' : 'rgba(239,68,68,0.2)', color: isOnline ? '#10b981' : '#ef4444'}}>
+                                <span style={{width: '8px', height: '8px', borderRadius: '50%', background: isOnline ? '#10b981' : '#ef4444'}}></span>
+                                {isOnline ? 'En linea' : 'Sin conexion'}
+                            </span>
+                            <button className="header-btn" onClick={logout}>Cerrar Sesion</button>
+                        </div>
+                    </header>
+                    
+                    <div className="container">
+                        <div className="hero">
+                            <div className="hero-icon">📱</div>
+                            <h1>Scanner QR</h1>
+                            <p>Valida las entradas de tus eventos</p>
+                        </div>
+                        
+                        <div className="stats-grid">
+                            <div className="stat-card">
+                                <div className="stat-icon">🎫</div>
+                                <div className="stat-number">{stats.total_entradas}</div>
+                                <div className="stat-label">Total</div>
+                            </div>
+                            <div className="stat-card">
+                                <div className="stat-icon">✅</div>
+                                <div className="stat-number">{stats.validadas}</div>
+                                <div className="stat-label">Validadas</div>
+                            </div>
+                            <div className="stat-card">
+                                <div className="stat-icon">📋</div>
+                                <div className="stat-number">{stats.pendientes}</div>
+                                <div className="stat-label">Disponibles</div>
+                            </div>
+                        </div>
+                        
+                        <div className="event-selector">
+                            <label>Seleccionar Evento:</label>
+                            <select value={eventoId} onChange={e => {
+                                setEventoId(e.target.value);
+                                setResultado(null);
+                            }}>
+                                <option value="">-- Seleccionar evento --</option>
+                                {eventos.map(ev => <option key={ev.id} value={ev.id}>{ev.nombre}</option>)}
+                            </select>
+                        </div>
+                        
+                        <div className="scanner-result-container">
+                            <div className="scanner-card">
+                                <div className="scanner-header">
+                                    <div className="scanner-title">
+                                        <span>📷</span> Escanear Codigo QR
+                                    </div>
+                                    <button className={`scan-btn ${scanning ? 'scanning' : ''}`} onClick={scanning ? stopCamera : startCamera}>
+                                        {scanning ? '⏹️ Detener' : '▶️ Iniciar Scanner'}
+                                    </button>
+                                </div>
+                                <div id="qr-reader" style={{width: '100%', borderRadius: '16px', overflow: 'hidden'}}></div>
+                                
+                                <div className="input-section">
+                                    <h4>Otras opciones de validacion:</h4>
+                                    <form className="manual-input" onSubmit={handleManualSubmit}>
+                                        <div className="input-group">
+                                            <input value={manualCode} onChange={e => setManualCode(e.target.value)} placeholder="GA-000001-001" />
+                                            <button type="submit">Validar</button>
+                                        </div>
+                                    </form>
+                                    <div className="image-upload">
+                                        <label>
+                                            <span className="image-upload-icon">📤</span>
+                                            <span>Subir imagen QR</span>
+                                            <input type="file" accept="image/*" onChange={handleImageUpload} />
+                                        </label>
+                                        {imagePreview && (
+                                            <div className="image-preview">
+                                                <img src={imagePreview} alt="QR Preview" />
+                                                <input type="hidden" id="image-qr-reader" />
+                                                {scanningImage && (
+                                                    <div className="loading-overlay">
+                                                        <div className="spinner"></div>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            {resultado && (
+                            <div className={`result-card ${getResultClass()}`}>
+                                <div className="result-content">
+                                    <div className="result-icon">{getResultIcon()}</div>
+                                    <div className="result-status">
+                                        {resultado.valida ? 'ACEPTADA' : resultado.estado === 'ya_usada' ? 'YA USADA' : 'RECHAZADA'}
+                                    </div>
+                                    <div className="result-message">{resultado.mensaje}</div>
+                                </div>
+                                <div className="result-details">
+                                    {resultado.usuario && (
+                                        <div className="result-row">Usuario: {resultado.usuario}</div>
+                                    )}
+                                    {resultado.evento && (
+                                        <div className="result-row">Evento: {resultado.evento}</div>
+                                    )}
+                                    {resultado.fecha && (
+                                        <div className="result-row">Fecha: {resultado.fecha}</div>
+                                    )}
+                                    <div className="result-row">ID Entrada: #{resultado.entrada_id}</div>
+                                </div>
+                            </div>
+                            )}
+                        </div>
+                        
+                        <div className="history-section">
+                            <div className="history-header">
+                                <span style={{fontSize: '1.5rem'}}>📋</span>
+                                <span className="history-title">Ultimas Validaciones</span>
+                            </div>
+                            <div className="history-list">
+                                {historial.length === 0 && (
+                                    <div className="empty-history">
+                                        <span>📭</span>
+                                        <p>Sin validaciones aun</p>
+                                    </div>
+                                )}
+                                {historial.map(h => (
+                                    <div key={h.id} className="history-item">
+                                        <div className="history-icon">✅</div>
+                                        <div className="history-info">
+                                            <div className="history-user">{h.scanner}</div>
+                                            <div className="history-event">{h.evento_nombre}</div>
+                                            <div className="history-time">{formatTime(h.timestamp)}</div>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    {toast && <div className={`toast ${toast.type}`}>{toast.message}</div>}
+                </div>
+            );
+        }
+        
+        ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+    </script>
+</body>
+</html>

@@ -1,0 +1,2465 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Get Access - Compra tus entradas</title>
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0%25' y1='0%25' x2='100%25' y2='100%25'%3E%3Cstop offset='0%25' style='stop-color:%236366f1'/%3E%3Cstop offset='100%25' style='stop-color:%23ec4899'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect x='10' y='25' width='80' height='55' rx='8' fill='url(%23g)'/%3E%3Ccircle cx='30' cy='52' r='8' fill='white'/%3E%3Ccircle cx='70' cy='52' r='8' fill='white'/%3E%3Crect x='38' y='48' width='24' height='8' fill='white' rx='2'/%3E%3Crect x='35' y='15' width='30' height='15' rx='4' fill='url(%23g)'/%3E%3C/svg%3E">
+    <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
+        :root { 
+            --primary: #6366f1; --primary-dark: #4f46e5; --primary-light: #818cf8;
+            --secondary: #ec4899; --accent: #10b981;
+            --bg-dark: #1a1a2e; --bg-card: #252542; --bg-card-hover: #2f2f52;
+            --text: #f8fafc; --text-muted: #94a3b8; --text-dim: #64748b;
+            --success: #10b981; --error: #ef4444; --warning: #f59e0b;
+            --gradient: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            --glow: 0 0 30px rgba(99, 102, 241, 0.3);
+        }
+        body { 
+            background: linear-gradient(180deg, #1e1e3f 0%, #16213e 50%, #1a1a35 100%); 
+            min-height: 100vh; 
+            color: var(--text);
+            background-attachment: fixed;
+        }
+        header { 
+            background: rgba(30, 30, 63, 0.85); 
+            padding: 1rem 2rem; 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            position: sticky; 
+            top: 0; 
+            z-index: 100; 
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(99, 102, 241, 0.2);
+        }
+        .logo { 
+            font-size: 1.5rem; 
+            font-weight: 800; 
+            background: var(--gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        nav { display: flex; gap: 0.5rem; align-items: center; }
+        nav button { 
+            background: transparent; 
+            border: 2px solid transparent;
+            color: var(--text-muted); 
+            padding: 0.6rem 1.2rem; 
+            cursor: pointer; 
+            border-radius: 12px; 
+            font-size: 0.9rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+        nav button:hover { 
+            color: var(--text);
+            background: rgba(99, 102, 241, 0.1);
+            border-color: rgba(99, 102, 241, 0.3);
+        }
+        nav button.active { 
+            background: var(--gradient);
+            color: white;
+            box-shadow: var(--glow);
+        }
+        .container { max-width: 1200px; margin: 0 auto; padding: 2rem; }
+        
+        /* Hero Section */
+        .hero {
+            text-align: center;
+            padding: 3rem 1rem;
+            margin-bottom: 2rem;
+            position: relative;
+        }
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 300px;
+            height: 300px;
+            background: radial-gradient(circle, rgba(99, 102, 241, 0.15) 0%, transparent 70%);
+            z-index: -1;
+        }
+        .hero h1 { 
+            font-size: 2.5rem; 
+            font-weight: 800;
+            margin-bottom: 0.5rem;
+            background: linear-gradient(135deg, #fff 0%, var(--primary-light) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            animation: slideDown 0.8s ease-out;
+        }
+        .hero p { color: var(--text-muted); font-size: 1.1rem; animation: fadeIn 1s ease-out 0.3s both; }
+        
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        @keyframes scaleIn {
+            from { opacity: 0; transform: scale(0.8); }
+            to { opacity: 1; transform: scale(1); }
+        }
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        h1 { 
+            margin-bottom: 1.5rem; 
+            color: var(--text);
+            font-weight: 700;
+        }
+        
+        .eventos-grid { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); 
+            gap: 1.5rem; 
+        }
+        .evento-card { 
+            background: var(--bg-card); 
+            border-radius: 24px; 
+            overflow: hidden; 
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            position: relative;
+        }
+        .evento-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: var(--gradient);
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        .evento-card:hover { 
+            transform: translateY(-12px);
+            box-shadow: 0 20px 40px rgba(99, 102, 241, 0.2);
+            border-color: rgba(99, 102, 241, 0.3);
+        }
+        .evento-card:hover::before { opacity: 1; }
+        
+        .evento-img { 
+            height: 200px; 
+            background: linear-gradient(135deg, #1e1b4b 0%, #312e81 50%, #4c1d95 100%);
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            font-size: 5rem;
+            position: relative;
+            overflow: hidden;
+        }
+        .evento-img::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(180deg, transparent 50%, var(--bg-card) 100%);
+        }
+        .evento-info { padding: 1.5rem; }
+        .evento-info h3 { 
+            margin-bottom: 0.5rem; 
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: var(--text);
+        }
+        .evento-meta { 
+            display: flex; 
+            gap: 1.5rem; 
+            color: var(--text-muted); 
+            font-size: 0.9rem; 
+            margin-bottom: 0.75rem;
+        }
+        .evento-meta span { display: flex; align-items: center; gap: 0.4rem; }
+        .evento-desc { 
+            color: var(--text-dim); 
+            font-size: 0.9rem; 
+            margin: 1rem 0; 
+            line-height: 1.5;
+        }
+        .evento-footer { 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            margin-top: 1rem; 
+            padding-top: 1rem; 
+            border-top: 1px solid rgba(255,255,255,0.08);
+        }
+        .precio { 
+            font-size: 2rem; 
+            font-weight: 800; 
+            color: var(--success);
+            text-shadow: 0 0 20px rgba(16, 185, 129, 0.3);
+        }
+        .disponibles { 
+            font-size: 0.85rem; 
+            color: var(--text-muted); 
+            margin-top: 0.25rem;
+        }
+        .disponibles.low { color: var(--error); }
+        
+        .btn { 
+            background: var(--gradient); 
+            color: white; 
+            border: none; 
+            padding: 0.9rem 1.8rem; 
+            border-radius: 14px; 
+            cursor: pointer; 
+            font-weight: 700;
+            font-size: 0.95rem;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(99, 102, 241, 0.3);
+        }
+        .btn:hover { 
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(99, 102, 241, 0.4);
+        }
+        .btn:disabled { 
+            background: #374151; 
+            cursor: not-allowed;
+            box-shadow: none;
+            transform: none;
+        }
+        .btn-block { width: 100%; }
+        
+        .form-page { 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            min-height: 70vh; 
+        }
+        .form-box { 
+            background: var(--bg-card); 
+            padding: 2.5rem; 
+            border-radius: 24px; 
+            width: 100%; 
+            max-width: 420px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        }
+        .form-box h2 { 
+            margin-bottom: 1.5rem; 
+            color: var(--text);
+            text-align: center;
+            font-size: 1.8rem;
+        }
+        .form-group { margin-bottom: 1.2rem; }
+        .form-group label { 
+            display: block; 
+            margin-bottom: 0.5rem; 
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+        .form-group input { 
+            width: 100%; 
+            padding: 1rem 1.2rem; 
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            background: rgba(0, 0, 0, 0.3); 
+            color: white; 
+            border-radius: 14px; 
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+        .form-group input:focus { 
+            outline: none; 
+            border-color: var(--primary);
+            box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1);
+        }
+        
+        .modal-overlay { 
+            position: fixed; 
+            top: 0; 
+            left: 0; 
+            width: 100%; 
+            height: 100%; 
+            background: rgba(0, 0, 0, 0.8); 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            z-index: 1000;
+            backdrop-filter: blur(8px);
+            animation: fadeIn 0.3s ease;
+        }
+        .modal { 
+            background: var(--bg-card); 
+            padding: 2rem; 
+            border-radius: 24px; 
+            width: 90%; 
+            max-width: 480px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            animation: scaleIn 0.3s ease;
+        }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes scaleIn { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        
+        .modal h3 { 
+            color: var(--text); 
+            margin-bottom: 1.5rem; 
+            font-size: 1.5rem;
+            text-align: center;
+        }
+        .modal-info { 
+            background: rgba(0, 0, 0, 0.2); 
+            border-radius: 16px; 
+            padding: 1.25rem;
+            margin-bottom: 1rem;
+        }
+        .modal-info p { 
+            display: flex; 
+            justify-content: space-between; 
+            padding: 0.6rem 0; 
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            color: var(--text-muted);
+        }
+        .modal-info p:last-child { border-bottom: none; }
+        .modal-info p span { color: var(--text); font-weight: 600; }
+        .modal-total { 
+            font-size: 2rem; 
+            font-weight: 800; 
+            color: var(--success); 
+            text-align: center; 
+            margin: 1.5rem 0;
+            text-shadow: 0 0 20px rgba(16, 185, 129, 0.3);
+        }
+        .modal-buttons { display: flex; gap: 1rem; }
+        .modal-buttons button { flex: 1; }
+        .btn-secondary { 
+            background: rgba(255, 255, 255, 0.1); 
+            color: var(--text-muted);
+            box-shadow: none;
+        }
+        .btn-secondary:hover { 
+            background: rgba(255, 255, 255, 0.15);
+            color: var(--text);
+        }
+        
+        .entradas-list { 
+            display: flex; 
+            flex-direction: column; 
+            gap: 1rem; 
+        }
+        .entrada-card { 
+            background: var(--bg-card); 
+            padding: 1.5rem; 
+            border-radius: 20px; 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            transition: all 0.3s ease;
+        }
+        .entrada-card:hover {
+            border-color: rgba(99, 102, 241, 0.2);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+        .entrada-info h4 { 
+            color: var(--primary-light); 
+            margin-bottom: 0.5rem; 
+            font-size: 1.2rem;
+        }
+        .entrada-info p { 
+            color: var(--text-muted); 
+            font-size: 0.9rem;
+            margin: 0.3rem 0;
+        }
+        .entrada-qr { 
+            background: linear-gradient(135deg, #fff 0%, #e2e8f0 100%);
+            color: #1e293b; 
+            padding: 0.8rem 1.2rem; 
+            border-radius: 12px; 
+            font-family: monospace; 
+            font-weight: 800;
+            font-size: 1.1rem;
+            letter-spacing: 2px;
+        }
+        .entrada-pagada { 
+            background: var(--success); 
+            color: white; 
+            padding: 0.4rem 1rem; 
+            border-radius: 20px; 
+            font-size: 0.8rem; 
+            font-weight: 700;
+            display: inline-block;
+            margin-top: 0.5rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .entrada-pendiente { 
+            background: var(--warning); 
+            color: white; 
+            padding: 0.4rem 1rem; 
+            border-radius: 20px; 
+            font-size: 0.8rem; 
+            font-weight: 700;
+            display: inline-block;
+            margin-top: 0.5rem;
+            text-transform: uppercase;
+        }
+        
+        .toast { 
+            position: fixed; 
+            top: 90px; 
+            right: 20px; 
+            padding: 1rem 1.5rem; 
+            border-radius: 16px; 
+            font-weight: 700; 
+            z-index: 2000; 
+            animation: slideIn 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+        }
+        .toast.success { 
+            background: var(--success); 
+            color: white; 
+        }
+        .toast.error { 
+            background: var(--error); 
+            color: white; 
+        }
+        @keyframes slideIn { 
+            from { transform: translateX(400px); opacity: 0; } 
+            to { transform: translateX(0); opacity: 1; } 
+        }
+        
+        .loading { 
+            text-align: center; 
+            padding: 3rem; 
+            color: var(--text-muted);
+            font-size: 1.1rem;
+        }
+        
+        .user-info { 
+            display: flex; 
+            align-items: center; 
+            gap: 1rem;
+            padding: 0.5rem 1rem;
+            background: rgba(99, 102, 241, 0.1);
+            border-radius: 12px;
+            border: 1px solid rgba(99, 102, 241, 0.2);
+        }
+        .user-info span { 
+            color: var(--primary-light);
+            font-weight: 600;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 3rem;
+            color: var(--text-muted);
+        }
+        .empty-state span { font-size: 4rem; display: block; margin-bottom: 1rem; }
+        
+        /* Animations */
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        .loading { animation: pulse 1.5s infinite; }
+        
+        .form-box textarea { font-family: 'Segoe UI', sans-serif; }
+        
+        .spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        .btn:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+        }
+        
+        .admin-evento-card {
+            display: flex !important;
+            flex-direction: column !important;
+        }
+        .admin-evento-card > div:first-child,
+        .admin-evento-card > p,
+        .admin-evento-card > div:last-child {
+            width: 100%;
+        }
+        
+        @media (max-width: 768px) {
+            div[style*="grid-template-columns"] { grid-template-columns: 1fr !important; }
+            .hero h1 { font-size: 1.8rem; }
+        }
+        
+        .detalle-evento { animation: fadeIn 0.5s ease; }
+        .detalle-hero {
+            width: 100%;
+            height: 400px;
+            border-radius: 24px;
+            overflow: hidden;
+            position: relative;
+            margin-bottom: 2rem;
+            cursor: pointer;
+        }
+        .detalle-hero img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.5s ease;
+        }
+        .detalle-hero:hover img { transform: scale(1.05); }
+        .detalle-hero-overlay {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            padding: 2rem;
+            background: linear-gradient(transparent, rgba(0,0,0,0.8));
+        }
+        .detalle-hero-overlay h1 { margin: 0; font-size: 2.5rem; color: white; text-shadow: 0 2px 10px rgba(0,0,0,0.5); }
+        .detalle-categoria {
+            display: inline-block;
+            background: var(--gradient);
+            color: white;
+            padding: 0.4rem 1rem;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+        }
+        .detalle-info {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+        @media (max-width: 900px) {
+            .detalle-info { grid-template-columns: 1fr; }
+            .detalle-hero { height: 300px; }
+        }
+        .detalle-descripcion {
+            background: var(--bg-card);
+            padding: 2rem;
+            border-radius: 20px;
+            line-height: 1.8;
+            color: var(--text-muted);
+            font-size: 1.05rem;
+        }
+        .detalle-sidebar {
+            position: sticky;
+            top: 100px;
+            height: fit-content;
+        }
+        .detalle-card {
+            background: var(--bg-card);
+            padding: 2rem;
+            border-radius: 20px;
+            border: 1px solid rgba(255,255,255,0.08);
+            margin-bottom: 1.5rem;
+        }
+        .detalle-card h3 { margin-bottom: 1rem; color: var(--text); display: flex; align-items: center; gap: 0.5rem; }
+        .detalle-card p { color: var(--text-muted); margin: 0.5rem 0; display: flex; align-items: center; gap: 0.5rem; }
+        .detalle-precio { font-size: 2.5rem; font-weight: 800; color: var(--success); text-shadow: 0 0 20px rgba(16, 185, 129, 0.3); }
+        
+        .galeria { margin-top: 2rem; }
+        .galeria-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+        .galeria-item {
+            position: relative;
+            aspect-ratio: 16/10;
+            border-radius: 16px;
+            overflow: hidden;
+            cursor: pointer;
+            transition: transform 0.3s ease;
+        }
+        .galeria-item:hover { transform: scale(1.03); }
+        .galeria-item img { width: 100%; height: 100%; object-fit: cover; }
+        .galeria-delete {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            background: rgba(239, 68, 68, 0.9);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 28px;
+            height: 28px;
+            cursor: pointer;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        .galeria-item:hover .galeria-delete { opacity: 1; }
+        .galeria-add {
+            aspect-ratio: 16/10;
+            border-radius: 16px;
+            border: 2px dashed rgba(255,255,255,0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            color: var(--text-dim);
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+        .galeria-add:hover { border-color: var(--primary); color: var(--primary); background: rgba(99, 102, 241, 0.1); }
+        
+        .lightbox {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.95);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+            animation: fadeIn 0.3s ease;
+        }
+        .lightbox img { max-width: 90%; max-height: 90%; border-radius: 12px; }
+        .lightbox-close {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(255,255,255,0.1);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            cursor: pointer;
+            font-size: 24px;
+        }
+        .lightbox-nav {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(255,255,255,0.1);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            cursor: pointer;
+            font-size: 24px;
+            transition: background 0.3s;
+        }
+        .lightbox-nav:hover { background: rgba(255,255,255,0.2); }
+        .lightbox-prev { left: 20px; }
+        .lightbox-next { right: 20px; }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+    <script type="text/babel">
+        const { useState, useEffect, createContext, useContext } = React;
+        const API_URL = window.location.protocol === 'https:' 
+            ? `https://${window.location.hostname}:8443` 
+            : 'http://localhost:8000';
+        const getImagenUrl = (img) => {
+            if (!img) return null;
+            if (img.startsWith('data:') || img.startsWith('http')) return img;
+            return 'http://localhost:3000/' + img;
+        };
+        const AuthContext = createContext(null);
+
+        function App() {
+            const [user, setUser] = useState(null);
+            const [token, setToken] = useState(sessionStorage.getItem('token'));
+            const [vista, setVista] = useState('eventos');
+            const [eventoId, setEventoId] = useState(null);
+            const [toast, setToast] = useState(null);
+            const [pagoEstado, setPagoEstado] = useState(null);
+            const [resetToken, setResetToken] = useState(null);
+            const [transferenciasPendientes, setTransferenciasPendientes] = useState([]);
+            const [carrito, setCarrito] = useState([]);
+            
+            useEffect(() => {
+                const params = new URLSearchParams(window.location.search);
+                const pago = params.get('pago');
+                const reset = params.get('reset');
+                const evento = params.get('evento');
+                
+                if (pago === 'exito') { setPagoEstado('success'); setVista('mis-entradas'); }
+                else if (pago === 'fallo') { setPagoEstado('error'); }
+                else if (pago === 'pendiente') { setPagoEstado('warning'); }
+                
+                if (reset) { setResetToken(reset); setVista('reset-password'); }
+                if (evento) { setEventoId(parseInt(evento)); setVista('detalle-evento'); }
+                
+                const savedToken = sessionStorage.getItem('token');
+                if (savedToken) {
+                    setToken(savedToken);
+                    fetch(API_URL + '/api/auth/me', { headers: { Authorization: 'Bearer ' + savedToken } })
+                    .then(res => res.ok ? res.json() : Promise.reject())
+                    .then(data => { setUser(data); console.log('Usuario cargado:', data); })
+                    .catch(() => { sessionStorage.removeItem('token'); setToken(null); console.log('Token inválido'); });
+                }
+            }, []);
+            
+            useEffect(() => {
+                if (pagoEstado) {
+                    const messages = { success: 'Pago exitoso! Tu entrada está confirmada.', error: 'El pago fue rechazado. Intenta nuevamente.', warning: 'Pago pendiente. Te notificaremos cuando se confirme.' };
+                    showToast(messages[pagoEstado], pagoEstado);
+                    window.history.replaceState({}, '', '/');
+                    setTimeout(() => setPagoEstado(null), 3000);
+                }
+            }, [pagoEstado]);
+            
+            useEffect(() => {
+                if (token) {
+                    fetch(API_URL + '/api/transferencias/pendientes', { headers: { Authorization: 'Bearer ' + token } })
+                    .then(res => res.ok ? res.json() : [])
+                    .then(data => setTransferenciasPendientes(Array.isArray(data) ? data : []))
+                    .catch(() => {});
+                }
+            }, [token]);
+            
+            const showToast = (message, type = 'success') => { setToast({ message, type }); setTimeout(() => setToast(null), 3000); };
+            const login = (userData, token) => { setUser(userData); setToken(token); sessionStorage.setItem('token', token); showToast('Bienvenido!'); };
+            const logout = () => { setUser(null); setToken(null); sessionStorage.removeItem('token'); setVista('eventos'); showToast('Sesion cerrada'); };
+            
+            const irADetalle = (id) => {
+                setEventoId(id);
+                setVista('detalle-evento');
+            };
+            
+            return (
+                <AuthContext.Provider value={{ user, token, login, logout, showToast, setUser, setVista, irADetalle }}>
+                    <Header vista={vista} setVista={setVista} user={user} logout={logout} carrito={carrito} />
+                    <div className="container">
+                        {vista === 'eventos' && <Eventos />}
+                        {vista === 'registro' && <Registro setVista={setVista} />}
+                        {vista === 'login' && <Login setVista={setVista} />}
+                        {vista === 'buscar-entradas' && <BuscarEntradas />}
+                        {vista === 'carrito' && <Carrito />}
+                        {vista === 'mis-entradas' && <MisEntradas />}
+                        {vista === 'aceptar-transferencia' && <AceptarTransferenciasList />}
+                        {vista === 'perfil' && <Perfil />}
+                        {vista === 'admin' && <AdminPanel />}
+                        {vista === 'recuperar' && <RecuperarPassword setVista={setVista} />}
+                        {vista === 'reset-password' && <ResetPassword setVista={setVista} toast={toast} />}
+                        {vista === 'detalle-evento' && <DetalleEvento eventoId={eventoId} />}
+                    </div>
+                    {toast && <div className={'toast ' + toast.type}>{toast.message}</div>}
+                </AuthContext.Provider>
+            );
+        }
+
+        function Header({ vista, setVista, user, logout, carrito }) {
+            return (
+                <header>
+                    <div className="logo" onClick={() => setVista('eventos')} style={{cursor:'pointer', display:'flex', alignItems:'center', gap:'10px'}}>
+                        <svg width="40" height="40" viewBox="0 0 100 100" style={{filter:'drop-shadow(0 0 10px rgba(99,102,241,0.5))'}}>
+                            <defs>
+                                <linearGradient id="logoGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                                    <stop offset="0%" stopColor="#6366f1"/>
+                                    <stop offset="100%" stopColor="#ec4899"/>
+                                </linearGradient>
+                            </defs>
+                            <rect x="10" y="25" width="80" height="55" rx="8" fill="url(#logoGrad)"/>
+                            <circle cx="30" cy="52" r="8" fill="white"/>
+                            <circle cx="70" cy="52" r="8" fill="white"/>
+                            <rect x="38" y="48" width="24" height="8" fill="white" rx="2"/>
+                            <rect x="35" y="15" width="30" height="15" rx="4" fill="url(#logoGrad)"/>
+                        </svg>
+                        <span style={{background:'linear-gradient(135deg, #6366f1, #ec4899)', WebkitBackgroundClip:'text', WebkitTextFillColor:'transparent', fontWeight:'700', fontSize:'1.3rem', letterSpacing:'-0.5px'}}>GET ACCESS</span>
+                    </div>
+                    <nav>
+                        <button className={vista === 'eventos' ? 'active' : ''} onClick={() => setVista('eventos')}>🎉 Eventos</button>
+                        <button className={vista === 'buscar-entradas' ? 'active' : ''} onClick={() => setVista('buscar-entradas')}>🔍 Buscar</button>
+                        {carrito.length > 0 && (
+                            <button className={vista === 'carrito' ? 'active' : ''} onClick={() => setVista('carrito')} style={{position: 'relative'}}>
+                                🛒 Carrito <span style={{position: 'absolute', top: '-5px', right: '-5px', background: '#ec4899', color: 'white', borderRadius: '50%', width: '20px', height: '20px', fontSize: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center'}}>{carrito.length}</span>
+                            </button>
+                        )}
+                        {user ? (
+                            <>
+                                <button className={vista === 'mis-entradas' ? 'active' : ''} onClick={() => setVista('mis-entradas')}>🎟️ Mis Entradas</button>
+                                <button className={vista === 'perfil' ? 'active' : ''} onClick={() => setVista('perfil')}>👤 Perfil</button>
+                                {user.rol === 'admin' && <button className={vista === 'admin' ? 'active' : ''} onClick={() => setVista('admin')}>⚙️ Admin</button>}
+                                <div className="user-info"><span>👤 {user.nombre}</span><button onClick={logout}>🚪</button></div>
+                            </>
+                        ) : (
+                            <>
+                                <button className={vista === 'registro' ? 'active' : ''} onClick={() => setVista('registro')}>📝 Registrarse</button>
+                                <button className={vista === 'login' ? 'active' : ''} onClick={() => setVista('login')}>🔐</button>
+                            </>
+                        )}
+                    </nav>
+                </header>
+            );
+        }
+
+        function Eventos() {
+            const [eventos, setEventos] = useState([]);
+            const [categorias, setCategorias] = useState([]);
+            const [loading, setLoading] = useState(true);
+            const [busqueda, setBusqueda] = useState('');
+            const [categoriaFiltro, setCategoriaFiltro] = useState('');
+            const { user, token, showToast, setVista, irADetalle } = useContext(AuthContext);
+            const [modal, setModal] = useState(null);
+            
+            useEffect(() => {
+                let mounted = true;
+                const init = async () => {
+                    await cargarEventos();
+                    if (mounted) await cargarCategorias();
+                };
+                init();
+                return () => { mounted = false; };
+            }, [categoriaFiltro]);
+            
+            const cargarCategorias = async () => {
+                try {
+                    const res = await fetch(API_URL + '/api/eventos/categorias');
+                    if (res.ok) {
+                        const data = await res.json();
+                        setCategorias(Array.isArray(data) ? data : []);
+                    }
+                } catch (err) { console.error('Error cargando categorías:', err); }
+            };
+            
+            const cargarEventos = async () => {
+                setLoading(true);
+                try {
+                    let url = API_URL + '/api/eventos/';
+                    const params = new URLSearchParams();
+                    if (categoriaFiltro) params.append('categoria', categoriaFiltro);
+                    if (busqueda) params.append('busqueda', busqueda);
+                    if (params.toString()) url += '?' + params.toString();
+                    
+                    const res = await fetch(url);
+                    if (!res.ok) throw new Error('Error del servidor');
+                    const data = await res.json();
+                    setEventos(Array.isArray(data) ? data : []);
+                } catch (err) {
+                    console.error('Error cargando eventos:', err);
+                    showToast('Error al cargar eventos. Reintentando...', 'error');
+                    setTimeout(() => cargarEventos(), 2000);
+                }
+                setLoading(false);
+            };
+            
+            const getEmoji = (nombre, categoria) => {
+                if (categoria) {
+                    const cats = { musica: '🎵', teatro: '🎭', deportes: '⚽', comedia: '😂', conferencia: '💼', espectaculo: '🎪' };
+                    if (cats[categoria]) return cats[categoria];
+                }
+                const n = nombre?.toLowerCase() || '';
+                if (n.includes('musica') || n.includes('festival')) return '🎵';
+                if (n.includes('rock') || n.includes('concierto')) return '🎸';
+                if (n.includes('comedia') || n.includes('stand up')) return '😂';
+                if (n.includes('futbol') || n.includes('deporte') || n.includes('clásico')) return '⚽';
+                if (n.includes('teatro') || n.includes('flamenco')) return '🎭';
+                if (n.includes('tech') || n.includes('conferencia')) return '💼';
+                return '🎉';
+            };
+            
+            const comprar = async (cantidad) => {
+                const savedToken = sessionStorage.getItem('token');
+                const storedCarrito = JSON.parse(localStorage.getItem('carrito') || '[]');
+                const nuevoItem = { id: modal.id, nombre: modal.nombre, fecha: modal.fecha, lugar: modal.lugar, precio: modal.precio, cantidad: cantidad };
+                const nuevoCarrito = [...storedCarrito, nuevoItem];
+                localStorage.setItem('carrito', JSON.stringify(nuevoCarrito));
+                showToast('Entrada agregada al carrito', 'success');
+                setModal(null);
+            };
+            
+            if (loading) return <div className="loading">Cargando eventos...</div>;
+            
+            return (
+                <>
+                    <div className="hero">
+                        <svg width="80" height="80" viewBox="0 0 100 100" style={{animation:'scaleIn 0.6s ease-out', marginBottom:'1rem'}}>
+                            <defs>
+                                <linearGradient id="heroGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                                    <stop offset="0%" stopColor="#6366f1"/>
+                                    <stop offset="100%" stopColor="#ec4899"/>
+                                </linearGradient>
+                            </defs>
+                            <rect x="10" y="25" width="80" height="55" rx="8" fill="url(#heroGrad)"/>
+                            <circle cx="30" cy="52" r="8" fill="white"/>
+                            <circle cx="70" cy="52" r="8" fill="white"/>
+                            <rect x="38" y="48" width="24" height="8" fill="white" rx="2"/>
+                            <rect x="35" y="15" width="30" height="15" rx="4" fill="url(#heroGrad)"/>
+                        </svg>
+                        <h1 style={{animation:'slideDown 0.8s ease-out'}}>Get Access</h1>
+                        <p style={{animation:'fadeIn 1s ease-out 0.3s both'}}>Descubre los mejores eventos y compra tus entradas de forma segura</p>
+                    </div>
+                    
+                    <div style={{display:'flex', gap:'1rem', marginBottom:'2rem', flexWrap:'wrap', animation:'slideUp 0.8s ease-out 0.5s both'}}>
+                        <input 
+                            type="text" 
+                            placeholder="🔍 Buscar eventos..." 
+                            value={busqueda}
+                            onChange={e => setBusqueda(e.target.value)}
+                            onKeyDown={e => e.key === 'Enter' && cargarEventos()}
+                            style={{flex:1, minWidth:'200px', padding:'1rem', borderRadius:'12px', border:'2px solid rgba(255,255,255,0.1)', background:'rgba(0,0,0,0.3)', color:'white', fontSize:'1rem'}}
+                        />
+                        <select 
+                            value={categoriaFiltro} 
+                            onChange={e => setCategoriaFiltro(e.target.value)}
+                            style={{padding:'1rem', borderRadius:'12px', border:'2px solid rgba(255,255,255,0.1)', background:'var(--bg-card)', color:'white', fontSize:'1rem', minWidth:'150px'}}
+                        >
+                            <option value="">Todas las categorías</option>
+                            {categorias.map(cat => (
+                                <option key={cat} value={cat}>{cat.charAt(0).toUpperCase() + cat.slice(1)}</option>
+                            ))}
+                        </select>
+                        <button className="btn" onClick={cargarEventos}>Buscar</button>
+                    </div>
+                    
+                    <h1 style={{animation:'fadeIn 0.8s ease-out 0.6s both'}}>Próximos Eventos {categoriaFiltro ? `- ${categoriaFiltro.charAt(0).toUpperCase() + categoriaFiltro.slice(1)}` : ''}</h1>
+                    {eventos.length === 0 ? (
+                        <div className="empty-state"><span>🎫</span><p>No hay eventos {categoriaFiltro ? 'en esta categoría' : 'disponibles'}</p></div>
+                    ) : (
+                        <div className="eventos-grid">
+                            {eventos.map(evento => (
+                                <div key={evento.id} className="evento-card">
+                                    <div className="evento-img" onClick={() => irADetalle(evento.id)} style={{cursor:'pointer'}}>
+                                        {evento.imagen ? (
+                                            <img src={getImagenUrl(evento.imagen)} alt={evento.nombre} style={{width:'100%',height:'100%',objectFit:'cover'}} onError={e => { e.target.style.display='none'; e.target.nextSibling.style.display='flex'; }} />
+                                        ) : null}
+                                        <span style={{display: evento.imagen ? 'none' : 'flex', fontSize:'4rem'}}>{getEmoji(evento.nombre, evento.categoria)}</span>
+                                    </div>
+                                    <div className="evento-info">
+                                        {evento.categoria && <span style={{fontSize:'0.75rem', background:'rgba(99,102,241,0.2)', padding:'0.25rem 0.75rem', borderRadius:'20px', color:'var(--primary-light)', display:'inline-block', marginBottom:'0.5rem'}}>{evento.categoria.toUpperCase()}</span>}
+                                        <h3 onClick={() => irADetalle(evento.id)} style={{cursor:'pointer'}}>{evento.nombre}</h3>
+                                        <div className="evento-meta"><span>📅 {new Date(evento.fecha).toLocaleDateString('es-AR', { weekday: 'short', day: 'numeric', month: 'short' })}</span><span>📍 {evento.lugar}</span></div>
+                                        <p className="evento-desc">{evento.descripcion}</p>
+                                        <div className="evento-footer">
+                                            <div><div className="precio">${evento.precio.toLocaleString('es-AR')}</div><div className={'disponibles ' + (evento.disponibles < 50 ? 'low' : '')}>{evento.disponibles} disponibles</div></div>
+                                            <button className="btn" disabled={evento.disponibles === 0} onClick={() => { if(!user) { showToast('Inicia sesión para comprar', 'error'); setVista('login'); } else { setModal(evento); } }}>{evento.disponibles === 0 ? 'Agotado' : '🎫 Comprar'}</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                    {modal && <ModalCompra evento={modal} onClose={() => setModal(null)} onConfirm={comprar} />}
+                </>
+            );
+        }
+
+        function DetalleEvento({ eventoId }) {
+            const [evento, setEvento] = useState(null);
+            const [loading, setLoading] = useState(true);
+            const [error, setError] = useState(null);
+            const [modal, setModal] = useState(null);
+            const [lightbox, setLightbox] = useState(null);
+            const [nuevaImagen, setNuevaImagen] = useState('');
+            const { user, token, showToast, setVista } = useContext(AuthContext);
+            const isAdmin = user && user.rol === 'admin';
+            
+            useEffect(() => {
+                cargarEvento();
+            }, [eventoId]);
+            
+            const cargarEvento = async () => {
+                setLoading(true);
+                setError(null);
+                try {
+                    const res = await fetch(API_URL + '/api/eventos/' + eventoId);
+                    if (!res.ok) {
+                        if (res.status === 404) setError('Evento no encontrado');
+                        else throw new Error('Error del servidor');
+                        return;
+                    }
+                    const data = await res.json();
+                    setEvento(data);
+                } catch (err) {
+                    setError(err.message);
+                    showToast('Error al cargar el evento', 'error');
+                }
+                setLoading(false);
+            };
+            
+            const comprar = async (cantidad) => {
+                const storedCarrito = JSON.parse(localStorage.getItem('carrito') || '[]');
+                const nuevoItem = { id: evento.id, nombre: evento.nombre, fecha: evento.fecha, lugar: evento.lugar, precio: evento.precio, cantidad: cantidad };
+                const nuevoCarrito = [...storedCarrito, nuevoItem];
+                localStorage.setItem('carrito', JSON.stringify(nuevoCarrito));
+                showToast('Entrada agregada al carrito', 'success');
+                setModal(null);
+            };
+            
+            const agregarImagen = async () => {
+                if (!nuevaImagen.trim()) { showToast('Ingresa una URL de imagen', 'error'); return; }
+                try {
+                    const res = await fetch(API_URL + '/api/eventos/' + eventoId + '/imagenes', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+                        body: JSON.stringify({ url: nuevaImagen, orden: evento.imagenes?.length || 0 })
+                    });
+                    if (res.ok) {
+                        showToast('Imagen agregada', 'success');
+                        setNuevaImagen('');
+                        cargarEvento();
+                    } else {
+                        const data = await res.json();
+                        showToast(data.detail || 'Error al agregar imagen', 'error');
+                    }
+                } catch (err) { showToast('Error de conexión', 'error'); }
+            };
+            
+            const eliminarImagen = async (imagenId) => {
+                if (!confirm('¿Eliminar esta imagen?')) return;
+                try {
+                    const res = await fetch(API_URL + '/api/eventos/' + eventoId + '/imagenes/' + imagenId, {
+                        method: 'DELETE',
+                        headers: { 'Authorization': 'Bearer ' + token }
+                    });
+                    if (res.ok) {
+                        showToast('Imagen eliminada', 'success');
+                        cargarEvento();
+                    } else {
+                        const data = await res.json();
+                        showToast(data.detail || 'Error al eliminar', 'error');
+                    }
+                } catch (err) { showToast('Error de conexión', 'error'); }
+            };
+            
+            const todasImagenes = evento ? [evento.imagen, ...(evento.imagenes || []).map(i => i.url)].filter(Boolean) : [];
+            
+            if (loading) return <div className="loading">Cargando...</div>;
+            if (error) return <div className="empty-state"><span>❌</span><p>{error}</p><button className="btn" onClick={() => setVista('eventos')}>Volver a eventos</button></div>;
+            if (!evento) return null;
+            
+            return (
+                <div className="detalle-evento">
+                    <button onClick={() => setVista('eventos')} style={{background:'transparent', border:'none', color:'var(--text-muted)', cursor:'pointer', display:'flex', alignItems:'center', gap:'0.5rem', marginBottom:'1rem', fontSize:'0.9rem'}}>← Volver a eventos</button>
+                    
+                    <div className="detalle-hero" onClick={() => todasImagenes.length > 0 && setLightbox(0)}>
+                        {evento.imagen ? (
+                            <img src={getImagenUrl(evento.imagen)} alt={evento.nombre} />
+                        ) : (
+                            <div style={{width:'100%',height:'100%',background:'linear-gradient(135deg, #1e1b4b 0%, #312e81 50%, #4c1d95 100%)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:'6rem'}}>🎉</div>
+                        )}
+                        <div className="detalle-hero-overlay">
+                            {evento.categoria && <span className="detalle-categoria">{evento.categoria.toUpperCase()}</span>}
+                            <h1>{evento.nombre}</h1>
+                        </div>
+                    </div>
+                    
+                    <div className="detalle-info">
+                        <div>
+                            <div className="detalle-descripcion">
+                                <h2 style={{marginBottom:'1rem', color:'var(--text)'}}>📄 Acerca del evento</h2>
+                                <p>{evento.descripcion || 'Sin descripción disponible.'}</p>
+                            </div>
+                            
+                            {todasImagenes.length > 0 && (
+                                <div className="galeria">
+                                    <h2 style={{color:'var(--text)', marginTop:'2rem', marginBottom:'0.5rem'}}>🖼️ Galería</h2>
+                                    <div className="galeria-grid">
+                                        {todasImagenes.map((img, idx) => (
+                                            <div key={idx} className="galeria-item" onClick={() => setLightbox(idx)}>
+                                                <img src={getImagenUrl(img)} alt={'Imagen ' + (idx + 1)} onError={e => e.target.style.display='none'} />
+                                                {isAdmin && idx > 0 && (
+                                                    <button className="galeria-delete" onClick={e => { e.stopPropagation(); eliminarImagen(evento.imagenes?.[idx - 1]?.id); }}>✕</button>
+                                                )}
+                                            </div>
+                                        ))}
+                                        {isAdmin && (
+                                            <div className="galeria-add">
+                                                <input type="url" placeholder="URL de imagen" value={nuevaImagen} onChange={e => setNuevaImagen(e.target.value)} onClick={e => e.stopPropagation()} style={{width:'80%',padding:'0.5rem',border:'none',background:'transparent',color:'white',textAlign:'center',fontSize:'0.85rem'}} />
+                                                <button onClick={e => { e.stopPropagation(); agregarImagen(); }} style={{background:'var(--primary)',border:'none',color:'white',padding:'0.5rem 1rem',borderRadius:'8px',cursor:'pointer',fontSize:'0.85rem'}}>Agregar</button>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                        
+                        <div className="detalle-sidebar">
+                            <div className="detalle-card">
+                                <h3>📅 Fecha y Hora</h3>
+                                <p>{new Date(evento.fecha).toLocaleDateString('es-AR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}</p>
+                                <p style={{fontSize:'0.9rem', marginTop:'0.5rem', color:'var(--text-dim)'}}>Verificar horario en la web del evento</p>
+                            </div>
+                            
+                            <div className="detalle-card">
+                                <h3>📍 Ubicación</h3>
+                                <p>{evento.lugar}</p>
+                            </div>
+                            
+                            <div className="detalle-card">
+                                <h3>🎟️ Entradas</h3>
+                                <p style={{marginBottom:'1rem'}}>Disponibles: <strong style={{color:'var(--success)'}}>{evento.disponibles}</strong> de {evento.capacidad}</p>
+                                {evento.disponibles < 50 && <p style={{color:'var(--error)', fontSize:'0.85rem'}}>⚠️ ¡Quedan pocas entradas!</p>}
+                                <div className="detalle-precio" style={{marginBottom:'1rem'}}>${evento.precio.toLocaleString('es-AR')}</div>
+                                <button className="btn btn-block" disabled={evento.disponibles === 0} onClick={() => { if(!user) { showToast('Inicia sesión para comprar', 'error'); setVista('login'); } else { setModal(evento); } }}>{evento.disponibles === 0 ? 'Agotado' : '🎫 Comprar Entrada'}</button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    {modal && <ModalCompra evento={modal} onClose={() => setModal(null)} onConfirm={comprar} />}
+                    
+                    {lightbox !== null && (
+                        <div className="lightbox" onClick={() => setLightbox(null)}>
+                            <button className="lightbox-close" onClick={() => setLightbox(null)}>✕</button>
+                            {todasImagenes.length > 1 && <button className="lightbox-nav lightbox-prev" onClick={e => { e.stopPropagation(); setLightbox((lightbox - 1 + todasImagenes.length) % todasImagenes.length); }}>‹</button>}
+                            <img src={todasImagenes[lightbox]} alt="Galería" onClick={e => e.stopPropagation()} />
+                            {todasImagenes.length > 1 && <button className="lightbox-nav lightbox-next" onClick={e => { e.stopPropagation(); setLightbox((lightbox + 1) % todasImagenes.length); }}>›</button>}
+                        </div>
+                    )}
+                </div>
+            );
+        }
+
+        function ModalCompra({ evento, onClose, onConfirm }) {
+            const [cantidad, setCantidad] = useState(1);
+            return (
+                <div className="modal-overlay" onClick={onClose}>
+                    <div className="modal" onClick={e => e.stopPropagation()}>
+                        <h3>🎫 Confirmar Compra</h3>
+                        <div className="modal-info">
+                            <p><strong>🎪 Evento:</strong> <span>{evento.nombre}</span></p>
+                            <p><strong>💰 Precio:</strong> <span>${evento.precio.toLocaleString('es-AR')}</span></p>
+                            <p><strong>📅 Fecha:</strong> <span>{new Date(evento.fecha).toLocaleDateString('es-AR')}</span></p>
+                            <p><strong>📍 Lugar:</strong> <span>{evento.lugar}</span></p>
+                        </div>
+                        <div className="form-group"><label>🎟️ Cantidad:</label><input type="number" value={cantidad} onChange={e => setCantidad(parseInt(e.target.value) || 1)} min="1" max={Math.min(10, evento.disponibles)} /></div>
+                        <div className="modal-total">💵 Total: ${(evento.precio * cantidad).toLocaleString('es-AR')}</div>
+                        <div className="modal-buttons"><button className="btn btn-secondary" onClick={onClose}>❌ Cancelar</button><button className="btn" onClick={() => onConfirm(cantidad)}>💳 Pagar con MercadoPago</button></div>
+                    </div>
+                </div>
+            );
+        }
+
+        function Registro({ setVista }) {
+            const [form, setForm] = useState({ email: '', nombre: '', apellido: '', password: '' });
+            const [confirmPassword, setConfirmPassword] = useState('');
+            const [codigo, setCodigo] = useState('');
+            const [codigoBackend, setCodigoBackend] = useState('');
+            const [enviado, setEnviado] = useState(false);
+            const [errorEmail, setErrorEmail] = useState('');
+            const [loading, setLoading] = useState(false);
+            const { login, showToast } = useContext(AuthContext);
+            const handleSubmit = async (e) => {
+                e.preventDefault();
+                const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                if (!emailRegex.test(form.email)) { setErrorEmail(''); showToast('Ingrese un email válido', 'error'); return; }
+                if (form.password !== confirmPassword) { setErrorEmail(''); showToast('Las contraseñas no coinciden', 'error'); return; }
+                setLoading(true);
+                const res = await fetch(API_URL + '/api/auth/registro', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(form) });
+                const data = await res.json();
+                setLoading(false);
+                if (res.ok) { 
+                    setEnviado(true); 
+                    setErrorEmail(''); 
+                    showToast('Código enviado a tu email (revisa también SPAM)', 'success');
+                }
+                else if (data.detail && data.detail.includes('ya registrado')) { setErrorEmail('Este email ya está registrado'); }
+                else if (data.detail) { showToast(data.detail, 'error'); setErrorEmail(data.detail); }
+                else { setErrorEmail(''); showToast(data.detail || 'Error al registrar', 'error'); }
+            };
+            const handleVerificar = async (e) => {
+                e.preventDefault();
+                setLoading(true);
+                const res = await fetch(API_URL + '/api/auth/verificar', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({email: form.email, codigo: codigo}) });
+                const data = await res.json();
+                setLoading(false);
+                if (res.ok) { login(data.user, data.access_token); setVista('eventos'); showToast('Email verificado correctamente', 'success'); }
+                else showToast(data.detail || 'Código incorrecto', 'error');
+            };
+            if (enviado) {
+                return (
+                    <div className="form-page"><div className="form-box"><h2>✅ Verificar Email</h2><p style={{marginBottom:'15px',color:'#666'}}>Ingresa el código de 6 dígitos que enviamos a <b>{form.email}</b></p>
+                        <div style={{background:'#fffbeb',border:'1px solid #f59e0b',borderRadius:'8px',padding:'10px',marginBottom:'15px',fontSize:'12px',color:'#92400e'}}>
+                            ⚠️ Si no recibiste el email, revisa la carpeta de <strong>SPAM</strong>.
+                        </div>
+                    <form onSubmit={handleVerificar}>
+                        <div className="form-group"><label>🔢 Código de verificación</label><input type="text" value={codigo} onChange={e => setCodigo(e.target.value)} maxLength="6" pattern="[0-9]{6}" disabled={loading} required /></div>
+                        <button type="submit" className="btn btn-block" disabled={loading}>{loading ? <span className="spinner"></span> : '✅ Verificar'}</button>
+                    </form></div></div>
+                );
+            }
+            return (
+                <div className="form-page"><div className="form-box"><h2>📝 Registrarse</h2><form onSubmit={handleSubmit}>
+                    <div className="form-group"><label>📧 Email</label><input type="email" value={form.email} onChange={e => { setForm({...form, email: e.target.value}); setErrorEmail(''); }} disabled={loading} required /></div>
+                    {errorEmail && <div style={{color:'#ef4444',fontSize:'14px',marginBottom:'10px',fontWeight:'bold'}}>⚠️ {errorEmail}</div>}
+                    <div className="form-group"><label>👤 Nombre</label><input type="text" value={form.nombre} onChange={e => setForm({...form, nombre: e.target.value})} disabled={loading} required /></div>
+                    <div className="form-group"><label>👤 Apellido</label><input type="text" value={form.apellido} onChange={e => setForm({...form, apellido: e.target.value})} disabled={loading} required /></div>
+                    <div className="form-group"><label>🔑 Contraseña</label><input type="password" value={form.password} onChange={e => setForm({...form, password: e.target.value})} disabled={loading} minLength="8" required /></div>
+                    <div className="form-group"><label>🔑 Confirmar Contraseña</label><input type="password" value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} disabled={loading} minLength="8" required /></div>
+                    <small style={{color:'#666',fontSize:'12px'}}>Mín: 8 caracteres, 1 mayúscula, 1 minúscula, 1 número, 1 especial (!@#$%...)</small>
+                    <button type="submit" className="btn btn-block" disabled={loading}>{loading ? <span className="spinner"></span> : '📝 Registrarse'}</button>
+                </form></div></div>
+            );
+        }
+
+        function Login({ setVista }) {
+            const [form, setForm] = useState({ email: '', password: '' });
+            const [loading, setLoading] = useState(false);
+            const { login, showToast } = useContext(AuthContext);
+            const handleSubmit = async (e) => {
+                e.preventDefault();
+                setLoading(true);
+                const res = await fetch(API_URL + '/api/auth/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(form) });
+                const data = await res.json();
+                setLoading(false);
+                if (res.ok) { login(data.user, data.access_token); setVista('eventos'); }
+                else showToast(data.detail || 'Error al iniciar sesion', 'error');
+            };
+            return (
+                <div className="form-page"><div className="form-box"><h2>🔐 Iniciar Sesion</h2><form onSubmit={handleSubmit}>
+                    <div className="form-group"><label>📧 Email</label><input type="email" value={form.email} onChange={e => setForm({...form, email: e.target.value})} disabled={loading} required /></div>
+                    <div className="form-group"><label>🔑 Contraseña</label><input type="password" value={form.password} onChange={e => setForm({...form, password: e.target.value})} disabled={loading} required /></div>
+                    <button type="submit" className="btn btn-block" disabled={loading}>{loading ? <span className="spinner"></span> : '🔐 Iniciar Sesion'}</button>
+                    <p style={{textAlign:'center', marginTop:'1rem'}}><button type="button" onClick={() => setVista('recuperar')} style={{background:'none', border:'none', color:'var(--primary-light)', cursor:'pointer', textDecoration:'underline', fontSize:'0.9rem'}}>¿Olvidaste tu contraseña?</button></p>
+                    <p style={{textAlign:'center', marginTop:'0.5rem'}}>¿No tienes cuenta? <button type="button" onClick={() => setVista('registro')} style={{background:'none', border:'none', color:'var(--primary-light)', cursor:'pointer', textDecoration:'underline'}}>Regístrate</button></p>
+                </form></div></div>
+            );
+        }
+
+        function RecuperarPassword({ setVista }) {
+            const [email, setEmail] = useState('');
+            const [enviado, setEnviado] = useState(false);
+            const [loading, setLoading] = useState(false);
+            const { showToast } = useContext(AuthContext);
+            
+            const handleSubmit = async (e) => {
+                e.preventDefault();
+                setLoading(true);
+                try {
+                    const res = await fetch(API_URL + '/api/auth/recuperar', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ email })
+                    });
+                    const data = await res.json();
+                    if (res.ok) {
+                        setEnviado(true);
+                        showToast('Revisa tu email para restablecer la contraseña', 'success');
+                    } else {
+                        showToast(data.detail || 'Error', 'error');
+                    }
+                } catch (err) {
+                    showToast('Error de conexión', 'error');
+                }
+                setLoading(false);
+            };
+            
+            if (enviado) {
+                return (
+                    <div className="form-page">
+                        <div className="form-box" style={{textAlign:'center'}}>
+                            <div style={{fontSize:'4rem', marginBottom:'1rem'}}>📧</div>
+                            <h2>Revisá tu email</h2>
+                            <p style={{color:'var(--text-muted)', marginBottom:'1.5rem'}}>Si el email existe en nuestro sistema, recibirás un enlace para restablecer tu contraseña.</p>
+                            <button className="btn" onClick={() => setVista('login')}>Volver al login</button>
+                            <p style={{marginTop:'1rem', fontSize:'0.85rem', color:'var(--text-dim)'}}>Revisa también la carpeta de SPAM</p>
+                        </div>
+                    </div>
+                );
+            }
+            
+            return (
+                <div className="form-page">
+                    <div className="form-box">
+                        <h2>🔐 Recuperar Contraseña</h2>
+                        <p style={{color:'var(--text-muted)', marginBottom:'1.5rem'}}>Ingresá tu email y te enviaremos un enlace para restablecer tu contraseña.</p>
+                        <form onSubmit={handleSubmit}>
+                            <div className="form-group"><label>📧 Email</label><input type="email" value={email} onChange={e => setEmail(e.target.value)} required /></div>
+                            <button type="submit" className="btn btn-block" disabled={loading}>{loading ? 'Enviando...' : 'Enviar enlace'}</button>
+                        </form>
+                        <p style={{textAlign:'center', marginTop:'1rem'}}><button onClick={() => setVista('login')} style={{background:'none', border:'none', color:'var(--primary-light)', cursor:'pointer', textDecoration:'underline'}}>Volver al login</button></p>
+                    </div>
+                </div>
+            );
+        }
+
+        function ResetPassword({ setVista }) {
+            const [password, setPassword] = useState('');
+            const [confirmPassword, setConfirmPassword] = useState('');
+            const [loading, setLoading] = useState(false);
+            const [error, setError] = useState('');
+            const [success, setSuccess] = useState(false);
+            const [showToast, setShowToast] = useState(null);
+            
+            const handleSubmit = async (e) => {
+                e.preventDefault();
+                setError('');
+                
+                if (password !== confirmPassword) {
+                    setError('Las contraseñas no coinciden');
+                    return;
+                }
+                
+                if (password.length < 8) {
+                    setError('La contraseña debe tener al menos 8 caracteres');
+                    return;
+                }
+                
+                const urlParams = new URLSearchParams(window.location.search);
+                const token = urlParams.get('reset');
+                
+                if (!token) {
+                    setError('Token inválido');
+                    return;
+                }
+                
+                setLoading(true);
+                try {
+                    const res = await fetch(API_URL + '/api/auth/restablecer', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ token, nueva_password: password })
+                    });
+                    const data = await res.json();
+                    
+                    if (res.ok) {
+                        setSuccess(true);
+                        window.history.replaceState({}, '', '/');
+                    } else {
+                        setError(data.detail || 'Error al restablecer contraseña');
+                    }
+                } catch (err) {
+                    setError('Error de conexión');
+                }
+                setLoading(false);
+            };
+            
+            if (success) {
+                return (
+                    <div className="form-page">
+                        <div className="form-box" style={{textAlign:'center'}}>
+                            <div style={{fontSize:'4rem', marginBottom:'1rem'}}>✅</div>
+                            <h2>¡Contraseña Restablecida!</h2>
+                            <p style={{color:'var(--text-muted)', marginBottom:'1.5rem'}}>Tu contraseña fue cambiada exitosamente. Ya podés iniciar sesión.</p>
+                            <button className="btn" onClick={() => setVista('login')}>Ir al Login</button>
+                        </div>
+                    </div>
+                );
+            }
+            
+            return (
+                <div className="form-page">
+                    <div className="form-box">
+                        <h2>🔐 Nueva Contraseña</h2>
+                        <p style={{color:'var(--text-muted)', marginBottom:'1.5rem'}}>Ingresá tu nueva contraseña.</p>
+                        <form onSubmit={handleSubmit}>
+                            <div className="form-group"><label>🔑 Nueva Contraseña</label><input type="password" value={password} onChange={e => setPassword(e.target.value)} required /></div>
+                            <div className="form-group"><label>🔑 Confirmar Contraseña</label><input type="password" value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} required /></div>
+                            <small style={{color:'#666', fontSize:'12px', display:'block', marginBottom:'1rem'}}>Mín: 8 caracteres, 1 mayúscula, 1 minúscula, 1 número, 1 especial (!@#$%...)</small>
+                            {error && <div style={{color:'var(--error)', marginBottom:'1rem', fontWeight:'bold'}}>{error}</div>}
+                            <button type="submit" className="btn btn-block" disabled={loading}>{loading ? 'Guardando...' : 'Guardar Contraseña'}</button>
+                        </form>
+                    </div>
+                </div>
+            );
+        }
+
+        function AnalyticsPanel({ eventos }) {
+            const { token, showToast } = useContext(AuthContext);
+            const [analytics, setAnalytics] = useState(null);
+            const [loading, setLoading] = useState(true);
+            const [eventoSeleccionado, setEventoSeleccionado] = useState('todos');
+            
+            useEffect(() => {
+                cargarAnalytics();
+            }, [eventoSeleccionado]);
+            
+            const cargarAnalytics = async () => {
+                setLoading(true);
+                try {
+                    const url = eventoSeleccionado === 'todos' 
+                        ? `${API_URL}/api/analytics/todos`
+                        : `${API_URL}/api/analytics/evento/${eventoSeleccionado}`;
+                    const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
+                    if (res.ok) {
+                        const data = await res.json();
+                        setAnalytics(data);
+                    }
+                } catch {}
+                setLoading(false);
+            };
+            
+            if (loading) return <div className="loading">Cargando analytics...</div>;
+            if (!analytics) return <div style={{textAlign:'center', padding:'2rem'}}>No hay datos disponibles</div>;
+            
+            const totalVendidas = analytics.ventas_total || 0;
+            const totalIngresos = analytics.ingresos_total || 0;
+            const ticketsUsados = analytics.tickets_usados || 0;
+            const tasaConversion = totalVendidas > 0 ? ((analytics.tickets_usados / totalVendidas) * 100).toFixed(1) : 0;
+            
+            return (
+                <div style={{maxWidth:'1200px', margin:'0 auto'}}>
+                    <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:'1.5rem', flexWrap:'wrap', gap:'1rem'}}>
+                        <h2 style={{fontSize:'1.5rem', margin:0}}>📊 Analytics Avanzado</h2>
+                        <select value={eventoSeleccionado} onChange={e => setEventoSeleccionado(e.target.value)} style={{padding:'0.75rem 1rem', borderRadius:'8px', border:'2px solid rgba(255,255,255,0.1)', background:'var(--bg-card)', color:'white'}}>
+                            <option value="todos">Todos los eventos</option>
+                            {eventos.map(ev => <option key={ev.id} value={ev.id}>{ev.nombre}</option>)}
+                        </select>
+                    </div>
+                    
+                    <div style={{display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(200px, 1fr))', gap:'1rem', marginBottom:'2rem'}}>
+                        <div style={{background:'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)', padding:'1.5rem', borderRadius:'16px', color:'white'}}>
+                            <div style={{fontSize:'2.5rem', fontWeight:'bold'}}>{totalVendidas}</div>
+                            <div style={{opacity:0.9}}>Entradas Vendidas</div>
+                        </div>
+                        <div style={{background:'linear-gradient(135deg, #10b981 0%, #34d399 100%)', padding:'1.5rem', borderRadius:'16px', color:'white'}}>
+                            <div style={{fontSize:'2.5rem', fontWeight:'bold'}}>${(totalIngresos/1000).toFixed(1)}K</div>
+                            <div style={{opacity:0.9}}>Ingresos Totales</div>
+                        </div>
+                        <div style={{background:'linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%)', padding:'1.5rem', borderRadius:'16px', color:'white'}}>
+                            <div style={{fontSize:'2.5rem', fontWeight:'bold'}}>{tasaConversion}%</div>
+                            <div style={{opacity:0.9}}>Tasa de Uso</div>
+                        </div>
+                        <div style={{background:'linear-gradient(135deg, #ec4899 0%, #f472b6 100%)', padding:'1.5rem', borderRadius:'16px', color:'white'}}>
+                            <div style={{fontSize:'2.5rem', fontWeight:'bold'}}>{ticketsUsados}</div>
+                            <div style={{opacity:0.9}}>Tickets Validados</div>
+                        </div>
+                    </div>
+                    
+                    <div style={{display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(300px, 1fr))', gap:'1.5rem'}}>
+                        <div style={{background:'var(--bg-card)', padding:'1.5rem', borderRadius:'16px'}}>
+                            <h3 style={{marginBottom:'1rem', fontSize:'1.1rem'}}>📈 Ventas por Categoría</h3>
+                            {analytics.por_categoria && analytics.por_categoria.length > 0 ? (
+                                <div style={{display:'flex', flexDirection:'column', gap:'0.75rem'}}>
+                                    {analytics.por_categoria.map((cat, i) => (
+                                        <div key={i}>
+                                            <div style={{display:'flex', justifyContent:'space-between', marginBottom:'0.25rem'}}>
+                                                <span>{cat.categoria || 'Sin categoría'}</span>
+                                                <span style={{color:'var(--primary-light)'}}>{cat.cantidad}</span>
+                                            </div>
+                                            <div style={{background:'rgba(255,255,255,0.1)', height:'8px', borderRadius:'4px', overflow:'hidden'}}>
+                                                <div style={{width: `${(cat.cantidad / totalVendidas) * 100}%`, background:'var(--gradient)', height:'100%'}}></div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            ) : <p style={{color:'var(--text-muted)'}}>Sin datos</p>}
+                        </div>
+                        
+                        <div style={{background:'var(--bg-card)', padding:'1.5rem', borderRadius:'16px'}}>
+                            <h3 style={{marginBottom:'1rem', fontSize:'1.1rem'}}>🎪 Top Eventos</h3>
+                            {analytics.top_eventos && analytics.top_eventos.length > 0 ? (
+                                <div style={{display:'flex', flexDirection:'column', gap:'0.75rem'}}>
+                                    {analytics.top_eventos.slice(0, 5).map((ev, i) => (
+                                        <div key={i} style={{display:'flex', justifyContent:'space-between', alignItems:'center', padding:'0.5rem', background:'rgba(255,255,255,0.05)', borderRadius:'8px'}}>
+                                            <div>
+                                                <div style={{fontWeight:'600'}}>{ev.nombre}</div>
+                                                <div style={{fontSize:'0.8rem', color:'var(--text-muted)'}}>{ev.vendidos} vendidos</div>
+                                            </div>
+                                            <div style={{color:'var(--success)', fontWeight:'bold'}}>${(ev.ingresos/1000).toFixed(1)}K</div>
+                                        </div>
+                                    ))}
+                                </div>
+                            ) : <p style={{color:'var(--text-muted)'}}>Sin datos</p>}
+                        </div>
+                        
+                        <div style={{background:'var(--bg-card)', padding:'1.5rem', borderRadius:'16px'}}>
+                            <h3 style={{marginBottom:'1rem', fontSize:'1.1rem'}}>📅 Tendencia de Ventas</h3>
+                            {analytics.ventas_por_dia && analytics.ventas_por_dia.length > 0 ? (
+                                <div style={{display:'flex', flexDirection:'column', gap:'0.5rem'}}>
+                                    {analytics.ventas_por_dia.slice(-7).map((dia, i) => (
+                                        <div key={i} style={{display:'flex', justifyContent:'space-between', alignItems:'center', padding:'0.4rem 0', borderBottom:'1px solid rgba(255,255,255,0.05)'}}>
+                                            <span style={{color:'var(--text-muted)'}}>{dia.fecha}</span>
+                                            <span style={{fontWeight:'600', color:'var(--primary-light)'}}>{dia.cantidad} tickets</span>
+                                        </div>
+                                    ))}
+                                </div>
+                            ) : <p style={{color:'var(--text-muted)'}}>Sin datos</p>}
+                        </div>
+                        
+                        <div style={{background:'var(--bg-card)', padding:'1.5rem', borderRadius:'16px'}}>
+                            <h3 style={{marginBottom:'1rem', fontSize:'1.1rem'}}>💰 Precio Promedio</h3>
+                            <div style={{textAlign:'center', padding:'1rem'}}>
+                                <div style={{fontSize:'2rem', fontWeight:'bold', color:'var(--success)'}}>${analytics.precio_promedio?.toLocaleString('es-AR') || 0}</div>
+                                <div style={{color:'var(--text-muted)'}}>por entrada</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    {analytics.proyeccion && (
+                        <div style={{marginTop:'1.5rem', background:'var(--bg-card)', padding:'1.5rem', borderRadius:'16px', border:'1px solid rgba(99,102,241,0.3)'}}>
+                            <h3 style={{marginBottom:'1rem', fontSize:'1.1rem'}}>🔮 Proyección de Ventas</h3>
+                            <div style={{display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(150px, 1fr))', gap:'1rem'}}>
+                                <div style={{textAlign:'center'}}>
+                                    <div style={{fontSize:'1.5rem', fontWeight:'bold', color:'var(--primary-light)'}}>{analytics.proyeccion.probabilidad_agotar}%</div>
+                                    <div style={{color:'var(--text-muted)', fontSize:'0.85rem'}}>Probabilidad de agotar</div>
+                                </div>
+                                <div style={{textAlign:'center'}}>
+                                    <div style={{fontSize:'1.5rem', fontWeight:'bold', color:'var(--warning)'}}>{analytics.proyeccion.dias_promedio_venta}</div>
+                                    <div style={{color:'var(--text-muted)', fontSize:'0.85rem'}}>Días promedio venta</div>
+                                </div>
+                                <div style={{textAlign:'center'}}>
+                                    <div style={{fontSize:'1.5rem', fontWeight:'bold', color:'var(--success)'}}>{analytics.proyeccion.tendencia}</div>
+                                    <div style={{color:'var(--text-muted)', fontSize:'0.85rem'}}>Tendencia</div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            );
+        }
+
+        function Perfil() {
+            const { user, token, showToast, setUser, setToken, setVista } = useContext(AuthContext);
+            const [form, setForm] = useState({ nombre: '', apellido: '', email: '', password_actual: '', password_nuevo: '', confirmar_password: '' });
+            const [guardando, setGuardando] = useState(false);
+
+            useEffect(() => {
+                if (user) {
+                    setForm({ ...form, nombre: user.nombre, apellido: user.apellido, email: user.email });
+                }
+            }, [user]);
+
+            const handleChange = (e) => {
+                setForm({ ...form, [e.target.name]: e.target.value });
+            };
+
+            const handleSubmit = async (e) => {
+                e.preventDefault();
+                
+                if (form.password_nuevo || form.confirmar_password) {
+                    if (form.password_nuevo !== form.confirmar_password) {
+                        showToast('Las contraseñas no coinciden', 'error');
+                        return;
+                    }
+                }
+
+                setGuardando(true);
+
+                const dataToSend = {
+                    nombre: form.nombre,
+                    apellido: form.apellido
+                };
+
+                if (form.email !== user.email) {
+                    dataToSend.email = form.email;
+                }
+
+                if (form.password_nuevo) {
+                    dataToSend.password_actual = form.password_actual;
+                    dataToSend.password_nuevo = form.password_nuevo;
+                }
+
+                try {
+                    console.log('Enviando perfil:', dataToSend);
+                    console.log('Token:', token);
+                    const res = await fetch(API_URL + '/api/auth/perfil', {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+                        body: JSON.stringify(dataToSend)
+                    });
+                    console.log('Response:', res.status);
+                    const data = await res.json();
+                    console.log('Data:', data);
+                    
+                    if (res.ok) {
+                        showToast('Perfil actualizado correctamente', 'success');
+                        setUser({ ...user, nombre: data.nombre, apellido: data.apellido, email: data.email });
+                        setForm({ ...form, password_actual: '', password_nuevo: '', confirmar_password: '' });
+                        setVista('eventos');
+                    } else {
+                        showToast(data.detail || 'Error al actualizar', 'error');
+                    }
+                } catch (err) {
+                    console.error('Error:', err);
+                    showToast('Error de conexión', 'error');
+                }
+                setGuardando(false);
+            };
+
+            return (
+                <>
+                    <div className="hero">
+                        <h1>👤 Mi Perfil</h1>
+                        <p>Gestiona tu información personal</p>
+                    </div>
+                    <div className="form-page">
+                        <div className="form-box" style={{maxWidth: '500px'}}>
+                            <h2>👤 Datos Personales</h2>
+                            <form onSubmit={handleSubmit}>
+                                <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:'1rem'}}>
+                                    <div className="form-group"><label>👤 Nombre</label><input type="text" name="nombre" value={form.nombre} onChange={handleChange} required /></div>
+                                    <div className="form-group"><label>👤 Apellido</label><input type="text" name="apellido" value={form.apellido} onChange={handleChange} required /></div>
+                                </div>
+                                <div className="form-group"><label>📧 Email</label><input type="email" name="email" value={form.email} onChange={handleChange} required /></div>
+                                
+                                <hr style={{border:'none', borderTop:'1px solid rgba(255,255,255,0.1)', margin:'1.5rem 0'}} />
+                                <h3 style={{marginBottom:'1rem', color:'#94a3b8'}}>🔐 Cambiar Contraseña</h3>
+                                <small style={{color:'#666', fontSize:'12px', display:'block', marginBottom:'1rem'}}>Dejar vacío para mantener la contraseña actual</small>
+                                
+                                <div className="form-group"><label>🔑 Contraseña Actual</label><input type="password" name="password_actual" value={form.password_actual} onChange={handleChange} placeholder="Ingresa tu contraseña actual" /></div>
+                                <div className="form-group"><label>🔑 Nueva Contraseña</label><input type="password" name="password_nuevo" value={form.password_nuevo} onChange={handleChange} placeholder="Mínimo 8 caracteres, 1 mayúscula, 1 número, 1 especial" /></div>
+                                <div className="form-group"><label>🔑 Confirmar Nueva Contraseña</label><input type="password" name="confirmar_password" value={form.confirmar_password} onChange={handleChange} placeholder="Repite la nueva contraseña" /></div>
+                                
+                                <button type="submit" className="btn btn-block" disabled={guardando}>
+                                    {guardando ? 'Guardando...' : '💾 Guardar Cambios'}
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </>
+            );
+        }
+
+        function Carrito() {
+            const { token, showToast, setVista } = useContext(AuthContext);
+            const [procesando, setProcesando] = useState(false);
+            const [carrito, setCarrito] = useState([]);
+            
+            useEffect(() => {
+                const stored = JSON.parse(localStorage.getItem('carrito') || '[]');
+                setCarrito(stored);
+            }, []);
+            
+            const eliminarDelCarrito = (eventoId) => {
+                const nuevo = carrito.filter(c => c.id !== eventoId);
+                setCarrito(nuevo);
+                localStorage.setItem('carrito', JSON.stringify(nuevo));
+            };
+            
+            const total = carrito.reduce((sum, e) => sum + (e.precio * (e.cantidad || 1)), 0);
+            
+            const pagarTodo = async () => {
+                if (!token) { showToast('Inicia sesión para pagar', 'error'); setVista('login'); return; }
+                if (carrito.length === 0) return;
+                setProcesando(true);
+                try {
+                    for (const item of carrito) {
+                        const res = await fetch(API_URL + '/api/entradas/', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+                            body: JSON.stringify({ evento_id: item.id, cantidad: item.cantidad || 1 })
+                        });
+                        if (!res.ok) throw new Error('Error al comprar ' + item.nombre);
+                    }
+                    
+                    const entradaIds = await Promise.all(
+                        fetch(API_URL + '/api/entradas/', { headers: { Authorization: 'Bearer ' + token } })
+                        .then(res => res.json())
+                        .then(ents => ents.slice(0, carrito.length).map(e => e.id))
+                    );
+                    
+                    const pagoRes = await fetch(API_URL + '/api/pagos/carrito', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+                        body: JSON.stringify({ entrada_ids: entradaIds })
+                    });
+                    const pago = await pagoRes.json();
+                    
+                    if (pagoRes.ok && pago.init_point) {
+                        localStorage.removeItem('carrito');
+                        showToast('Redirigiendo a MercadoPago...', 'success');
+                        window.location.href = pago.init_point;
+                    } else {
+                        showToast(pago.detail || 'Error al procesar pago', 'error');
+                    }
+                } catch (err) { showToast(err.message, 'error'); }
+                setProcesando(false);
+            };
+            
+            if (carrito.length === 0) {
+                return (
+                    <div className="hero"><h1>🛒 Carrito</h1></div>,
+                    <div className="empty-state"><span>🛒</span><p>Tu carrito está vacío</p><button className="btn" onClick={() => setVista('eventos')}>Ver Eventos</button></div>
+                );
+            }
+            
+            return (
+                <>
+                    <div className="hero"><h1>🛒 Carrito de Compras</h1><p>{carrito.length} entrada(s) en tu carrito</p></div>
+                    <div style={{maxWidth: '800px', margin: '0 auto', padding: '1rem'}}>
+                        <div className="entradas-list">
+                            {carrito.map(item => (
+                                <div key={item.id} className="entrada-card">
+                                    <div className="entrada-info">
+                                        <h4>🎪 {item.nombre}</h4>
+                                        <p>📅 {new Date(item.fecha).toLocaleDateString('es-AR')}</p>
+                                        <p>📍 {item.lugar}</p>
+                                        <p>🎟️ Cantidad: {item.cantidad || 1}</p>
+                                        <p>💵 Subtotal: ${((item.precio * (item.cantidad || 1))).toLocaleString('es-AR')}</p>
+                                    </div>
+                                    <button className="btn btn-secondary" onClick={() => eliminarDelCarrito(item.id)}>❌</button>
+                                </div>
+                            ))}
+                        </div>
+                        <div className="modal-total" style={{marginTop: '1rem', padding: '1rem', background: 'linear-gradient(135deg, #6366f1, #ec4899)', borderRadius: '12px', color: 'white'}}>
+                            💵 Total: ${total.toLocaleString('es-AR')}
+                        </div>
+                        <button className="btn" style={{width: '100%', marginTop: '1rem'}} onClick={pagarTodo} disabled={procesando}>
+                            {procesando ? 'Procesando...' : '💳 Pagar Todo con MercadoPago'}
+                        </button>
+                        <button className="btn btn-secondary" style={{width: '100%', marginTop: '0.5rem'}} onClick={() => setVista('eventos')}>
+                            + Agregar más entradas
+                        </button>
+                    </div>
+                </>
+            );
+        }
+
+        function BuscarEntradas() {
+            const [busqueda, setBusqueda] = useState('');
+            const [resultados, setResultados] = useState(null);
+            const [loading, setLoading] = useState(false);
+            const [error, setError] = useState(null);
+            const { showToast } = useContext(AuthContext);
+            const [enviando, setEnviando] = useState(null);
+
+            const buscar = async () => {
+                if (!busqueda || busqueda.length < 3) {
+                    showToast('Ingresa al menos 3 caracteres', 'error');
+                    return;
+                }
+                setLoading(true);
+                setError(null);
+                setResultados(null);
+                try {
+                    const res = await fetch(API_URL + '/api/entradas/buscar?q=' + encodeURIComponent(busqueda));
+                    if (!res.ok) throw new Error('No se encontraron entradas');
+                    const data = await res.json();
+                    setResultados(data);
+                } catch (err) {
+                    setError(err.message);
+                } finally {
+                    setLoading(false);
+                }
+            };
+
+            const reenviarTicket = async (entradaId, email) => {
+                setEnviando(entradaId);
+                try {
+                    const res = await fetch(API_URL + `/api/email/reenviar-ticket?entrada_id=${entradaId}&email=${encodeURIComponent(email)}`, {
+                        method: 'POST'
+                    });
+                    const data = await res.json();
+                    if (res.ok) {
+                        showToast('📧 Ticket enviado a tu email', 'success');
+                    } else {
+                        showToast(typeof data.detail === 'object' ? JSON.stringify(data.detail) : (data.detail || 'Error al enviar'), 'error');
+                    }
+                } catch (err) {
+                    showToast('Error al enviar', 'error');
+                } finally {
+                    setEnviando(null);
+                }
+            };
+
+            return (
+                <>
+                    <div className="hero">
+                        <h1>🔍 Buscar Mis Entradas</h1>
+                        <p>¿Perdiste tus entradas? Búscalas por email o documento</p>
+                    </div>
+                    <div style={{maxWidth: '600px', margin: '0 auto', padding: '1rem'}}>
+                        <div style={{display: 'flex', gap: '0.5rem', marginBottom: '1.5rem'}}>
+                            <input 
+                                type="text" 
+                                value={busqueda} 
+                                onChange={e => setBusqueda(e.target.value)} 
+                                placeholder="Tu email o DNI"
+                                style={{flex: 1, padding: '14px', borderRadius: '8px', border: '2px solid #6366f1', fontSize: '16px'}}
+                                onKeyDown={e => e.key === 'Enter' && buscar()}
+                            />
+                            <button className="btn" onClick={buscar} disabled={loading}>
+                                {loading ? 'Buscando...' : '🔍'}
+                            </button>
+                        </div>
+
+                        {error && (
+                            <div className="empty-state">
+                                <span>❌</span>
+                                <p>{error}</p>
+                                <p style={{fontSize: '0.9rem', opacity: 0.7}}>Verifica tu email o documento e intenta nuevamente</p>
+                            </div>
+                        )}
+
+                        {resultados && resultados.length > 0 && (
+                            <div className="entradas-list">
+                                <h3 style={{marginBottom: '1rem'}}>🎟️ Se encontraron {resultados.length} entrada(s)</h3>
+                                {resultados.map(ent => (
+                                    <div key={ent.id} className="entrada-card">
+                                        <div className="entrada-info">
+                                            <h4>🎪 {ent.evento?.nombre || 'Evento'}</h4>
+                                            <p>📅 {ent.evento ? new Date(ent.evento.fecha).toLocaleDateString('es-AR') : ''}</p>
+                                            <p>📍 {ent.evento?.lugar || ''}</p>
+                                            <p>🎟️ Cantidad: {ent.cantidad} - 💵 Total: ${ent.total?.toLocaleString('es-AR')}</p>
+                                            <span className={ent.estado === 'pagada' ? 'entrada-pagada' : 'entrada-pendiente'}>
+                                                {ent.estado === 'pagada' ? '✅ Pagada' : '⏳ Pendiente'}
+                                            </span>
+                                        </div>
+                                        <div style={{marginTop: '1rem'}}>
+                                            <button 
+                                                className="btn" 
+                                                style={{background: '#10b981', width: '100%'}}
+                                                onClick={() => reenviarTicket(ent.id, ent.email)}
+                                                disabled={enviando === ent.id}
+                                            >
+                                                {enviando === ent.id ? 'Enviando...' : '📧 Reenviar a mi email'}
+                                            </button>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                </>
+            );
+        }
+
+        function MisEntradas() {
+            const [entradas, setEntradas] = useState([]);
+            const [loading, setLoading] = useState(true);
+            const { showToast } = useContext(AuthContext);
+            const [transferenciasPendientes, setTransferenciasPendientes] = useState([]);
+            
+            useEffect(() => {
+                const savedToken = sessionStorage.getItem('token');
+                if (savedToken) {
+                    fetch(API_URL + '/api/entradas/', { headers: { Authorization: 'Bearer ' + savedToken } })
+                    .then(res => res.ok ? res.json() : [])
+                    .then(data => setEntradas(Array.isArray(data) ? data : []))
+                    .catch(() => setEntradas([]))
+                    .finally(() => setLoading(false));
+                    
+                    const tr1 = savedToken + 't1';
+                    fetch(API_URL + '/api/transferencias/pendientes', { headers: { Authorization: 'Bearer ' + savedToken } })
+                    .then(res => { 
+                        if (!res.ok) return []; 
+                        return res.json(); 
+                    })
+                    .then(data => {
+                        console.log('Transferencias data:', data);
+                        setTransferenciasPendientes(Array.isArray(data) ? data : []);
+                    })
+                    .catch(err => {
+                        console.log('Transferencias error (ignorado):', err);
+                        setTransferenciasPendientes([]);
+                    });
+                } else {
+                    setLoading(false);
+                }
+            }, []);
+            
+            const enviarTicket = async (entradaId) => {
+                const savedToken = sessionStorage.getItem('token');
+                const res = await fetch(API_URL + '/api/email/enviar-ticket?entrada_id=' + entradaId, { method: 'POST', headers: { Authorization: 'Bearer ' + savedToken } });
+                const data = await res.json();
+                if (res.ok) showToast('Ticket enviado a ' + data.email, 'success');
+                else showToast(data.detail || 'Error', 'error');
+            };
+            const [transferModal, setTransferModal] = useState(null);
+            const [transferEmail, setTransferEmail] = useState('');
+            const [transferring, setTransferring] = useState(false);
+            const [confirmTransfer, setConfirmTransfer] = useState(false);
+            
+            const transferirEntrada = async () => {
+                if (!transferEmail || !transferEmail.includes('@')) {
+                    showToast('Ingresa un email válido', 'error');
+                    return;
+                }
+                setTransferring(true);
+                try {
+                    const res = await fetch(API_URL + '/api/entradas/' + transferModal.id + '/transferir', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
+                        body: JSON.stringify({ email_destino: transferEmail })
+                    });
+                    const data = await res.json();
+                    if (res.ok) {
+                        showToast('Transferencia iniciada. Se envió un email al destinatario.', 'success');
+                        setTransferModal(null);
+                        setTransferEmail('');
+                    } else {
+                        showToast(data.detail || 'Error al transferir', 'error');
+                    }
+                } catch (e) {
+                    showToast('Error de conexión', 'error');
+                }
+                setTransferring(false);
+            };
+            
+            const [acceptToken, setAcceptToken] = useState('');
+            const [accepting, setAccepting] = useState(false);
+            
+            const aceptarTransferencia = async () => {
+                if (!acceptToken) {
+                    showToast('Ingresa el código de transferencia', 'error');
+                    return;
+                }
+                setAccepting(true);
+                try {
+                    const res = await fetch(API_URL + '/api/entradas/aceptar-transferencia?token=' + acceptToken, {
+                        method: 'POST',
+                        headers: { Authorization: 'Bearer ' + token }
+                    });
+                    const data = await res.json();
+                    if (res.ok) {
+                        showToast(data.mensaje, 'success');
+                        setAcceptToken('');
+                        fetch(API_URL + '/api/entradas/', { headers: { Authorization: 'Bearer ' + token } }).then(res => res.json()).then(data => setEntradas(data));
+                    } else {
+                        showToast(data.detail || 'Error al aceptar', 'error');
+                    }
+                } catch (e) {
+                    showToast('Error de conexión', 'error');
+                }
+                setAccepting(false);
+            };
+            if (loading) return <div className="loading">Cargando...</div>;
+            return (
+                <>
+                    <div className="hero">
+                        <h1>🎟️ Mis Entradas</h1>
+                        <p>Todas tus entradas compradas en un solo lugar</p>
+                    </div>
+                    {transferenciasPendientes && transferenciasPendientes.length > 0 && (
+                        <div style={{background: 'linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%)', padding: '1.5rem', borderRadius: '12px', marginBottom: '1.5rem', color: 'white'}}>
+                            <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem'}}>
+                                <div>
+                                    <h3 style={{margin: 0, fontSize: '1.1rem'}}>📥 Tienes {transferenciasPendientes.length} Transferencia(s) de entrada(s) por aceptar</h3>
+                                    <p style={{margin: '0.5rem 0 0 0', opacity: 0.9, fontSize: '0.9rem'}}>{transferenciasPendientes[0].evento} - {new Date(transferenciasPendientes[0].fecha_evento).toLocaleDateString('es-AR')}</p>
+                                </div>
+                                <button className="btn" style={{background: 'white', color: '#f59e0b', fontWeight: 'bold'}} onClick={() => setVista('aceptar-transferencia')}>Aceptar</button>
+                            </div>
+                        </div>
+                    )}
+                    {entradas.length === 0 ? (
+                        <div className="empty-state">
+                            <span>🎫</span>
+                            <p>No tienes entradas compradas</p>
+                            <button className="btn" style={{marginTop: '1rem'}} onClick={() => setVista('eventos')}>Ver Eventos</button>
+                        </div>
+                    ) : (
+                        <div className="entradas-list">
+                            {entradas.map(ent => (
+                                <div key={ent.id} className="entrada-card">
+                                    <div className="entrada-info">
+                                        <h4>🎪 {ent.evento?.nombre || 'Evento'}</h4>
+                                        <p>📅 {ent.evento ? new Date(ent.evento.fecha).toLocaleDateString('es-AR') : ''}</p>
+                                        <p>📍 {ent.evento?.lugar || ''}</p>
+                                        <p>🎟️ Cantidad: {ent.cantidad} - 💵 Total: ${ent.total?.toLocaleString('es-AR')}</p>
+                                        <span className={ent.estado === 'pagada' ? 'entrada-pagada' : 'entrada-pendiente'}>{ent.estado === 'pagada' ? '✅ Pagada' : '⏳ Pendiente'}</span>
+                                    </div>
+                                    <div>
+                                        <div className="entrada-qr" style={{fontSize: '14px', fontFamily: 'monospace'}}>
+                                            <div style={{marginBottom: '8px'}}>🎫 Código de Acceso</div>
+                                            <div style={{fontSize: '16px', fontWeight: 'bold', color: '#6366f1', wordBreak: 'break-all'}}>{ent.codigo}</div>
+                                        </div>
+                                        {ent.estado === 'pagada' && (
+                                            <div style={{display: 'flex', flexDirection: 'column', gap: '0.5rem'}}>
+                                                <button className="btn" style={{marginTop: '0.5rem'}} onClick={() => enviarTicket(ent.id)}>📧 Enviar por email</button>
+                                                <button className="btn btn-secondary" style={{marginTop: '0.25rem'}} onClick={() => setTransferModal(ent)}>🔄 Transferir</button>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                    
+                    {transferModal && !confirmTransfer && (
+                        <div className="modal-overlay" onClick={() => setTransferModal(null)}>
+                            <div className="modal" onClick={e => e.stopPropagation()}>
+                                <h3>🔄 Transferir Entrada</h3>
+                                <div className="modal-info">
+                                    <p>🎪 <span>Evento:</span> {transferModal.evento?.nombre}</p>
+                                    <p>🎫 <span>Código:</span> {transferModal.codigo}</p>
+                                </div>
+                                <div style={{margin: '1rem 0'}}>
+                                    <label style={{display: 'block', marginBottom: '0.5rem', fontWeight: '600'}}>📧 Email del destinatario:</label>
+                                    <input type="email" value={transferEmail} onChange={e => setTransferEmail(e.target.value)} placeholder="amigo@email.com" style={{width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #ddd', fontSize: '14px'}} />
+                                </div>
+                                <p style={{fontSize: '12px', color: '#64748b', marginBottom: '1rem'}}>El destinatario recibirá un email para aceptar la transferencia.</p>
+                                <div className="modal-buttons">
+                                    <button className="btn btn-secondary" onClick={() => setTransferModal(null)}>❌ Cancelar</button>
+                                    <button className="btn" onClick={() => setConfirmTransfer(true)} disabled={!transferEmail || !transferEmail.includes('@')}>✅ Confirmar</button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                    
+                    {transferModal && confirmTransfer && (
+                        <div className="modal-overlay" onClick={() => { setConfirmTransfer(false); setTransferModal(null); }}>
+                            <div className="modal" onClick={e => e.stopPropagation()}>
+                                <h3>⚠️ ¿Estás seguro?</h3>
+                                <p style={{margin: '1rem 0', textAlign: 'center'}}>Vas a transferir esta entrada a:</p>
+                                <p style={{fontSize: '18px', fontWeight: 'bold', color: '#6366f1', textAlign: 'center', margin: '1rem 0'}}>{transferEmail}</p>
+                                <p style={{fontSize: '14px', color: '#64748b', textAlign: 'center'}}>Una vez transferida, ya no podrás usarla.</p>
+                                <div className="modal-buttons">
+                                    <button className="btn btn-secondary" onClick={() => { setConfirmTransfer(false); setTransferEmail(''); setTransferModal(null); }}>❌ Cancelar</button>
+                                    <button className="btn" onClick={transferirEntrada} disabled={transferring}>{transferring ? 'Enviando...' : '🔥 Sí, Transferir'}</button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                    
+                    <div style={{marginTop: '2rem', padding: '1.5rem', background: 'var(--card-bg)', borderRadius: '12px'}}>
+                        <h3 style={{marginBottom: '1rem'}}>📥 Aceptar Transferencia</h3>
+                        <p style={{color: 'var(--text-muted)', marginBottom: '1rem'}}>Si te enviaron una entrada, ingresa el código que recibiste por email:</p>
+                        <div style={{display: 'flex', gap: '0.5rem'}}>
+                            <input type="text" value={acceptToken} onChange={e => setAcceptToken(e.target.value)} placeholder="Código de transferencia" style={{flex: 1, padding: '12px', borderRadius: '8px', border: '1px solid #ddd', fontSize: '14px'}} />
+                            <button className="btn" onClick={aceptarTransferencia} disabled={accepting}>{accepting ? 'Aceptando...' : '✅ Aceptar'}</button>
+                        </div>
+                    </div>
+                </>
+            );
+        }
+
+        function AceptarTransferenciasList() {
+            const { showToast, setVista } = useContext(AuthContext);
+            const [transferencias, setTransferencias] = useState([]);
+            const [loading, setLoading] = useState(true);
+            
+            useEffect(() => {
+                const savedToken = sessionStorage.getItem('token');
+                if (savedToken) {
+                    fetch(API_URL + '/api/transferencias/pendientes', { headers: { Authorization: 'Bearer ' + savedToken } })
+                    .then(res => res.ok ? res.json() : [])
+                    .then(data => setTransferencias(Array.isArray(data) ? data : []))
+                    .catch(() => setTransferencias([]))
+                    .finally(() => setLoading(false));
+                } else {
+                    setLoading(false);
+                }
+            }, []);
+            
+            const aceptarTransferencia = async (tokenTransfer) => {
+                try {
+                    const res = await fetch(API_URL + '/api/entradas/aceptar-transferencia?token=' + tokenTransfer, {
+                        method: 'POST',
+                        headers: { Authorization: 'Bearer ' + token }
+                    });
+                    const data = await res.json();
+                    if (res.ok) {
+                        showToast('¡Transferencia aceptada! La entrada ahora es tuya.', 'success');
+                        setTransferencias(transferencias.filter(t => t.token !== tokenTransfer));
+                    } else {
+                        showToast(data.detail || 'Error', 'error');
+                    }
+                } catch (e) {
+                    showToast('Error de conexión', 'error');
+                }
+            };
+            
+            if (loading) return <div className="loading">Cargando...</div>;
+            
+            return (
+                <>
+                    <div className="hero">
+                        <h1>📥 Transferencias por Aceptar</h1>
+                        <p>Acepta las entradas que te han transferido</p>
+                    </div>
+                    <button onClick={() => setVista('mis-entradas')} style={{background: 'rgba(255,255,255,0.1)', border: 'none', color: 'white', padding: '0.75rem 1.5rem', borderRadius: '8px', cursor: 'pointer', marginBottom: '1rem'}}>← Volver</button>
+                    {transferencias.length === 0 ? (
+                        <div className="empty-state">
+                            <span>📭</span>
+                            <p>No tienes transferencias pendientes</p>
+                        </div>
+                    ) : (
+                        <div className="entradas-list">
+                            {transferencias.map(t => (
+                                <div key={t.id} className="entrada-card">
+                                    <div className="entrada-info">
+                                        <h4>🎪 {t.evento}</h4>
+                                        <p>📅 {new Date(t.fecha_evento).toLocaleDateString('es-AR')}</p>
+                                        <p>📍 {t.lugar}</p>
+                                        <div style={{marginTop: '0.5rem', padding: '0.75rem', background: 'rgba(99,102,241,0.2)', borderRadius: '8px'}}>
+                                            <p style={{margin: 0, fontFamily: 'monospace', fontWeight: 'bold', color: '#6366f1'}}>🎫 {t.codigo}</p>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <button className="btn" onClick={() => aceptarTransferencia(t.token)}>✅ Aceptar Entrada</button>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </>
+            );
+        }
+
+        function AdminPanel() {
+            const { token, showToast, irADetalle } = useContext(AuthContext);
+            const [eventos, setEventos] = useState([]);
+            const [loading, setLoading] = useState(true);
+            const [form, setForm] = useState({ nombre: '', descripcion: '', fecha: '', lugar: '', precio: '', capacidad: '', imagen: '', categoria: '' });
+            const [imagenPreview, setImagenPreview] = useState(null);
+            const [editando, setEditando] = useState(null);
+            const [guardando, setGuardando] = useState(false);
+            const [tab, setTab] = useState('crear');
+            
+            useEffect(() => {
+                cargarEventos();
+            }, []);
+            
+            const cargarEventos = async () => {
+                setLoading(true);
+                try {
+                    const res = await fetch(API_URL + '/api/eventos/');
+                    const data = await res.json();
+                    setEventos(data);
+                } catch (err) { showToast('Error cargando eventos', 'error'); }
+                setLoading(false);
+            };
+            
+            const handleChange = (e) => {
+                setForm({ ...form, [e.target.name]: e.target.value });
+            };
+            
+            const handleImagenFile = (e) => {
+                const file = e.target.files[0];
+                if (file) {
+                    if (!file.type.startsWith('image/')) {
+                        showToast('Selecciona un archivo de imagen válido', 'error');
+                        return;
+                    }
+                    if (file.size > 5 * 1024 * 1024) {
+                        showToast('La imagen debe ser menor a 5MB', 'error');
+                        return;
+                    }
+                    const reader = new FileReader();
+                    reader.onloadend = () => {
+                        setForm({ ...form, imagen: reader.result });
+                        setImagenPreview(reader.result);
+                    };
+                    reader.readAsDataURL(file);
+                }
+            };
+            
+            const limpiarImagen = () => {
+                setForm({ ...form, imagen: '' });
+                setImagenPreview(null);
+            };
+            
+            const crearEvento = async (e) => {
+                e.preventDefault();
+                if (!form.nombre || !form.fecha || !form.lugar || !form.precio || !form.capacidad) {
+                    showToast('Completa todos los campos requeridos', 'error');
+                    return;
+                }
+                
+                setGuardando(true);
+                try {
+                    const res = await fetch(API_URL + '/api/eventos/', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+                        body: JSON.stringify({
+                            nombre: form.nombre,
+                            descripcion: form.descripcion,
+                            fecha: form.fecha,
+                            lugar: form.lugar,
+                            precio: parseFloat(form.precio),
+                            capacidad: parseInt(form.capacidad),
+                            imagen: form.imagen || null,
+                            categoria: form.categoria || null
+                        })
+                    });
+                    
+                    if (res.ok) {
+                        showToast('Evento creado exitosamente', 'success');
+                        setForm({ nombre: '', descripcion: '', fecha: '', lugar: '', precio: '', capacidad: '', imagen: '', categoria: '' });
+                        setImagenPreview(null);
+                        cargarEventos();
+                    } else {
+                        const data = await res.json();
+                        showToast(data.detail || 'Error al crear evento', 'error');
+                    }
+                } catch (err) { showToast('Error de conexión', 'error'); }
+                setGuardando(false);
+            };
+            
+            const editarEvento = (ev) => {
+                setEditando(ev);
+                setForm({
+                    nombre: ev.nombre || '',
+                    descripcion: ev.descripcion || '',
+                    fecha: ev.fecha ? ev.fecha.split('T')[0].split(' ')[0] : '',
+                    lugar: ev.lugar || '',
+                    precio: ev.precio?.toString() || '',
+                    capacidad: ev.capacidad?.toString() || '',
+                    imagen: ev.imagen || '',
+                    categoria: ev.categoria || ''
+                });
+                setImagenPreview(ev.imagen || null);
+                setTab('editar');
+            };
+            
+            const guardarEdicion = async (e) => {
+                e.preventDefault();
+                if (!form.nombre || !form.fecha || !form.lugar || !form.precio || !form.capacidad) {
+                    showToast('Completa todos los campos requeridos', 'error');
+                    return;
+                }
+                
+                setGuardando(true);
+                try {
+                    const res = await fetch(API_URL + '/api/eventos/' + editando.id, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+                        body: JSON.stringify({
+                            nombre: form.nombre,
+                            descripcion: form.descripcion,
+                            fecha: form.fecha,
+                            lugar: form.lugar,
+                            precio: parseFloat(form.precio),
+                            capacidad: parseInt(form.capacidad),
+                            imagen: form.imagen || null,
+                            categoria: form.categoria || null
+                        })
+                    });
+                    
+                    if (res.ok) {
+                        showToast('Evento actualizado correctamente', 'success');
+                        setEditando(null);
+                        setForm({ nombre: '', descripcion: '', fecha: '', lugar: '', precio: '', capacidad: '', imagen: '', categoria: '' });
+                        setTab('crear');
+                        cargarEventos();
+                    } else {
+                        const data = await res.json();
+                        showToast(data.detail || 'Error al actualizar evento', 'error');
+                    }
+                } catch (err) { showToast('Error de conexión', 'error'); }
+                setGuardando(false);
+            };
+            
+            const eliminarEvento = async (ev) => {
+                if (!confirm(`¿Estás seguro de eliminar "${ev.nombre}"? Esta acción no se puede deshacer.`)) return;
+                
+                try {
+                    const res = await fetch(API_URL + '/api/eventos/' + ev.id, {
+                        method: 'DELETE',
+                        headers: { 'Authorization': 'Bearer ' + token }
+                    });
+                    
+                    if (res.ok) {
+                        showToast('Evento eliminado', 'success');
+                        cargarEventos();
+                    } else {
+                        const data = await res.json();
+                        showToast(data.detail || 'Error al eliminar', 'error');
+                    }
+                } catch (err) { showToast('Error de conexión', 'error'); }
+            };
+            
+            const cancelarEdicion = () => {
+                setEditando(null);
+                setForm({ nombre: '', descripcion: '', fecha: '', lugar: '', precio: '', capacidad: '', imagen: '', categoria: '' });
+                setImagenPreview(null);
+                setTab('crear');
+            };
+            
+            if (loading) return <div className="loading">Cargando...</div>;
+            
+            return (
+                <>
+                    <div className="hero">
+                        <h1>⚙️ Panel de Administración</h1>
+                        <p>Gestiona los eventos de Get Access</p>
+                    </div>
+                    
+                    <div style={{display:'flex', gap:'0.5rem', marginBottom:'1.5rem', flexWrap:'wrap'}}>
+                        <button onClick={() => { setTab('crear'); setEditando(null); setForm({ nombre: '', descripcion: '', fecha: '', lugar: '', precio: '', capacidad: '', imagen: '', categoria: '' }); }} style={{background: tab === 'crear' ? 'var(--gradient)' : 'rgba(255,255,255,0.1)', border:'none', color:'white', padding:'0.8rem 1.5rem', borderRadius:'12px', cursor:'pointer', fontWeight:'600', boxShadow: tab === 'crear' ? 'var(--glow)' : 'none'}}>➕ Crear Evento</button>
+                        <button onClick={() => setTab('editar')} style={{background: tab === 'editar' ? 'var(--gradient)' : 'rgba(255,255,255,0.1)', border:'none', color:'white', padding:'0.8rem 1.5rem', borderRadius:'12px', cursor:'pointer', fontWeight:'600', boxShadow: tab === 'editar' ? 'var(--glow)' : 'none'}}>✏️ Editar / Eliminar</button>
+                        <button onClick={() => setTab('scanner')} style={{background: tab === 'scanner' ? 'var(--gradient)' : 'rgba(255,255,255,0.1)', border:'none', color:'white', padding:'0.8rem 1.5rem', borderRadius:'12px', cursor:'pointer', fontWeight:'600', boxShadow: tab === 'scanner' ? 'var(--glow)' : 'none'}}>📷 Scanner QR</button>
+                        <button onClick={() => setTab('analytics')} style={{background: tab === 'analytics' ? 'var(--gradient)' : 'rgba(255,255,255,0.1)', border:'none', color:'white', padding:'0.8rem 1.5rem', borderRadius:'12px', cursor:'pointer', fontWeight:'600', boxShadow: tab === 'analytics' ? 'var(--glow)' : 'none'}}>📊 Analytics</button>
+                    </div>
+                    
+                    {tab === 'crear' && (
+                        <div className="form-box" style={{maxWidth:'800px', margin:'0 auto'}}>
+                            <h2 style={{fontSize:'1.3rem', marginBottom:'1.5rem'}}>➕ Crear Nuevo Evento</h2>
+                            <form onSubmit={crearEvento}>
+                                <div className="form-group"><label>📝 Nombre del Evento *</label><input type="text" name="nombre" value={form.nombre} onChange={handleChange} required /></div>
+                                <div className="form-group"><label>📄 Descripción</label><textarea name="descripcion" value={form.descripcion} onChange={handleChange} style={{width:'100%', padding:'1rem', border:'2px solid rgba(255,255,255,0.1)', background:'rgba(0,0,0,0.3)', color:'white', borderRadius:'14px', minHeight:'80px', resize:'vertical'}} /></div>
+                                <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:'1rem'}}>
+                                    <div className="form-group"><label>📅 Fecha *</label><input type="date" name="fecha" value={form.fecha} onChange={handleChange} required /></div>
+                                    <div className="form-group"><label>📍 Lugar *</label><input type="text" name="lugar" value={form.lugar} onChange={handleChange} required /></div>
+                                </div>
+                                <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:'1rem'}}>
+                                    <div className="form-group"><label>💰 Precio (ARS) *</label><input type="number" name="precio" value={form.precio} onChange={handleChange} min="0" required /></div>
+                                    <div className="form-group"><label>🎫 Capacidad *</label><input type="number" name="capacidad" value={form.capacidad} onChange={handleChange} min="1" required /></div>
+                                </div>
+                                <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:'1rem'}}>
+                                    <div className="form-group"><label>🏷️ Categoría</label>
+                                        <select name="categoria" value={form.categoria} onChange={handleChange} style={{width:'100%', padding:'1rem', border:'2px solid rgba(255,255,255,0.1)', background:'var(--bg-card)', color:'white', borderRadius:'14px'}}>
+                                            <option value="">Sin categoría</option>
+                                            <option value="musica">🎵 Música</option>
+                                            <option value="teatro">🎭 Teatro</option>
+                                            <option value="deportes">⚽ Deportes</option>
+                                            <option value="comedia">😂 Comedia</option>
+                                            <option value="conferencia">💼 Conferencia</option>
+                                            <option value="espectaculo">🎪 Espectáculo</option>
+                                        </select>
+                                    </div>
+                                    <div className="form-group">
+                                        <label>🖼️ Imagen del Evento (opcional)</label>
+                                        <div style={{display:'flex', gap:'0.5rem', alignItems:'center', marginBottom:'0.75rem'}}>
+                                            <label className="btn" style={{padding:'0.7rem 1rem', cursor:'pointer', fontSize:'0.9rem', flex:1, textAlign:'center'}}>
+                                                📁 {form.imagen ? 'Cambiar imagen' : 'Subir imagen'}
+                                                <input type="file" accept="image/*" onChange={handleImagenFile} style={{display:'none'}} />
+                                            </label>
+                                        </div>
+                                        {form.imagen && (
+                                            <div style={{marginTop:'0.75rem', position:'relative'}}>
+                                                <img src={form.imagen} alt="Preview" style={{width:'100%', maxHeight:'150px', objectFit:'cover', borderRadius:'12px', border:'2px solid rgba(255,255,255,0.1)'}} />
+                                                <button onClick={limpiarImagen} style={{position:'absolute', top:'8px', right:'8px', background:'rgba(239,68,68,0.9)', color:'white', border:'none', borderRadius:'50%', width:'28px', height:'28px', cursor:'pointer', fontSize:'14px'}}>✕</button>
+                                            </div>
+                                        )}
+                                        <small style={{color:'var(--text-dim)', fontSize:'0.75rem', marginTop:'0.5rem', display:'block'}}>Máx 5MB. Formatos: JPG, PNG, GIF, WebP</small>
+                                    </div>
+                                </div>
+                                <button type="submit" className="btn btn-block" disabled={guardando}>{guardando ? <span className="spinner"></span> : '✅ Crear Evento'}</button>
+                            </form>
+                        </div>
+                    )}
+                    
+                    {tab === 'editar' && (
+                        <>
+                            {editando ? (
+                                <div className="form-box" style={{maxWidth:'800px', margin:'0 auto'}}>
+                                    <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:'1.5rem'}}>
+                                        <h2 style={{fontSize:'1.3rem', margin:0}}>✏️ Editando: {editando.nombre}</h2>
+                                        <button onClick={cancelarEdicion} style={{background:'transparent', border:'1px solid rgba(255,255,255,0.2)', color:'var(--text-muted)', padding:'0.5rem 1rem', borderRadius:'8px', cursor:'pointer'}}>✕ Cancelar</button>
+                                    </div>
+                                    <form onSubmit={guardarEdicion}>
+                                        <div className="form-group"><label>📝 Nombre del Evento *</label><input type="text" name="nombre" value={form.nombre} onChange={handleChange} required /></div>
+                                        <div className="form-group"><label>📄 Descripción</label><textarea name="descripcion" value={form.descripcion} onChange={handleChange} style={{width:'100%', padding:'1rem', border:'2px solid rgba(255,255,255,0.1)', background:'rgba(0,0,0,0.3)', color:'white', borderRadius:'14px', minHeight:'80px', resize:'vertical'}} /></div>
+                                        <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:'1rem'}}>
+                                            <div className="form-group"><label>📅 Fecha *</label><input type="date" name="fecha" value={form.fecha} onChange={handleChange} required /></div>
+                                            <div className="form-group"><label>📍 Lugar *</label><input type="text" name="lugar" value={form.lugar} onChange={handleChange} required /></div>
+                                        </div>
+                                        <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:'1rem'}}>
+                                            <div className="form-group"><label>💰 Precio (ARS) *</label><input type="number" name="precio" value={form.precio} onChange={handleChange} min="0" required /></div>
+                                            <div className="form-group"><label>🎫 Capacidad *</label><input type="number" name="capacidad" value={form.capacidad} onChange={handleChange} min="1" required /></div>
+                                        </div>
+                                        <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:'1rem'}}>
+                                            <div className="form-group"><label>🏷️ Categoría</label>
+                                                <select name="categoria" value={form.categoria} onChange={handleChange} style={{width:'100%', padding:'1rem', border:'2px solid rgba(255,255,255,0.1)', background:'var(--bg-card)', color:'white', borderRadius:'14px'}}>
+                                                    <option value="">Sin categoría</option>
+                                                    <option value="musica">🎵 Música</option>
+                                                    <option value="teatro">🎭 Teatro</option>
+                                                    <option value="deportes">⚽ Deportes</option>
+                                                    <option value="comedia">😂 Comedia</option>
+                                                    <option value="conferencia">💼 Conferencia</option>
+                                                    <option value="espectaculo">🎪 Espectáculo</option>
+                                                </select>
+                                            </div>
+                                            <div className="form-group">
+                                                <label>🖼️ Imagen del Evento (opcional)</label>
+                                                <div style={{display:'flex', gap:'0.5rem', alignItems:'center', marginBottom:'0.75rem'}}>
+                                                    <label className="btn" style={{padding:'0.7rem 1rem', cursor:'pointer', fontSize:'0.9rem', flex:1, textAlign:'center'}}>
+                                                        📁 {form.imagen ? 'Cambiar imagen' : 'Subir imagen'}
+                                                        <input type="file" accept="image/*" onChange={handleImagenFile} style={{display:'none'}} />
+                                                    </label>
+                                                </div>
+                                                {form.imagen && (
+                                                    <div style={{marginTop:'0.75rem', position:'relative'}}>
+                                                        <img src={form.imagen} alt="Preview" style={{width:'100%', maxHeight:'150px', objectFit:'cover', borderRadius:'12px', border:'2px solid rgba(255,255,255,0.1)'}} />
+                                                        <button onClick={limpiarImagen} style={{position:'absolute', top:'8px', right:'8px', background:'rgba(239,68,68,0.9)', color:'white', border:'none', borderRadius:'50%', width:'28px', height:'28px', cursor:'pointer', fontSize:'14px'}}>✕</button>
+                                                    </div>
+                                                )}
+                                                <small style={{color:'var(--text-dim)', fontSize:'0.75rem', marginTop:'0.5rem', display:'block'}}>Máx 5MB. Formatos: JPG, PNG, GIF, WebP</small>
+                                            </div>
+                                        </div>
+                                        <button type="submit" className="btn btn-block" disabled={guardando}>{guardando ? <span className="spinner"></span> : '💾 Guardar Cambios'}</button>
+                                    </form>
+                                </div>
+                            ) : (
+                                <div>
+                                    <h2 style={{marginBottom:'1rem'}}>📋 Selecciona un evento para editar</h2>
+                                    <div style={{display:'grid', gridTemplateColumns:'repeat(auto-fill, minmax(320px, 1fr))', gap:'1rem'}}>
+                                        {eventos.map(ev => (
+                                            <div key={ev.id} className="entrada-card admin-evento-card" style={{padding:'1.25rem', display:'block'}}>
+                                                <div style={{display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:'0.5rem'}}>
+                                                    <h4 style={{fontSize:'1rem', color:'var(--text)', margin:0, flex:1}}>{ev.nombre}</h4>
+                                                    {ev.categoria && <span style={{fontSize:'0.7rem', background:'rgba(99,102,241,0.2)', padding:'0.2rem 0.5rem', borderRadius:'8px', color:'var(--primary-light)'}}>{ev.categoria.toUpperCase()}</span>}
+                                                </div>
+                                                <p style={{fontSize:'0.8rem', color:'var(--text-muted)', margin:'0.3rem 0'}}>📅 {new Date(ev.fecha).toLocaleDateString('es-AR')} | 📍 {ev.lugar}</p>
+                                                <p style={{fontSize:'0.8rem', color:'var(--text-muted)', margin:'0.3rem 0'}}>💰 ${ev.precio.toLocaleString('es-AR')} | 🎫 {ev.disponibles}/{ev.capacidad}</p>
+                                                <div style={{display:'flex', gap:'0.5rem', marginTop:'0.75rem'}}>
+                                                    <button onClick={() => editarEvento(ev)} style={{flex:1, background:'var(--primary)', border:'none', color:'white', padding:'0.6rem', borderRadius:'10px', cursor:'pointer', fontWeight:'600', fontSize:'0.85rem'}}>✏️ Editar</button>
+                                                    <button onClick={() => eliminarEvento(ev)} style={{flex:1, background:'rgba(239,68,68,0.2)', border:'none', color:'var(--error)', padding:'0.6rem', borderRadius:'10px', cursor:'pointer', fontWeight:'600', fontSize:'0.85rem'}}>🗑️ Eliminar</button>
+                                                    <button onClick={() => irADetalle(ev.id)} style={{flex:1, background:'rgba(16,185,129,0.2)', border:'none', color:'var(--success)', padding:'0.6rem', borderRadius:'10px', cursor:'pointer', fontWeight:'600', fontSize:'0.85rem'}}>👁️ Ver</button>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+                        </>
+                    )}
+                    
+                    {tab === 'scanner' && (
+                        <div style={{textAlign:'center', padding:'2rem'}}>
+                            <h2 style={{fontSize:'1.5rem', marginBottom:'1rem'}}>📷 Scanner de Entradas QR</h2>
+                            <p style={{color:'var(--text-muted)', marginBottom:'2rem'}}>Usa la app de validación para escanear códigos QR en los ingresos.</p>
+                            <div style={{display:'flex', flexDirection:'column', gap:'1rem', alignItems:'center'}}>
+                                <a href="/scanner.html" style={{background:'var(--gradient)', color:'white', padding:'1rem 2rem', borderRadius:'12px', textDecoration:'none', fontWeight:'bold', fontSize:'1.1rem', boxShadow:'var(--glow)'}}>
+                                    📷 Abrir Scanner QR
+                                </a>
+                                <p style={{color:'var(--text-dim)', fontSize:'0.85rem'}}>Se abrirá en una nueva pestaña</p>
+                            </div>
+                            <div style={{marginTop:'2rem', background:'var(--bg-card)', padding:'1.5rem', borderRadius:'12px', textAlign:'left', maxWidth:'500px', margin:'2rem auto'}}>
+                                <h3 style={{fontSize:'1rem', marginBottom:'0.5rem'}}>📋 Instrucciones:</h3>
+                                <ol style={{color:'var(--text-muted)', paddingLeft:'1.5rem', lineHeight:'1.8'}}>
+                                    <li>Abre el Scanner QR en tu celular o tablet</li>
+                                    <li>Permite el acceso a la cámara</li>
+                                    <li>Apunta al código QR de la entrada</li>
+                                    <li>Verifica que el estado sea "ACEPTADA"</li>
+                                    <li>Deja pasar al asistente</li>
+                                </ol>
+                            </div>
+                        </div>
+                    )}
+                    
+                    {tab === 'analytics' && (
+                        <AnalyticsPanel eventos={eventos} />
+                    )}
+                    
+                    <div className="form-box" style={{marginTop:'2rem', maxWidth:'700px', marginLeft:'auto', marginRight:'auto'}}>
+                        <h2 style={{fontSize:'1.2rem', marginBottom:'1rem', textAlign:'center'}}>📊 Estadísticas</h2>
+                        <div style={{display:'flex', flexWrap:'wrap', gap:'1rem', justifyContent:'center'}}>
+                            <div style={{background:'rgba(99,102,241,0.2)', padding:'1rem', borderRadius:'12px', textAlign:'center', minWidth:'120px', flex:'1 1 120px'}}>
+                                <div style={{fontSize:'1.8rem', fontWeight:'bold', color:'var(--primary-light)'}}>{eventos.length}</div>
+                                <div style={{color:'var(--text-muted)', fontSize:'0.8rem'}}>Eventos</div>
+                            </div>
+                            <div style={{background:'rgba(16,185,129,0.2)', padding:'1rem', borderRadius:'12px', textAlign:'center', minWidth:'120px', flex:'1 1 120px'}}>
+                                <div style={{fontSize:'1.8rem', fontWeight:'bold', color:'var(--success)'}}>{eventos.reduce((a, e) => a + (e.capacidad - e.disponibles), 0).toLocaleString('es-AR')}</div>
+                                <div style={{color:'var(--text-muted)', fontSize:'0.8rem'}}>Vendidas</div>
+                            </div>
+                            <div style={{background:'rgba(236,72,153,0.2)', padding:'1rem', borderRadius:'12px', textAlign:'center', minWidth:'120px', flex:'1 1 120px'}}>
+                                <div style={{fontSize:'1.2rem', fontWeight:'bold', color:'var(--secondary)'}}>${(eventos.reduce((a, e) => a + (e.precio * (e.capacidad - e.disponibles)), 0) / 1000000).toFixed(1)}M</div>
+                                <div style={{color:'var(--text-muted)', fontSize:'0.8rem'}}>Ingresos</div>
+                            </div>
+                            <div style={{background:'rgba(245,158,11,0.2)', padding:'1rem', borderRadius:'12px', textAlign:'center', minWidth:'120px', flex:'1 1 120px'}}>
+                                <div style={{fontSize:'1.8rem', fontWeight:'bold', color:'var(--warning)'}}>{eventos.filter(e => e.disponibles < 50).length}</div>
+                                <div style={{color:'var(--text-muted)', fontSize:'0.8rem'}}>Por Agotar</div>
+                            </div>
+                        </div>
+                    </div>
+                </>
+            );
+        }
+
+        ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+    </script>
+</body>
+</html>
