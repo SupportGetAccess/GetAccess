@@ -64,11 +64,7 @@ def get_db():
 
 ---
 
-## 📌 PRÓXIMA TAREA
 
-- **Quitar código de entrada** al buscar entradas por email (ocultar el código en el resultado)
-
----
 
 ### ✅ Implementado y Funcional
 
