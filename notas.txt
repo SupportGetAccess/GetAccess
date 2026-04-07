@@ -1,6 +1,67 @@
 # Notas del Proyecto Get Access
 
-## Fecha Última Actualización: Lunes 6 de Abril de 2026 - 19:40
+## Fecha Última Actualización: Martes 7 de Abril de 2026
+
+---
+
+## 🚀 DEPLOY EN RENDER
+
+### URL del servicio
+- **Backend API**: https://getaccess-d3um.onrender.com
+- **Frontend**: https://getaccess-d3um.onrender.com (mismo servicio)
+
+### Estado actual: 🔧 EN DEBUG
+
+**Problema actual:** Las rutas API devuelven 404 en producción
+- `/api/eventos/` → 404
+- `/health` → funciona (devuelve JSON)
+- `/` → funciona (sirve index.html)
+- Pero cualquier ruta `/api/*` devuelve 404
+
+**Última acción:** Se agregó debug output en el código para ver los paths en los logs de Render.
+
+### Cómo ver los logs de Render:
+1. Ir al dashboard de Render: https://dashboard.render.com
+2. Click en el servicio "GetAccess"
+3. Click en "Logs" (a la izquierda)
+4. Buscar líneas que digan "DEBUG" para ver los paths
+
+### Variables de entorno configuradas en Render:
+```
+SECRET_KEY = access_on_super_secret_key_2026_fallback
+BREVO_API_KEY = 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
+BREVO_SENDER_EMAIL = support.getaccess@gmail.com
+MERCADO_PAGO_ACCESS_TOKEN = APP_USR-2888302331727804-031609-eb4c51fc6c1654d701d4a5f3b24fbcd7-1921694
+ALLOWED_ORIGINS = https://getaccess-d3um.onrender.com
+```
+
+### Pasos para debuggear:
+1. Esperar a que redepliegue
+2. Ver los logs en busca de "DEBUG"
+3. Verificar que FRONTEND_DIR y BACKEND_DIR estén correctos
+4. Si los paths están bien, el problema puede estar en el orden de las rutas de FastAPI
+
+### Código del Procfile (backend/):
+```
+web: uvicorn main:app --host 0.0.0.0 --port $PORT
+```
+
+### Requirements.txt (backend/):
+```
+fastapi
+uvicorn
+sqlalchemy
+pydantic[email]
+python-jose[cryptography]
+PyJWT
+passlib[bcrypt]
+bcrypt
+python-multipart
+httpx
+requests
+qrcode
+Pillow
+```
 
 ---
 
