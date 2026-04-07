@@ -160,6 +160,9 @@ async def serve_scanner():
 
 @app.get("/{path:path}")
 async def serve_static(path: str):
+    if path.startswith("api"):
+        from fastapi.responses import JSONResponse
+        return JSONResponse({"detail": "Not found"}, status_code=404)
     file_path = FRONTEND_DIR / path
     if file_path.exists() and file_path.is_file():
         return FileResponse(file_path)
