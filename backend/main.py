@@ -150,8 +150,16 @@ app.add_middleware(
 BACKEND_DIR = Path(__file__).parent
 FRONTEND_DIR = BACKEND_DIR.parent / "frontend"
 
+# Debug: print the paths
+print(f"DEBUG: BACKEND_DIR = {BACKEND_DIR}")
+print(f"DEBUG: FRONTEND_DIR = {FRONTEND_DIR}")
+print(f"DEBUG: FRONTEND_DIR exists = {FRONTEND_DIR.exists()}")
+if FRONTEND_DIR.exists():
+    print(f"DEBUG: index.html exists = {(FRONTEND_DIR / 'index.html').exists()}")
+
 @app.get("/")
 async def serve_index():
+    print(f"DEBUG: Serving index from {FRONTEND_DIR / 'index.html'}")
     return FileResponse(FRONTEND_DIR / "index.html")
 
 @app.get("/test-api")
