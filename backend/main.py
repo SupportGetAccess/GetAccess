@@ -165,6 +165,14 @@ async def serve_html_files(file_path: str):
         return FileResponse(file_path_html)
     return FileResponse(FRONTEND_DIR / "index.html")
 
+@app.get("/api/{path:path}")
+async def api_catch_all(path: str):
+    from fastapi.responses import JSONResponse
+    return JSONResponse(
+        status_code=404,
+        content={"detail": f"API endpoint not found: /api/{path}"}
+    )
+
 @app.exception_handler(Exception)
 async def global_exception_handler(request, exc):
     import traceback
