@@ -8,7 +8,7 @@ from datetime import datetime, timedelta
 import uvicorn
 import sqlite3
 import bcrypt
-import jwt
+from jose import jwt
 import datetime
 import requests
 import random

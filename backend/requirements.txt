@@ -3,6 +3,7 @@ uvicorn
 sqlalchemy
 pydantic
 python-jose[cryptography]
+PyJWT
 passlib[bcrypt]
 bcrypt
 python-multipart
