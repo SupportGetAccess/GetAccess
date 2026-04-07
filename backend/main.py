@@ -154,6 +154,10 @@ FRONTEND_DIR = BACKEND_DIR.parent / "frontend"
 async def serve_index():
     return FileResponse(FRONTEND_DIR / "index.html")
 
+@app.get("/test-api")
+def test_api():
+    return {"test": "ok", "message": "API is working"}
+
 @app.get("/scanner.html")
 async def serve_scanner():
     return FileResponse(FRONTEND_DIR / "scanner.html")
