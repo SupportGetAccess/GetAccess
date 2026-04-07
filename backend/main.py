@@ -158,21 +158,12 @@ async def serve_index():
 async def serve_scanner():
     return FileResponse(FRONTEND_DIR / "scanner.html")
 
-@app.get("/")
-async def serve_index():
-    return FileResponse(FRONTEND_DIR / "index.html")
-
 @app.get("/{file_path:path}.html")
 async def serve_html_files(file_path: str):
     file_path_html = FRONTEND_DIR / f"{file_path}.html"
     if file_path_html.exists() and file_path_html.is_file():
         return FileResponse(file_path_html)
     return FileResponse(FRONTEND_DIR / "index.html")
-
-@app.get("/api/{path:path}")
-async def api_proxy(path: str):
-    from fastapi.responses import JSONResponse
-    return JSONResponse({"detail": "API endpoint not found - proxy"}, status_code=404)
 
 @app.exception_handler(Exception)
 async def global_exception_handler(request, exc):
