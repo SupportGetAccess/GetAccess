@@ -605,7 +605,7 @@
     <script type="text/babel">
         const API_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
             ? (window.location.protocol === 'https:' ? `https://${window.location.hostname}:8443` : 'http://localhost:8000')
-            : 'https://getaccess.onrender.com';
+            : window.location.origin;
         
         function App() {
             const [user, setUser] = React.useState(null);

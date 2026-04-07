@@ -1,6 +1,7 @@
 from fastapi import FastAPI, Depends, HTTPException, status, Request
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse, HTMLResponse
 from pydantic import BaseModel, EmailStr
 from typing import List, Optional
 from collections import defaultdict
@@ -19,6 +20,7 @@ import qrcode
 import io
 import base64
 import os
+from pathlib import Path
 
 # Configuration from Environment Variables
 SECRET_KEY = os.environ.get("SECRET_KEY", "access_on_super_secret_key_2026_fallback")
@@ -143,6 +145,25 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Get the directory where the main.py is located (backend folder)
+BACKEND_DIR = Path(__file__).parent
+FRONTEND_DIR = BACKEND_DIR.parent / "frontend"
+
+@app.get("/")
+async def serve_index():
+    return FileResponse(FRONTEND_DIR / "index.html")
+
+@app.get("/scanner.html")
+async def serve_scanner():
+    return FileResponse(FRONTEND_DIR / "scanner.html")
+
+@app.get("/{path:path}")
+async def serve_static(path: str):
+    file_path = FRONTEND_DIR / path
+    if file_path.exists() and file_path.is_file():
+        return FileResponse(file_path)
+    return FileResponse(FRONTEND_DIR / "index.html")
 
 @app.exception_handler(Exception)
 async def global_exception_handler(request, exc):
