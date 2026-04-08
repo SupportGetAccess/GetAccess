@@ -906,7 +906,7 @@
         const getImagenUrl = (img) => {
             if (!img) return null;
             if (img.startsWith('data:') || img.startsWith('http')) return img;
-            return 'https://getaccess-d3um.onrender.com/' + img;
+            return API_URL + '/' + img;
         };
         const AuthContext = createContext(null);
 

@@ -9,6 +9,19 @@
 - **Servidor frontend**: C:\Users\guill\eventos_tickets_full\frontend\serve.py
 - **Base de datos**: C:\Users\guill\eventos_tickets_full\backend\access_on.db
 
+## ⚠️ REGLA: ANÁLISIS DE IMPACTO EN CAMBIOS
+**Cada vez que el usuario pida una modificación o implementación nueva, DEBO:**
+
+1. **Evaluar el impacto**: Antes de hacer cualquier cambio, analizar si puede alterar el funcionamiento correcto del sitio.
+
+2. **Si no estás seguro**: Si no tienes certeza del 100% de que el cambio es seguro, directamente enviarás un comentario diciendo: **"No sé si esto es 100% seguro - necesita verificación"** y esperarás confirmación del usuario.
+
+3. **No asumir**: No asumas que un cambio es seguro sin verificarlo. Siempre consulta si tenés dudas.
+
+4. **Documentar riesgos**: Si identificás posibles problemas, comunicarlos claramente al usuario antes de proceder.
+
+---
+
 ## ⚠️ REGLA IMPORTANTE
 **Cada vez que el usuario pida una modificación o implementación nueva, se deben reiniciar TODOS los servicios (backend y frontend).**
 

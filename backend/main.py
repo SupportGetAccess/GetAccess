@@ -2,6 +2,7 @@ from fastapi import FastAPI, Depends, HTTPException, status, Request
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, HTMLResponse
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, EmailStr
 from typing import List, Optional
 from collections import defaultdict
@@ -149,6 +150,11 @@ app.add_middleware(
 # Get the directory where the main.py is located (backend folder)
 BACKEND_DIR = Path(__file__).parent
 FRONTEND_DIR = BACKEND_DIR.parent / "frontend"
+
+# Serve static files (images)
+IMAGES_DIR = FRONTEND_DIR / "images"
+if IMAGES_DIR.exists():
+    app.mount("/images", StaticFiles(directory=str(IMAGES_DIR)), name="images")
 
 # Debug: print the paths
 print(f"DEBUG: BACKEND_DIR = {BACKEND_DIR}")
