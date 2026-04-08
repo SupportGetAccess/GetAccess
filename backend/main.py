@@ -75,6 +75,9 @@ except ImportError:
         "https://images.unsplash.com/photo-1598387993441-a364f854c3e1?w=800",
     ]
 
+# Rate Limiting - global storage
+RATE_LIMIT = defaultdict(list)
+
 def check_rate_limit(client_id: str) -> bool:
     now = datetime.datetime.now()
     RATE_LIMIT[client_id] = [t for t in RATE_LIMIT[client_id] if now - t < datetime.timedelta(seconds=RATE_LIMIT_WINDOW)]
