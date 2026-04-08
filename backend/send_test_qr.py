@@ -3,6 +3,22 @@ import base64
 from io import BytesIO
 import requests
 import os
+import sys
+from pathlib import Path
+
+# Importar configuración centralizada
+sys.path.insert(0, str(Path(__file__).parent))
+try:
+    import config
+    BREVO_API_URL = config.BREVO_API_URL
+    BREVO_API_KEY = config.BREVO_API_KEY
+    BREVO_SENDER_EMAIL = config.BREVO_SENDER_EMAIL
+    BREVO_SENDER_NAME = config.BREVO_SENDER_NAME
+except ImportError:
+    BREVO_API_URL = "https://api.brevo.com/v3/smtp/email"
+    BREVO_API_KEY = os.environ.get("BREVO_API_KEY", "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")
+    BREVO_SENDER_EMAIL = os.environ.get("BREVO_SENDER_EMAIL", "support.getaccess@gmail.com")
+    BREVO_SENDER_NAME = "Get Access"
 
 codigo = "GA-000012-001"
 
@@ -45,9 +61,9 @@ html_content = f"""
 </html>
 """
 
-brevo_api_key = os.environ.get("BREVO_API_KEY", "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")
-brevo_sender_email = os.environ.get("BREVO_SENDER_EMAIL", "support.getaccess@gmail.com")
-brevo_sender_name = "Get Access"
+brevo_api_key = BREVO_API_KEY
+brevo_sender_email = BREVO_SENDER_EMAIL
+brevo_sender_name = BREVO_SENDER_NAME
 
 data = {
     "sender": {"name": brevo_sender_name, "email": brevo_sender_email},
@@ -58,7 +74,7 @@ data = {
 
 try:
     response = requests.post(
-        "https://api.brevo.com/v3/smtp/email",
+        BREVO_API_URL,
         json=data,
         headers={"api-key": brevo_api_key, "Content-Type": "application/json"},
         timeout=30

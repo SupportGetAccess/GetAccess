@@ -23,26 +23,56 @@ import base64
 import os
 from pathlib import Path
 
-# Configuration from Environment Variables
-SECRET_KEY = os.environ.get("SECRET_KEY", "access_on_super_secret_key_2026_fallback")
-ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 30
-
-# Allowed origins for CORS
-ALLOWED_ORIGINS = os.environ.get("ALLOWED_ORIGINS", "http://localhost:3000,https://192.168.1.40:3443").split(",")
-
-# Brevo Email Configuration
-BREVO_API_KEY = os.environ.get("BREVO_API_KEY", "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")
-BREVO_SENDER_EMAIL = os.environ.get("BREVO_SENDER_EMAIL", "support.getaccess@gmail.com")
-BREVO_SENDER_NAME = "Get Access"
-
-# Database setup
-DATABASE_URL = "access_on.db"
-
-# Rate Limiting
-RATE_LIMIT = defaultdict(list)
-RATE_LIMIT_WINDOW = 60
-RATE_LIMIT_MAX = 100
+# Importar configuración centralizada
+try:
+    import config
+    SECRET_KEY = config.SECRET_KEY
+    ALGORITHM = config.ALGORITHM
+    ACCESS_TOKEN_EXPIRE_MINUTES = config.ACCESS_TOKEN_EXPIRE_MINUTES
+    ALLOWED_ORIGINS = config.ALLOWED_ORIGINS
+    BREVO_API_KEY = config.BREVO_API_KEY
+    BREVO_SENDER_EMAIL = config.BREVO_SENDER_EMAIL
+    BREVO_SENDER_NAME = config.BREVO_SENDER_NAME
+    DATABASE_URL = config.DATABASE_URL
+    RATE_LIMIT_WINDOW = config.RATE_LIMIT_WINDOW
+    RATE_LIMIT_MAX = config.RATE_LIMIT_MAX
+    PRODUCTION_URL = config.PRODUCTION_URL
+    DEV_URLS = config.DEV_URLS
+    BREVO_API_URL = config.BREVO_API_URL
+    MERCADOPAGO_API_URL = config.MERCADOPAGO_API_URL
+    MERCADOPAGO_ACCESS_TOKEN = config.MERCADOPAGO_ACCESS_TOKEN
+    QUICKCHART_URL = config.QUICKCHART_URL
+    EMAIL_LOGO_URL = config.EMAIL_LOGO_URL
+    DEFAULT_EVENT_IMAGES = config.DEFAULT_EVENT_IMAGES
+except ImportError:
+    # Fallback si no existe config.py
+    SECRET_KEY = os.environ.get("SECRET_KEY", "access_on_super_secret_key_2026_fallback")
+    ALGORITHM = "HS256"
+    ACCESS_TOKEN_EXPIRE_MINUTES = 30
+    ALLOWED_ORIGINS = os.environ.get("ALLOWED_ORIGINS", "http://localhost:3000,https://192.168.1.40:3443").split(",")
+    BREVO_API_KEY = os.environ.get("BREVO_API_KEY", "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")
+    BREVO_SENDER_EMAIL = os.environ.get("BREVO_SENDER_EMAIL", "support.getaccess@gmail.com")
+    BREVO_SENDER_NAME = "Get Access"
+    DATABASE_URL = "access_on.db"
+    RATE_LIMIT_WINDOW = 60
+    RATE_LIMIT_MAX = 100
+    PRODUCTION_URL = "https://getaccess-d3um.onrender.com"
+    DEV_URLS = ["http://localhost:3000", "https://192.168.1.40:3443"]
+    BREVO_API_URL = "https://api.brevo.com/v3/smtp/email"
+    MERCADOPAGO_API_URL = "https://api.mercadopago.com"
+    MERCADOPAGO_ACCESS_TOKEN = "APP_USR-2888302331727804-031609-eb4c51fc6c1654d701d4a5f3b24fbcd7-1921694"
+    QUICKCHART_URL = "https://quickchart.io/qr"
+    EMAIL_LOGO_URL = "https://getaccess.now.sh/logo.png"
+    DEFAULT_EVENT_IMAGES = [
+        "https://images.unsplash.com/photo-1540039155733-5bb30b53aa14?w=800",
+        "https://images.unsplash.com/photo-1504609813442-a8924e83f76e?w=800",
+        "https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=800",
+        "https://images.unsplash.com/photo-1527224857830-43a7acc85260?w=800",
+        "https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=800",
+        "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=800",
+        "https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=800",
+        "https://images.unsplash.com/photo-1598387993441-a364f854c3e1?w=800",
+    ]
 
 def check_rate_limit(client_id: str) -> bool:
     now = datetime.datetime.now()
@@ -58,9 +88,9 @@ MERCADO_PAGO_WEBHOOK_SECRET = os.environ.get("MERCADO_PAGO_WEBHOOK_SECRET", "acc
 # Logo base64 para emails
 LOGO_DATA = """data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48ZGVmcz48bGluZWFyR3JhZGllbnQgaWQ9ImxvZ28iIHgxPSIwJSIgeTE9IjAlIiB4Mj0iMTAwJSIgeTI9IjEwMCUiPjxzdG9wIHN0b3AtY29sb3I9IiM2MzY2ZjEiLz48c3RvcCBvZmZzZXQ9IjEwMCUiIHN0b3AtY29sb3I9IiNlYzQ4OWEiLz48L2xpbmVhckdyYWRpZW50PjwvZGVmcz48cmVjdCB4PSI1MCIgeT0iMjUiIHdpZHRoPSI4MCIgaGVpZ2h0PSI1NSIgcng9IjgiIGZpbGw9InVybCgjbG9nbykiLz48Y2lyY2xlIGN4PSIzMCIgY3k9IjUyIiByPSIyMCIgZmlsbD0iIzY4NjhGRiIvPjxjaXJjbGUgY3g9IjcwIiBjeT0iNTIiIHI9IjIwIiBmaWxsPSIjNjg2OEZGIi8+PHJlY3QgeD0iNDgiIHk9IjQ4IiB3aWR0aD0iMjQiIGhlaWdodD0iOCIgcng9IjIiIGZpbGw9IiM2ODY4RkYiLz48cmVjdCB4PSI0NSIgeT0iMTUiIHdpZHRoPSIzMCIgaGVpZ2h0PSIxNSIgcng9IjQiIGZpbGw9InVybCgjbG9nbykiLz48L3N2Zz4="""
 
-EMAIL_HEADER = """
+EMAIL_HEADER = f"""
     <div style="text-align: center; margin-bottom: 25px; padding-bottom: 20px; border-bottom: 2px solid #e5e7eb;">
-        <img src="https://getaccess.now.sh/logo.png" alt="Get Access" style="width: 150px; height: auto;" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+        <img src="{EMAIL_LOGO_URL}" alt="Get Access" style="width: 150px; height: auto;" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
         <div style="display: none; color: #6366f1; font-size: 28px; font-weight: bold;">🎫 Get Access</div>
     </div>
 """
@@ -130,7 +160,7 @@ def enviar_codigo_verificacion(email: str, codigo: str, nombre: str = ""):
             "htmlContent": html_content
         }
         
-        response = requests.post("https://api.brevo.com/v3/smtp/email", json=data, headers={"api-key": BREVO_API_KEY, "Content-Type": "application/json"}, timeout=30)
+        response = requests.post(BREVO_API_URL, json=data, headers={"api-key": BREVO_API_KEY, "Content-Type": "application/json"}, timeout=30)
         print(f"Brevo API Response Status: {response.status_code}")
         return response.status_code == 201
     except Exception as e:
@@ -845,7 +875,7 @@ def transferir_entrada(entrada_id: int, req: TransferenciaRequest, credentials: 
         </p>
     """
     
-    requests.post("https://api.brevo.com/v3/smtp/email", json={
+    requests.post(BREVO_API_URL, json={
         "sender": {"name": BREVO_SENDER_NAME, "email": BREVO_SENDER_EMAIL},
         "to": [{"email": req.email_destino, "name": req.email_destino.split('@')[0]}],
         "subject": f"🎫 Te han transferido una entrada - {evento[0] if evento else 'Get Access'}",
@@ -974,7 +1004,7 @@ async def webhook_mercadopago(request: Request, db: sqlite3.Connection = Depends
             
             if payment_id:
                 response = requests.get(
-                    f"https://api.mercadopago.com/v1/payments/{payment_id}",
+                    f"{MERCADOPAGO_API_URL}/v1/payments/{payment_id}",
                     headers={"Authorization": f"Bearer {MERCADO_PAGO_ACCESS_TOKEN}"},
                     timeout=30
                 )
@@ -1039,7 +1069,7 @@ def enviar_ticket_email(email, nombre, apellido, evento_nombre, fecha, lugar, ca
 </html>"""
     
     try:
-        url = "https://api.brevo.com/v3/smtp/email"
+        url = BREVO_API_URL
         headers = {"api-key": BREVO_API_KEY, "Content-Type": "application/json"}
         data = {
             "sender": {"name": BREVO_SENDER_NAME, "email": BREVO_SENDER_EMAIL},
@@ -1095,7 +1125,7 @@ def crear_preferencia_carrito(datos: dict, credentials: HTTPAuthorizationCredent
         }
         
         response = requests.post(
-            "https://api.mercadopago.com/checkout/preferences",
+            f"{MERCADOPAGO_API_URL}/checkout/preferences",
             json=preference_data,
             headers={"Authorization": f"Bearer {MERCADO_PAGO_ACCESS_TOKEN}"},
             timeout=30
@@ -1142,7 +1172,7 @@ def crear_preferencia_pago(datos: dict, credentials: HTTPAuthorizationCredential
         }
         
         response = requests.post(
-            "https://api.mercadopago.com/checkout/preferences",
+            f"{MERCADOPAGO_API_URL}/checkout/preferences",
             json=preference_data,
             headers={"Authorization": f"Bearer {MERCADO_PAGO_ACCESS_TOKEN}"},
             timeout=30
@@ -1205,7 +1235,7 @@ def recuperar_password(datos: dict, request: Request, db: sqlite3.Connection = D
     email_content = get_email_template(content)
     
     try:
-        url = "https://api.brevo.com/v3/smtp/email"
+        url = BREVO_API_URL
         headers = {"api-key": BREVO_API_KEY, "Content-Type": "application/json"}
         data = {
             "sender": {"name": BREVO_SENDER_NAME, "email": BREVO_SENDER_EMAIL},
@@ -1744,7 +1774,7 @@ def enviar_ticket(entrada_id: int, credentials: HTTPAuthorizationCredentials = D
     html_content = get_email_template(email_content)
     
     try:
-        url = "https://api.brevo.com/v3/smtp/email"
+        url = BREVO_API_URL
         headers = {"api-key": BREVO_API_KEY, "Content-Type": "application/json"}
         data = {
             "sender": {"name": BREVO_SENDER_NAME, "email": BREVO_SENDER_EMAIL},
@@ -1779,7 +1809,7 @@ def reenviar_ticket_sin_auth(entrada_id: int, email: str, db: sqlite3.Connection
     preference_id = pref_row[0] if pref_row and pref_row[0] else None
     
     codigo_qr = preference_id if preference_id else f"GA-{entrada[0]:06d}"
-    qr_url = f"https://quickchart.io/qr?size=300x300&text={codigo_qr}"
+    qr_url = f"{QUICKCHART_URL}?size=300x300&text={codigo_qr}"
     qr_cid = f"qr-{entrada_id}-{int(datetime.datetime.now().timestamp())}"
     
     fecha_formateada = entrada[5]
@@ -1868,7 +1898,7 @@ def reenviar_ticket_sin_auth(entrada_id: int, email: str, db: sqlite3.Connection
 </html>"""
     
     try:
-        url = "https://api.brevo.com/v3/smtp/email"
+        url = BREVO_API_URL
         headers = {"api-key": BREVO_API_KEY, "Content-Type": "application/json"}
         data = {
             "sender": {"name": BREVO_SENDER_NAME, "email": BREVO_SENDER_EMAIL},
@@ -1977,14 +2007,14 @@ if __name__ == "__main__":
     cursor = conn.execute("SELECT COUNT(*) FROM eventos")
     if cursor.fetchone()[0] == 0:
         eventos_seed = [
-            ("Coldplay - Music of the Spheres", "Gira mundial con producción espectacular. Ponte en órbita con Chris Martin y la banda.", "2026-06-15", "Estadio River Plate, Buenos Aires", 45000, 50000, 5000, "https://images.unsplash.com/photo-1540039155733-5bb30b53aa14?w=800", "musica"),
-            ("Flamenco en Buenos Aires", "Una noche mágica con los mejores artistas del flamenco español.", "2026-04-20", "Teatro Colón, Buenos Aires", 8500, 800, 150, "https://images.unsplash.com/photo-1504609813442-a8924e83f76e?w=800", "teatro"),
-            ("Superclásico Boca vs River", "El partido más apasionante del fútbol mundial. No te lo pierdas!", "2026-05-10", "La Bombonera, Buenos Aires", 12000, 49000, 45000, "https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=800", "deportes"),
-            ("Show de Stand Up - Fabian Pamberino", "El comediante más gracioso del país presenta su nuevo show.", "2026-04-05", "Teatro Metropolitan, Buenos Aires", 3500, 500, 200, "https://images.unsplash.com/photo-1527224857830-43a7acc85260?w=800", "comedia"),
-            ("Festival Electrónico 2026", "3 escenarios, 20 DJs internacionales, 12 horas de música continua.", "2026-07-20", "Rural Palermo, Buenos Aires", 8000, 15000, 8000, "https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=800", "musica"),
-            ("Cirque du Soleil - O", "El espectáculo acuático más impresionante del mundo.", "2026-05-25", "Estadio GEBA, Buenos Aires", 12000, 3000, 1200, "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=800", "espectaculo"),
-            ("Conferencia Tech Summit 2026", "Los líderes tecnológicos del mundo comparten el futuro de la IA.", "2026-08-10", "Centro de Convenciones, Buenos Aires", 25000, 2000, 500, "https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=800", "conferencia"),
-            ("Roger Waters - This Is Not A Drill", "El legendario líder de Pink Floyd presenta su gira de regreso.", "2026-09-15", "Estadio Monumental, Buenos Aires", 38000, 65000, 60000, "https://images.unsplash.com/photo-1598387993441-a364f854c3e1?w=800", "musica"),
+            ("Coldplay - Music of the Spheres", "Gira mundial con producción spectacular. Ponte en órbita con Chris Martin y la banda.", "2026-06-15", "Estadio River Plate, Buenos Aires", 45000, 50000, 5000, DEFAULT_EVENT_IMAGES[0], "musica"),
+            ("Flamenco en Buenos Aires", "Una noche mágica con los mejores artistas del flamenco español.", "2026-04-20", "Teatro Colón, Buenos Aires", 8500, 800, 150, DEFAULT_EVENT_IMAGES[1], "teatro"),
+            ("Superclásico Boca vs River", "El partido más apasionante del fútbol mundial. No te lo pierdas!", "2026-05-10", "La Bombonera, Buenos Aires", 12000, 49000, 45000, DEFAULT_EVENT_IMAGES[2], "deportes"),
+            ("Show de Stand Up - Fabian Pamberino", "El comediante más gracioso del país presenta su nuevo show.", "2026-04-05", "Teatro Metropolitan, Buenos Aires", 3500, 500, 200, DEFAULT_EVENT_IMAGES[3], "comedia"),
+            ("Festival Electrónico 2026", "3 escenarios, 20 DJs internacionales, 12 horas de música continua.", "2026-07-20", "Rural Palermo, Buenos Aires", 8000, 15000, 8000, DEFAULT_EVENT_IMAGES[4], "musica"),
+            ("Cirque du Soleil - O", "El espectáculo acuático más impresionante del mundo.", "2026-05-25", "Estadio GEBA, Buenos Aires", 12000, 3000, 1200, DEFAULT_EVENT_IMAGES[5], "espectaculo"),
+            ("Conferencia Tech Summit 2026", "Los líderes tecnológicos del mundo comparten el futuro de la IA.", "2026-08-10", "Centro de Convenciones, Buenos Aires", 25000, 2000, 500, DEFAULT_EVENT_IMAGES[6], "conferencia"),
+            ("Roger Waters - This Is Not A Drill", "El legendario líder de Pink Floyd presenta su gira de regreso.", "2026-09-15", "Estadio Monumental, Buenos Aires", 38000, 65000, 60000, DEFAULT_EVENT_IMAGES[7], "musica"),
         ]
         conn.executemany(
             "INSERT INTO eventos (nombre, descripcion, fecha, lugar, precio, capacidad, vendidos, imagen, categoria) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
