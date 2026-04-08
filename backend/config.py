@@ -42,6 +42,9 @@ MERCADOPAGO_API_URL = "https://api.mercadopago.com"
 MERCADOPAGO_ACCESS_TOKEN = os.environ.get("MERCADO_PAGO_ACCESS_TOKEN", "APP_USR-2888302331727804-031609-eb4c51fc6c1654d701d4a5f3b24fbcd7-1921694")
 MERCADOPAGO_WEBHOOK_SECRET = os.environ.get("MERCADO_PAGO_WEBHOOK_SECRET", "webhook_secret_fallback")
 
+# Admin
+ADMIN_SECRET = "access_on_admin_secret_2026"
+
 # QuickChart (QR codes)
 QUICKCHART_URL = "https://quickchart.io/qr"
 

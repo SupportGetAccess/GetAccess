@@ -44,6 +44,7 @@ try:
     QUICKCHART_URL = config.QUICKCHART_URL
     EMAIL_LOGO_URL = config.EMAIL_LOGO_URL
     DEFAULT_EVENT_IMAGES = config.DEFAULT_EVENT_IMAGES
+    ADMIN_SECRET = config.ADMIN_SECRET
 except ImportError:
     # Fallback si no existe config.py
     SECRET_KEY = os.environ.get("SECRET_KEY", "access_on_super_secret_key_2026_fallback")
