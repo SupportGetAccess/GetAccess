@@ -524,6 +524,7 @@ def listar_eventos(categoria: str = None, busqueda: str = None, db: sqlite3.Conn
     query += " ORDER BY fecha"
     cursor = db.execute(query, params)
     rows = cursor.fetchall()
+    print(f">>> LISTAR EVENTOS: {len(rows)} eventos encontrados")
     return [
         {"id": r[0], "nombre": r[1], "descripcion": r[2], "fecha": r[3], "lugar": r[4], "precio": r[5], "disponibles": r[6] - r[7], "imagen": r[8], "categoria": r[9], "capacidad": r[6], "vendidos": r[7]}
         for r in rows
@@ -620,6 +621,7 @@ def crear_evento(evento: EventoCreate, credentials: HTTPAuthorizationCredentials
         (evento.nombre, evento.descripcion, evento.fecha + " 20:00:00", evento.lugar, evento.precio, evento.capacidad, evento.imagen, evento.categoria)
     )
     db.commit()
+    print(f">>> EVENTO CREADO: {evento.nombre}, ID: {cursor.lastrowid}, Fecha: {evento.fecha}")
     fecha_formateada = evento.fecha + " 20:00:00"
     return {"id": cursor.lastrowid, "nombre": evento.nombre, "descripcion": evento.descripcion, "fecha": fecha_formateada, "lugar": evento.lugar, "precio": evento.precio, "capacidad": evento.capacidad, "imagen": evento.imagen, "categoria": evento.categoria}
 
