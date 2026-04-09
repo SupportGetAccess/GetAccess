@@ -617,10 +617,11 @@ def crear_evento(evento: EventoCreate, credentials: HTTPAuthorizationCredentials
     
     cursor = db.execute(
         "INSERT INTO eventos (nombre, descripcion, fecha, lugar, precio, capacidad, vendidos, imagen, categoria) VALUES (?, ?, ?, ?, ?, ?, 0, ?, ?)",
-        (evento.nombre, evento.descripcion, evento.fecha, evento.lugar, evento.precio, evento.capacidad, evento.imagen, evento.categoria)
+        (evento.nombre, evento.descripcion, evento.fecha + " 20:00:00", evento.lugar, evento.precio, evento.capacidad, evento.imagen, evento.categoria)
     )
     db.commit()
-    return {"id": cursor.lastrowid, "nombre": evento.nombre, "descripcion": evento.descripcion, "fecha": evento.fecha, "lugar": evento.lugar, "precio": evento.precio, "capacidad": evento.capacidad, "imagen": evento.imagen, "categoria": evento.categoria}
+    fecha_formateada = evento.fecha + " 20:00:00"
+    return {"id": cursor.lastrowid, "nombre": evento.nombre, "descripcion": evento.descripcion, "fecha": fecha_formateada, "lugar": evento.lugar, "precio": evento.precio, "capacidad": evento.capacidad, "imagen": evento.imagen, "categoria": evento.categoria}
 
 class EventoUpdate(BaseModel):
     nombre: Optional[str] = None
