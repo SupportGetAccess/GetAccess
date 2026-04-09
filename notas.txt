@@ -1,26 +1,43 @@
 # Notas del Proyecto Get Access
 
-## 📌 PROYECTO PRIORITARIO ACTUAL: CARRITO DE COMPRAS
+## 📌 PROYECTO PRIORITARIO ACTUAL: Base de datos persistente
 
-### Objetivo
-Implementar un carrito de compras funcional que permita:
-- Agregar entradas de múltiples eventos
-- Simular compra real desde la web
-- Efectivizar pagos reales con MercadoPago
+### Problema actual
+- Render tiene sistema de archivos efímero
+- Cada deploy elimina la base de datos SQLite (access_on.db)
+- Los eventos y compras se pierden al hacer deploy
 
-### Estado actual
-- El frontend ya tiene un array de `carrito` implementado
-- Hay una función `agregarAlCarrito` en el código
-- Falta integrar con el flow de compra de MercadoPago
+### Estado de funcionalidades implementadas
+- ✅ Carrito de compras con MercadoPago
+- ✅ Compra real con webhook de MP
+- ✅ Código único por entrada (GA-XXXXXX)
+- ✅ QR en email de entrada
+- ✅ Botón Carrito solo visible para usuarios logueados
 
-### Próximos pasos
-1. Revisar estado actual del carrito en el frontend
-2. Conectar con API de MercadoPago para pagos reales
-3. Testing con tarjeta real o sandbox de MP
+### Próximos pasos para mañana
+1. Configurar base de datos externa (Supabase PostgreSQL)
+2. Migrar de SQLite a PostgreSQL
+3. Actualizar backend para conectar a Supabase
 
 ---
 
-## Fecha Última Actualización: Jueves 9 de Abril de 2026
+## Fecha Última Actualización: Jueves 9 de Abril de 2026 - 21:30 hs
+
+---
+
+## 📋 RESUMEN DE TRABAJO HECHO
+
+### Funcionalidades implementadas:
+- ✅ **Carrito de compras** con MercadoPago
+- ✅ **Pagos reales** a través de MercadoPago (webhook configurado)
+- ✅ **Código único** por entrada (formato GA-XXXXXX)
+- ✅ **QR Code** en email de confirmación
+- ✅ **Validación de fecha** de eventos (no permite fechas pasadas)
+- ✅ **Botón Carrito** solo visible para usuarios logueados
+
+### Problemas encontrados:
+- ⚠️ **Base de datos efímera en Render** - SQLite se borra con cada deploy
+- ⚠️ Los eventos creados se pierden al hacer deploy del código
 
 ---
 
