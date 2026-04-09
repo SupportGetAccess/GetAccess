@@ -945,6 +945,11 @@
             }, []);
             
             useEffect(() => {
+                const savedCarrito = JSON.parse(localStorage.getItem('carrito') || '[]');
+                setCarrito(savedCarrito);
+            }, []);
+            
+            useEffect(() => {
                 if (pagoEstado) {
                     const messages = { success: 'Pago exitoso! Tu entrada está confirmada.', error: 'El pago fue rechazado. Intenta nuevamente.', warning: 'Pago pendiente. Te notificaremos cuando se confirme.' };
                     showToast(messages[pagoEstado], pagoEstado);
@@ -1015,11 +1020,9 @@
                     <nav>
                         <button className={vista === 'eventos' ? 'active' : ''} onClick={() => setVista('eventos')}>🎉 Eventos</button>
                         <button className={vista === 'buscar-entradas' ? 'active' : ''} onClick={() => setVista('buscar-entradas')}>🔍 Buscar</button>
-                        {carrito.length > 0 && (
-                            <button className={vista === 'carrito' ? 'active' : ''} onClick={() => setVista('carrito')} style={{position: 'relative'}}>
-                                🛒 Carrito <span style={{position: 'absolute', top: '-5px', right: '-5px', background: '#ec4899', color: 'white', borderRadius: '50%', width: '20px', height: '20px', fontSize: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center'}}>{carrito.length}</span>
+                        <button className={vista === 'carrito' ? 'active' : ''} onClick={() => setVista('carrito')} style={{position: 'relative'}}>
+                                🛒 Carrito {carrito.length > 0 && <span style={{position: 'absolute', top: '-5px', right: '-5px', background: '#ec4899', color: 'white', borderRadius: '50%', width: '20px', height: '20px', fontSize: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center'}}>{carrito.length}</span>}
                             </button>
-                        )}
                         {user ? (
                             <>
                                 <button className={vista === 'mis-entradas' ? 'active' : ''} onClick={() => setVista('mis-entradas')}>🎟️ Mis Entradas</button>

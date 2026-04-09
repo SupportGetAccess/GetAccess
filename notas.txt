@@ -1,6 +1,26 @@
 # Notas del Proyecto Get Access
 
-## Fecha Última Actualización: Martes 7 de Abril de 2026
+## 📌 PROYECTO PRIORITARIO ACTUAL: CARRITO DE COMPRAS
+
+### Objetivo
+Implementar un carrito de compras funcional que permita:
+- Agregar entradas de múltiples eventos
+- Simular compra real desde la web
+- Efectivizar pagos reales con MercadoPago
+
+### Estado actual
+- El frontend ya tiene un array de `carrito` implementado
+- Hay una función `agregarAlCarrito` en el código
+- Falta integrar con el flow de compra de MercadoPago
+
+### Próximos pasos
+1. Revisar estado actual del carrito en el frontend
+2. Conectar con API de MercadoPago para pagos reales
+3. Testing con tarjeta real o sandbox de MP
+
+---
+
+## Fecha Última Actualización: Jueves 9 de Abril de 2026
 
 ---
 
