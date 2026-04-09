@@ -1872,6 +1872,7 @@
                 if (carrito.length === 0) return;
                 setProcesando(true);
                 try {
+                    const entradaIds = [];
                     for (const item of carrito) {
                         const res = await fetch(API_URL + '/api/entradas/', {
                             method: 'POST',
@@ -1879,13 +1880,9 @@
                             body: JSON.stringify({ evento_id: item.id, cantidad: item.cantidad || 1 })
                         });
                         if (!res.ok) throw new Error('Error al comprar ' + item.nombre);
+                        const entrada = await res.json();
+                        entradaIds.push(entrada.id);
                     }
-                    
-                    const entradaIds = await Promise.all(
-                        fetch(API_URL + '/api/entradas/', { headers: { Authorization: 'Bearer ' + token } })
-                        .then(res => res.json())
-                        .then(ents => ents.slice(0, carrito.length).map(e => e.id))
-                    );
                     
                     const pagoRes = await fetch(API_URL + '/api/pagos/carrito', {
                         method: 'POST',
