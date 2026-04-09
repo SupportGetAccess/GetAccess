@@ -1020,9 +1020,11 @@
                     <nav>
                         <button className={vista === 'eventos' ? 'active' : ''} onClick={() => setVista('eventos')}>🎉 Eventos</button>
                         <button className={vista === 'buscar-entradas' ? 'active' : ''} onClick={() => setVista('buscar-entradas')}>🔍 Buscar</button>
-                        <button className={vista === 'carrito' ? 'active' : ''} onClick={() => setVista('carrito')} style={{position: 'relative'}}>
-                                Carrito {carrito.length > 0 && <span style={{position: 'absolute', top: '-5px', right: '-5px', background: '#ec4899', color: 'white', borderRadius: '50%', width: '20px', height: '20px', fontSize: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center'}}>{carrito.length}</span>}
+                        {user && (
+                            <button className={vista === 'carrito' ? 'active' : ''} onClick={() => setVista('carrito')} style={{position: 'relative'}}>
+                                🛒 Carrito {carrito.length > 0 && <span style={{position: 'absolute', top: '-5px', right: '-5px', background: '#ec4899', color: 'white', borderRadius: '50%', width: '20px', height: '20px', fontSize: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center'}}>{carrito.length}</span>}
                             </button>
+                        )}
                         {user ? (
                             <>
                                 <button className={vista === 'mis-entradas' ? 'active' : ''} onClick={() => setVista('mis-entradas')}>🎟️ Mis Entradas</button>
