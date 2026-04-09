@@ -1036,27 +1036,27 @@ async def webhook_mercadopago(request: Request, db: sqlite3.Connection = Depends
                     print(f">>> Payment ID: {payment_id}, Status: {status_mp}, Ref: {external_ref}")
                     
                     if external_ref and status_mp == "approved":
-                        cursor_check = db.execute("SELECT id, estado FROM entradas WHERE id = ?", (external_ref,))
-                        entrada = cursor_check.fetchone()
-                        if entrada and entrada[1] != "pagada":
-                            db.execute("UPDATE entradas SET estado = 'pagada', usada = 0 WHERE id = ?", (external_ref,))
-                            db.commit()
-                            print(f">>> Entrada {external_ref} marcada como pagada")
-                            
-                            cursor = db.execute("""
-                                SELECT u.email, u.nombre, u.apellido, ev.nombre, ev.fecha, ev.lugar, e.cantidad, e.total
-                                FROM entradas e
-                                JOIN usuarios u ON e.usuario_id = u.id
-                                JOIN eventos ev ON e.evento_id = ev.id
-                                WHERE e.id = ?
-                            """, (external_ref,))
-                            row = cursor.fetchone()
-                            if row:
-                                enviar_ticket_email(
-                                    row[0], row[1], row[2], row[3], row[4], row[5], row[6], row[7], external_ref
-                                )
-                        else:
-                            print(f">>> Entrada {external_ref} ya estaba pagada, se ignora")
+                        entrada_ids = [int(x.strip()) for x in str(external_ref).split(',') if x.strip().isdigit()]
+                        for ext_id in entrada_ids:
+                            cursor_check = db.execute("SELECT id, estado FROM entradas WHERE id = ?", (ext_id,))
+                            entrada = cursor_check.fetchone()
+                            if entrada and entrada[1] != "pagada":
+                                db.execute("UPDATE entradas SET estado = 'pagada', usada = 0 WHERE id = ?", (ext_id,))
+                                db.commit()
+                                print(f">>> Entrada {ext_id} marcada como pagada")
+                                
+                                cursor = db.execute("""
+                                    SELECT u.email, u.nombre, u.apellido, ev.nombre, ev.fecha, ev.lugar, e.cantidad, e.total
+                                    FROM entradas e
+                                    JOIN usuarios u ON e.usuario_id = u.id
+                                    JOIN eventos ev ON e.evento_id = ev.id
+                                    WHERE e.id = ?
+                                """, (ext_id,))
+                                row = cursor.fetchone()
+                                if row:
+                                    enviar_ticket_email(
+                                        row[0], row[1], row[2], row[3], row[4], row[5], row[6], row[7], ext_id
+                                    )
                         
         return {"status": "ok"}
     except Exception as e:
