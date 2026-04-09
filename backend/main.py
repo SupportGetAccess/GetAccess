@@ -608,6 +608,10 @@ def crear_evento(evento: EventoCreate, credentials: HTTPAuthorizationCredentials
     if not es_admin(db, user_id):
         raise HTTPException(status_code=403, detail="Solo administradores pueden crear eventos")
     
+    evento_fecha = datetime.datetime.fromisoformat(evento.fecha.replace('Z', '+00:00'))
+    if evento_fecha < datetime.datetime.now(datetime.timezone.utc):
+        raise HTTPException(status_code=400, detail="La fecha del evento no puede ser anterior a la fecha actual")
+    
     cursor = db.execute(
         "INSERT INTO eventos (nombre, descripcion, fecha, lugar, precio, capacidad, vendidos, imagen, categoria) VALUES (?, ?, ?, ?, ?, ?, 0, ?, ?)",
         (evento.nombre, evento.descripcion, evento.fecha, evento.lugar, evento.precio, evento.capacidad, evento.imagen, evento.categoria)
@@ -640,6 +644,11 @@ def actualizar_evento(evento_id: int, evento: EventoUpdate, credentials: HTTPAut
     cursor = db.execute("SELECT id FROM eventos WHERE id = ?", (evento_id,))
     if not cursor.fetchone():
         raise HTTPException(status_code=404, detail="Evento no encontrado")
+    
+    if evento.fecha is not None:
+        evento_fecha = datetime.datetime.fromisoformat(evento.fecha.replace('Z', '+00:00'))
+        if evento_fecha < datetime.datetime.now(datetime.timezone.utc):
+            raise HTTPException(status_code=400, detail="La fecha del evento no puede ser anterior a la fecha actual")
     
     updates = []
     params = []
