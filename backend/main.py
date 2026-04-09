@@ -1134,6 +1134,7 @@ def crear_preferencia_carrito(datos: dict, credentials: HTTPAuthorizationCredent
     ext_refs = [str(e[0]) for e in entradas]
     
     back_url_base = os.environ.get("PRODUCTION_URL", "https://getaccess-d3um.onrender.com")
+    webhook_url = f"{back_url_base}/api/pagos/webhook"
     
     try:
         preference_data = {
@@ -1143,6 +1144,7 @@ def crear_preferencia_carrito(datos: dict, credentials: HTTPAuthorizationCredent
                 "failure": f"{back_url_base}?pago=fallo",
                 "pending": f"{back_url_base}?pago=pendiente"
             },
+            "notification_url": webhook_url,
             "external_reference": ",".join(ext_refs)
         }
         
@@ -1177,6 +1179,7 @@ def crear_preferencia_pago(datos: dict, credentials: HTTPAuthorizationCredential
     
     try:
         back_url_base = os.environ.get("PRODUCTION_URL", "https://getaccess-d3um.onrender.com")
+        webhook_url = f"{back_url_base}/api/pagos/webhook"
         preference_data = {
             "items": [
                 {
@@ -1191,6 +1194,7 @@ def crear_preferencia_pago(datos: dict, credentials: HTTPAuthorizationCredential
                 "failure": f"{back_url_base}?pago=fallo",
                 "pending": f"{back_url_base}?pago=pendiente"
             },
+            "notification_url": webhook_url,
             "external_reference": str(entrada_id)
         }
         
