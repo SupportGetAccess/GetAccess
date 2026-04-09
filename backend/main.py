@@ -1117,13 +1117,15 @@ def crear_preferencia_carrito(datos: dict, credentials: HTTPAuthorizationCredent
     
     ext_refs = [str(e[0]) for e in entradas]
     
+    back_url_base = os.environ.get("PRODUCTION_URL", "https://getaccess-d3um.onrender.com")
+    
     try:
         preference_data = {
             "items": items,
             "back_urls": {
-                "success": "http://localhost:3000?pago=exito",
-                "failure": "http://localhost:3000?pago=fallo",
-                "pending": "http://localhost:3000?pago=pendiente"
+                "success": f"{back_url_base}?pago=exito",
+                "failure": f"{back_url_base}?pago=fallo",
+                "pending": f"{back_url_base}?pago=pendiente"
             },
             "external_reference": ",".join(ext_refs)
         }
@@ -1158,6 +1160,7 @@ def crear_preferencia_pago(datos: dict, credentials: HTTPAuthorizationCredential
         raise HTTPException(status_code=404, detail="Entrada no encontrada o ya pagada")
     
     try:
+        back_url_base = os.environ.get("PRODUCTION_URL", "https://getaccess-d3um.onrender.com")
         preference_data = {
             "items": [
                 {
@@ -1168,9 +1171,9 @@ def crear_preferencia_pago(datos: dict, credentials: HTTPAuthorizationCredential
                 }
             ],
             "back_urls": {
-                "success": "http://localhost:3000?pago=exito",
-                "failure": "http://localhost:3000?pago=fallo",
-                "pending": "http://localhost:3000?pago=pendiente"
+                "success": f"{back_url_base}?pago=exito",
+                "failure": f"{back_url_base}?pago=fallo",
+                "pending": f"{back_url_base}?pago=pendiente"
             },
             "external_reference": str(entrada_id)
         }
