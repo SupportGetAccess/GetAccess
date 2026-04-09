@@ -821,17 +821,25 @@ def crear_entrada(entrada: EntradaCreate, credentials: HTTPAuthorizationCredenti
     
     total = evento[1] * entrada.cantidad
     
+    # Generar código único para la entrada
+    codigo = f"GA-{entrada_id:06d}" if entrada_id else f"GA-{random.randint(100000, 999999)}"
+    
     cursor = db.execute(
-        "INSERT INTO entradas (evento_id, usuario_id, cantidad, total, estado) VALUES (?, ?, ?, ?, ?)",
-        (entrada.evento_id, user_id, entrada.cantidad, total, "pendiente")
+        "INSERT INTO entradas (evento_id, usuario_id, cantidad, total, estado, preference_id) VALUES (?, ?, ?, ?, ?, ?)",
+        (entrada.evento_id, user_id, entrada.cantidad, total, "pendiente", codigo)
     )
     db.commit()
     entrada_id = cursor.lastrowid
     
+    # Actualizar el código con el ID real
+    codigo = f"GA-{entrada_id:06d}"
+    db.execute("UPDATE entradas SET preference_id = ? WHERE id = ?", (codigo, entrada_id))
+    db.commit()
+    
     db.execute("UPDATE eventos SET vendidos = vendidos + ? WHERE id = ?", (entrada.cantidad, entrada.evento_id))
     db.commit()
     
-    return {"id": entrada_id, "evento_id": entrada.evento_id, "usuario_id": user_id, "cantidad": entrada.cantidad, "total": total, "estado": "pendiente"}
+    return {"id": entrada_id, "evento_id": entrada.evento_id, "usuario_id": user_id, "cantidad": entrada.cantidad, "total": total, "estado": "pendiente", "codigo": codigo}
 
 # === TRANSFERENCIA DE ENTRADAS ===
 import secrets
@@ -1041,7 +1049,7 @@ async def webhook_mercadopago(request: Request, db: sqlite3.Connection = Depends
                     if external_ref and status_mp == "approved":
                         entrada_ids = [int(x.strip()) for x in str(external_ref).split(',') if x.strip().isdigit()]
                         for ext_id in entrada_ids:
-                            cursor_check = db.execute("SELECT id, estado FROM entradas WHERE id = ?", (ext_id,))
+                            cursor_check = db.execute("SELECT id, estado, preference_id FROM entradas WHERE id = ?", (ext_id,))
                             entrada = cursor_check.fetchone()
                             if entrada and entrada[1] != "pagada":
                                 db.execute("UPDATE entradas SET estado = 'pagada', usada = 0 WHERE id = ?", (ext_id,))
@@ -1049,7 +1057,7 @@ async def webhook_mercadopago(request: Request, db: sqlite3.Connection = Depends
                                 print(f">>> Entrada {ext_id} marcada como pagada")
                                 
                                 cursor = db.execute("""
-                                    SELECT u.email, u.nombre, u.apellido, ev.nombre, ev.fecha, ev.lugar, e.cantidad, e.total
+                                    SELECT u.email, u.nombre, u.apellido, ev.nombre, ev.fecha, ev.lugar, e.cantidad, e.total, e.preference_id
                                     FROM entradas e
                                     JOIN usuarios u ON e.usuario_id = u.id
                                     JOIN eventos ev ON e.evento_id = ev.id
@@ -1057,8 +1065,9 @@ async def webhook_mercadopago(request: Request, db: sqlite3.Connection = Depends
                                 """, (ext_id,))
                                 row = cursor.fetchone()
                                 if row:
+                                    codigo = row[8] if row[8] else f"GA-{ext_id:06d}"
                                     enviar_ticket_email(
-                                        row[0], row[1], row[2], row[3], row[4], row[5], row[6], row[7], ext_id
+                                        row[0], row[1], row[2], row[3], row[4], row[5], row[6], row[7], codigo
                                     )
                         
         return {"status": "ok"}
@@ -1066,13 +1075,15 @@ async def webhook_mercadopago(request: Request, db: sqlite3.Connection = Depends
         print(f">>> ERROR WEBHOOK: {e}")
         return {"status": "error", "detail": str(e)}
 
-def enviar_ticket_email(email, nombre, apellido, evento_nombre, fecha, lugar, cantidad, total, entrada_id):
+def enviar_ticket_email(email, nombre, apellido, evento_nombre, fecha, lugar, cantidad, total, entrada_id, codigo=None):
+    codigo_display = codigo or f"GA-{entrada_id:06d}"
+    qr_data = f"https://getaccess-d3um.onrender.com/validar/{codigo_display}"
     email_content = f"""<!DOCTYPE html>
 <html>
 <head></head>
 <body style="font-family: Arial, sans-serif; background-color: #f4f4f4; margin: 0; padding: 20px;">
     <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; padding: 20px; border-radius: 8px;">
-        <h2 style="color: #333333; text-align: center;">🎫 Tu Entrada - Access ON</h2>
+        <h2 style="color: #333333; text-align: center;">🎫 Tu Entrada - Get Access</h2>
         <p style="color: #555555;">Hola {nombre} {apellido},</p>
         <p style="color: #555555;">Tu pago fue confirmado! Aquí está tu entrada:</p>
         <div style="background-color: #f8f9fa; border-radius: 8px; padding: 20px; margin: 20px 0;">
@@ -1083,9 +1094,17 @@ def enviar_ticket_email(email, nombre, apellido, evento_nombre, fecha, lugar, ca
             <p><strong>💵 Total:</strong> ${total:,.2f}</p>
             <p><strong>✅ Estado:</strong> PAGADA</p>
         </div>
-        <p style="text-align: center; font-size: 24px; font-weight: bold; color: #007bff;">#{entrada_id}</p>
+        <div style="text-align: center; margin: 20px 0; padding: 20px; background: #f0f0f0; border-radius: 8px;">
+            <p style="font-size: 14px; color: #666; margin: 0 0 10px 0;">🎫 CÓDIGO DE ACCESO</p>
+            <p style="font-size: 28px; font-weight: bold; color: #6366f1; margin: 0;">{codigo_display}</p>
+        </div>
+        <div style="text-align: center; margin: 20px 0;">
+            <p style="font-size: 14px; color: #666; margin: 0 0 10px 0;">📱 ESCANEA PARA VALIDAR</p>
+            <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data={qr_data}" alt="QR Code" style="max-width: 200px; border-radius: 8px;">
+        </div>
+        <p style="text-align: center; font-size: 12px; color: #999;">Presenta este código o escanea el QR en la entrada del evento</p>
         <hr style="border: none; border-top: 1px solid #eeeeee; margin: 20px 0;">
-        <p style="color: #999999; font-size: 12px; text-align: center;">© 2026 Get Access. Presenta este código en la entrada del evento.</p>
+        <p style="color: #999999; font-size: 12px; text-align: center;">© 2026 Get Access</p>
     </div>
 </body>
 </html>"""
