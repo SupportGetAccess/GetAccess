@@ -608,9 +608,12 @@ def crear_evento(evento: EventoCreate, credentials: HTTPAuthorizationCredentials
     if not es_admin(db, user_id):
         raise HTTPException(status_code=403, detail="Solo administradores pueden crear eventos")
     
-    evento_fecha = datetime.datetime.fromisoformat(evento.fecha.replace('Z', '+00:00'))
-    if evento_fecha < datetime.datetime.now(datetime.timezone.utc):
-        raise HTTPException(status_code=400, detail="La fecha del evento no puede ser anterior a la fecha actual")
+    evento_fecha_str = evento.fecha.replace('Z', '')
+    if '+' in evento_fecha_str:
+        evento_fecha_str = evento_fecha_str.split('+')[0]
+    evento_fecha = datetime.datetime.fromisoformat(evento_fecha_str)
+    if evento_fecha < datetime.datetime.now():
+        raise HTTPException(status_code=400, detail="La fecha ingresada no debe ser anterior a la fecha actual")
     
     cursor = db.execute(
         "INSERT INTO eventos (nombre, descripcion, fecha, lugar, precio, capacidad, vendidos, imagen, categoria) VALUES (?, ?, ?, ?, ?, ?, 0, ?, ?)",
@@ -646,9 +649,12 @@ def actualizar_evento(evento_id: int, evento: EventoUpdate, credentials: HTTPAut
         raise HTTPException(status_code=404, detail="Evento no encontrado")
     
     if evento.fecha is not None:
-        evento_fecha = datetime.datetime.fromisoformat(evento.fecha.replace('Z', '+00:00'))
-        if evento_fecha < datetime.datetime.now(datetime.timezone.utc):
-            raise HTTPException(status_code=400, detail="La fecha del evento no puede ser anterior a la fecha actual")
+        evento_fecha_str = evento.fecha.replace('Z', '')
+        if '+' in evento_fecha_str:
+            evento_fecha_str = evento_fecha_str.split('+')[0]
+        evento_fecha = datetime.datetime.fromisoformat(evento_fecha_str)
+        if evento_fecha < datetime.datetime.now():
+            raise HTTPException(status_code=400, detail="La fecha ingresada no debe ser anterior a la fecha actual")
     
     updates = []
     params = []
