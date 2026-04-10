@@ -10,7 +10,6 @@ from datetime import datetime, timedelta
 import uvicorn
 import sqlite3
 import psycopg2
-from psycopg2.extras import RealDictCursor
 import bcrypt
 from jose import jwt
 import datetime
@@ -648,26 +647,19 @@ def listar_eventos(categoria: str = None, busqueda: str = None, db = Depends(get
     query = "SELECT id, nombre, descripcion, fecha, lugar, precio, capacidad, vendidos, COALESCE(imagen, '') as imagen, COALESCE(categoria, '') as categoria FROM eventos WHERE 1=1"
     params = []
     if categoria:
-        query += " AND categoria = " + ("%s" if is_postgres() else "?")
+        query += " AND categoria = %s"
         params.append(categoria)
     if busqueda:
-        query += " AND (nombre LIKE " + ("%s" if is_postgres() else "?") + " OR descripcion LIKE " + ("%s" if is_postgres() else "?") + " OR lugar LIKE " + ("%s" if is_postgres() else "?") + ")"
+        query += " AND (nombre LIKE %s OR descripcion LIKE %s OR lugar LIKE %s)"
         params.extend([f"%{busqueda}%", f"%{busqueda}%", f"%{busqueda}%"])
     query += " ORDER BY fecha"
     
-    if is_postgres():
-        rows = fetch_all(db, query, params)
-        return [
-            {"id": r["id"], "nombre": r["nombre"], "descripcion": r["descripcion"], "fecha": r["fecha"], "lugar": r["lugar"], "precio": r["precio"], "disponibles": r["capacidad"] - r["vendidos"], "imagen": r["imagen"], "categoria": r["categoria"], "capacidad": r["capacidad"], "vendidos": r["vendidos"]}
-            for r in rows
-        ]
-    else:
-        cursor = db.execute(query, params)
-        rows = cursor.fetchall()
-        return [
-            {"id": r[0], "nombre": r[1], "descripcion": r[2], "fecha": r[3], "lugar": r[4], "precio": r[5], "disponibles": r[6] - r[7], "imagen": r[8], "categoria": r[9], "capacidad": r[6], "vendidos": r[7]}
-            for r in rows
-        ]
+    cursor = db.execute(query, params)
+    rows = cursor.fetchall()
+    return [
+        {"id": r[0], "nombre": r[1], "descripcion": r[2], "fecha": r[3], "lugar": r[4], "precio": r[5], "disponibles": r[6] - r[7], "imagen": r[8], "categoria": r[9], "capacidad": r[6], "vendidos": r[7]}
+        for r in rows
+    ]
 
 @app.get("/api/eventos/categorias")
 def listar_categorias(db = Depends(get_db)):
