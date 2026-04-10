@@ -169,6 +169,17 @@ class CursorWrapper:
         self._cursor = cursor
         self._conn = conn
     
+    @property
+    def lastrowid(self):
+        cur = self._conn.cursor()
+        cur.execute("SELECT lastval()")
+        result = cur.fetchone()
+        return result[0] if result else None
+    
+    @property
+    def rowcount(self):
+        return self._cursor.rowcount
+    
     def fetchall(self):
         return self._cursor.fetchall()
     
