@@ -123,8 +123,8 @@ def get_email_template(content: str) -> str:
 def get_db():
     """Devuelve conexión a la base de datos (SQLite local o PostgreSQL Supabase)"""
     if DATABASE_URL.startswith("postgresql"):
-        # Producción: Supabase PostgreSQL
-        conn = psycopg2.connect(DATABASE_URL, cursor_factory=RealDictCursor)
+        # Producción: Supabase PostgreSQL - sin RealDictCursor para compatibilidad
+        conn = psycopg2.connect(DATABASE_URL)
         conn.autocommit = False
         try:
             yield DbWrapper(conn, is_postgres=True)
@@ -165,24 +165,19 @@ class DbWrapper:
         self._conn.commit()
 
 class CursorWrapper:
-    """Wrapper para el cursor de PostgreSQL"""
+    """Wrapper para el cursor de PostgreSQL - devuelve tuplas como SQLite"""
     def __init__(self, cursor, conn):
         self._cursor = cursor
         self._conn = conn
     
     def fetchall(self):
-        rows = self._cursor.fetchall()
-        return [dict(r) for r in rows]
+        return self._cursor.fetchall()
     
     def fetchone(self):
-        row = self._cursor.fetchone()
-        if row:
-            return dict(row)
-        return None
+        return self._cursor.fetchone()
     
     def fetchmany(self, size=5):
-        rows = self._cursor.fetchmany(size)
-        return [dict(r) for r in rows]
+        return self._cursor.fetchmany(size)
 
 # Tipos de conexión compatibles
 try:
@@ -1121,16 +1116,23 @@ def get_transferencias_pendientes(credentials: HTTPAuthorizationCredentials = De
             FROM transferencias t
             JOIN entradas e ON t.entrada_id = e.id
             JOIN eventos ev ON e.evento_id = ev.id
-            WHERE t.usuario_destino = ? AND t.estado = 'pendiente'
+            WHERE t.usuario_destino = %s AND t.estado = 'pendiente'
             ORDER BY t.created_at DESC
-        """, (user_email,))
+        """, (user_id,))
         rows = cursor.fetchall()
         print(f">>> [{request_id}] Rows found: {len(rows)}")
         
         return [
             {
-                "id": r[0], "entrada_id": r[1], "token": r[2], "estado": r[3], "fecha": r[4],
-                "codigo": r[5], "evento": r[6], "fecha_evento": r[7], "lugar": r[8]
+                "id": r['id'] if isinstance(r, dict) else r[0], 
+                "entrada_id": r['entrada_id'] if isinstance(r, dict) else r[1], 
+                "token": r['token'] if isinstance(r, dict) else r[2], 
+                "estado": r['estado'] if isinstance(r, dict) else r[3], 
+                "fecha": r['created_at'] if isinstance(r, dict) else r[4],
+                "codigo": r['preference_id'] if isinstance(r, dict) else r[5], 
+                "evento": r['nombre'] if isinstance(r, dict) else r[6], 
+                "fecha_evento": r['fecha'] if isinstance(r, dict) else r[7], 
+                "lugar": r['lugar'] if isinstance(r, dict) else r[8]
             }
             for r in rows
         ]
