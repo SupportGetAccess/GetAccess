@@ -150,13 +150,9 @@ class DbWrapper:
         return self._is_postgres
     
     def execute(self, query, params=None):
-        # Convertir ? a %s para PostgreSQL
-        if self._is_postgres and params:
+        # Convertir ? a %s para PostgreSQL siempre
+        if self._is_postgres and '?' in query:
             query = query.replace('?', '%s')
-        elif self._is_postgres and '?' in query:
-            # Query sin params - convertir todos los ?
-            parts = query.split('?')
-            query = '%s'.join(parts[:-1]) + parts[-1]
         
         if self._is_postgres:
             cur = self._conn.cursor()
@@ -239,9 +235,6 @@ def run_query(db, query, params=None):
     if db.is_postgres:
         cur = db._conn.cursor()
         cur.execute(query.replace('?', '%s') if '?' in query else query, params or [])
-        db.commit()
-    else:
-        db.execute(query, params or [])
         db.commit()
     else:
         db.execute(query, params or [])
@@ -425,7 +418,7 @@ def validar_password(password: str) -> tuple[bool, str]:
     return True, ""
 
 @app.post("/api/auth/registro", response_model=dict)
-def registro(usuario: UsuarioCreate, request: Request, db: sqlite3.Connection = Depends(get_db)):
+def registro(usuario: UsuarioCreate, request: Request, db = Depends(get_db)):
     client_id = request.client.host if request.client else "unknown"
     if not check_rate_limit(client_id):
         raise HTTPException(status_code=429, detail="Demasiadas solicitudes. Intenta más tarde.")
@@ -476,7 +469,7 @@ def registro(usuario: UsuarioCreate, request: Request, db: sqlite3.Connection = 
     }
 
 @app.post("/api/auth/login", response_model=TokenResponse)
-def login(credenciales: UsuarioLogin, request: Request, db: sqlite3.Connection = Depends(get_db)):
+def login(credenciales: UsuarioLogin, request: Request, db = Depends(get_db)):
     client_id = request.client.host if request.client else "unknown"
     if not check_rate_limit(client_id):
         raise HTTPException(status_code=429, detail="Demasiados intentos. Espera un momento.")
@@ -490,7 +483,17 @@ def login(credenciales: UsuarioLogin, request: Request, db: sqlite3.Connection =
     if not row:
         raise HTTPException(status_code=401, detail="Credenciales inválidas")
     
-    user_id, email, nombre, apellido, hashed_password, verificado, rol = row
+    # Manejar tanto dict (PostgreSQL) como tupla (SQLite)
+    if isinstance(row, dict):
+        user_id = row['id']
+        email = row['email']
+        nombre = row['nombre']
+        apellido = row['apellido']
+        hashed_password = row['password']
+        verificado = row['verificado']
+        rol = row['rol']
+    else:
+        user_id, email, nombre, apellido, hashed_password, verificado, rol = row[0], row[1], row[2], row[3], row[4], row[5], row[6]
     
     if not verificado:
         raise HTTPException(status_code=403, detail="Debes verificar tu email primero")
@@ -506,7 +509,7 @@ def login(credenciales: UsuarioLogin, request: Request, db: sqlite3.Connection =
     )
 
 @app.post("/api/auth/verificar", response_model=TokenResponse)
-def verificar_email(datos: dict, db: sqlite3.Connection = Depends(get_db)):
+def verificar_email(datos: dict, db = Depends(get_db)):
     email = datos.get("email")
     codigo = datos.get("codigo")
     
@@ -543,7 +546,7 @@ def verificar_email(datos: dict, db: sqlite3.Connection = Depends(get_db)):
     )
 
 @app.get("/api/auth/me", response_model=UsuarioResponse)
-def obtener_usuario_actual(credentials: HTTPAuthorizationCredentials = Depends(security), db: sqlite3.Connection = Depends(get_db)):
+def obtener_usuario_actual(credentials: HTTPAuthorizationCredentials = Depends(security), db = Depends(get_db)):
     token = credentials.credentials
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
@@ -571,7 +574,7 @@ class PerfilUpdate(BaseModel):
     password_nuevo: Optional[str] = None
 
 @app.put("/api/auth/perfil")
-def actualizar_perfil(datos: PerfilUpdate, credentials: HTTPAuthorizationCredentials = Depends(security), db: sqlite3.Connection = Depends(get_db)):
+def actualizar_perfil(datos: PerfilUpdate, credentials: HTTPAuthorizationCredentials = Depends(security), db = Depends(get_db)):
     token = credentials.credentials
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
@@ -672,12 +675,12 @@ def listar_eventos(categoria: str = None, busqueda: str = None, db = Depends(get
         ]
 
 @app.get("/api/eventos/categorias")
-def listar_categorias(db: sqlite3.Connection = Depends(get_db)):
+def listar_categorias(db = Depends(get_db)):
     cursor = db.execute("SELECT DISTINCT categoria FROM eventos WHERE categoria IS NOT NULL AND categoria != ''")
     return [r[0] for r in cursor.fetchall()]
 
 @app.get("/api/eventos/{evento_id}")
-def obtener_evento(evento_id: int, db: sqlite3.Connection = Depends(get_db)):
+def obtener_evento(evento_id: int, db = Depends(get_db)):
     cursor = db.execute("SELECT id, nombre, descripcion, fecha, lugar, precio, capacidad, vendidos, COALESCE(imagen, '') as imagen, COALESCE(categoria, '') as categoria FROM eventos WHERE id = ?", (evento_id,))
     row = cursor.fetchone()
     
@@ -698,7 +701,7 @@ class ImagenCreate(BaseModel):
     orden: int = 0
 
 @app.post("/api/eventos/{evento_id}/imagenes")
-def agregar_imagen(evento_id: int, imagen: ImagenCreate, credentials: HTTPAuthorizationCredentials = Depends(security), db: sqlite3.Connection = Depends(get_db)):
+def agregar_imagen(evento_id: int, imagen: ImagenCreate, credentials: HTTPAuthorizationCredentials = Depends(security), db = Depends(get_db)):
     token = credentials.credentials
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
@@ -719,7 +722,7 @@ def agregar_imagen(evento_id: int, imagen: ImagenCreate, credentials: HTTPAuthor
     return {"id": cursor.lastrowid, "url": imagen.url, "orden": imagen.orden}
 
 @app.delete("/api/eventos/{evento_id}/imagenes/{imagen_id}")
-def eliminar_imagen(evento_id: int, imagen_id: int, credentials: HTTPAuthorizationCredentials = Depends(security), db: sqlite3.Connection = Depends(get_db)):
+def eliminar_imagen(evento_id: int, imagen_id: int, credentials: HTTPAuthorizationCredentials = Depends(security), db = Depends(get_db)):
     token = credentials.credentials
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
@@ -739,7 +742,7 @@ def eliminar_imagen(evento_id: int, imagen_id: int, credentials: HTTPAuthorizati
     return {"message": "Imagen eliminada"}
 
 @app.post("/api/eventos/")
-def crear_evento(evento: EventoCreate, credentials: HTTPAuthorizationCredentials = Depends(security), db: sqlite3.Connection = Depends(get_db)):
+def crear_evento(evento: EventoCreate, credentials: HTTPAuthorizationCredentials = Depends(security), db = Depends(get_db)):
     token = credentials.credentials
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
@@ -777,7 +780,7 @@ class EventoUpdate(BaseModel):
     categoria: Optional[str] = None
 
 @app.put("/api/eventos/{evento_id}")
-def actualizar_evento(evento_id: int, evento: EventoUpdate, credentials: HTTPAuthorizationCredentials = Depends(security), db: sqlite3.Connection = Depends(get_db)):
+def actualizar_evento(evento_id: int, evento: EventoUpdate, credentials: HTTPAuthorizationCredentials = Depends(security), db = Depends(get_db)):
     token = credentials.credentials
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
@@ -844,7 +847,7 @@ def actualizar_evento(evento_id: int, evento: EventoUpdate, credentials: HTTPAut
     }
 
 @app.delete("/api/eventos/{evento_id}")
-def eliminar_evento(evento_id: int, credentials: HTTPAuthorizationCredentials = Depends(security), db: sqlite3.Connection = Depends(get_db)):
+def eliminar_evento(evento_id: int, credentials: HTTPAuthorizationCredentials = Depends(security), db = Depends(get_db)):
     token = credentials.credentials
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
@@ -881,7 +884,7 @@ class EntradaResponse(BaseModel):
     estado: str
 
 @app.get("/api/entradas/")
-def listar_entradas(credentials: HTTPAuthorizationCredentials = Depends(security), db: sqlite3.Connection = Depends(get_db)):
+def listar_entradas(credentials: HTTPAuthorizationCredentials = Depends(security), db = Depends(get_db)):
     request_id = str(random.randint(1000, 9999))
     print(f">>> [{request_id}] Entradas endpoint called")
     token = credentials.credentials
@@ -917,7 +920,7 @@ def listar_entradas(credentials: HTTPAuthorizationCredentials = Depends(security
         return []
 
 @app.get("/api/entradas/buscar")
-def buscar_entradas(q: str, db: sqlite3.Connection = Depends(get_db)):
+def buscar_entradas(q: str, db = Depends(get_db)):
     cursor = db.execute("""
         SELECT e.id, e.evento_id, e.usuario_id, e.cantidad, e.total, e.estado, e.preference_id,
                ev.nombre, ev.fecha, ev.lugar, u.email, u.nombre, u.apellido
@@ -943,7 +946,7 @@ def buscar_entradas(q: str, db: sqlite3.Connection = Depends(get_db)):
     ]
 
 @app.post("/api/entradas/")
-def crear_entrada(entrada: EntradaCreate, credentials: HTTPAuthorizationCredentials = Depends(security), db: sqlite3.Connection = Depends(get_db)):
+def crear_entrada(entrada: EntradaCreate, credentials: HTTPAuthorizationCredentials = Depends(security), db = Depends(get_db)):
     token = credentials.credentials
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
@@ -989,7 +992,7 @@ class TransferenciaRequest(BaseModel):
     email_destino: EmailStr
 
 @app.post("/api/entradas/{entrada_id}/transferir")
-def transferir_entrada(entrada_id: int, req: TransferenciaRequest, credentials: HTTPAuthorizationCredentials = Depends(security), db: sqlite3.Connection = Depends(get_db)):
+def transferir_entrada(entrada_id: int, req: TransferenciaRequest, credentials: HTTPAuthorizationCredentials = Depends(security), db = Depends(get_db)):
     token = credentials.credentials
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
@@ -1056,7 +1059,7 @@ def transferir_entrada(entrada_id: int, req: TransferenciaRequest, credentials: 
     return {"mensaje": "Transferencia iniciada. Se envió un email al destinatario.", "token": token_transferencia}
 
 @app.post("/api/entradas/aceptar-transferencia")
-def aceptar_transferencia(token: str, credentials: HTTPAuthorizationCredentials = Depends(security), db: sqlite3.Connection = Depends(get_db)):
+def aceptar_transferencia(token: str, credentials: HTTPAuthorizationCredentials = Depends(security), db = Depends(get_db)):
     token_auth = credentials.credentials
     try:
         payload = jwt.decode(token_auth, SECRET_KEY, algorithms=[ALGORITHM])
@@ -1089,7 +1092,7 @@ import time
 import random
 
 @app.get("/api/transferencias/pendientes")
-def get_transferencias_pendientes(credentials: HTTPAuthorizationCredentials = Depends(security), db: sqlite3.Connection = Depends(get_db)):
+def get_transferencias_pendientes(credentials: HTTPAuthorizationCredentials = Depends(security), db = Depends(get_db)):
     request_id = str(random.randint(1000, 9999))
     print(f">>> [{request_id}] Transferencias endpoint called")
     token = credentials.credentials
@@ -1136,7 +1139,7 @@ def get_transferencias_pendientes(credentials: HTTPAuthorizationCredentials = De
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/api/entradas/{entrada_id}/transferencias")
-def get_transferencias(entrada_id: int, credentials: HTTPAuthorizationCredentials = Depends(security), db: sqlite3.Connection = Depends(get_db)):
+def get_transferencias(entrada_id: int, credentials: HTTPAuthorizationCredentials = Depends(security), db = Depends(get_db)):
     token = credentials.credentials
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
@@ -1163,7 +1166,7 @@ def get_transferencias(entrada_id: int, credentials: HTTPAuthorizationCredential
 MERCADO_PAGO_ACCESS_TOKEN = os.environ.get("MERCADO_PAGO_ACCESS_TOKEN", "APP_USR-2888302331727804-031609-eb4c51fc6c1654d701d4a5f3b24fbcd7-1921694")
 
 @app.post("/api/pagos/webhook")
-async def webhook_mercadopago(request: Request, db: sqlite3.Connection = Depends(get_db)):
+async def webhook_mercadopago(request: Request, db = Depends(get_db)):
     try:
         client_ip = request.client.host if request.client else "unknown"
         body_json = await request.json()
@@ -1265,7 +1268,7 @@ def enviar_ticket_email(email, nombre, apellido, evento_nombre, fecha, lugar, ca
         print(f">>> ERROR ENVIANDO EMAIL: {e}")
 
 @app.post("/api/pagos/carrito")
-def crear_preferencia_carrito(datos: dict, credentials: HTTPAuthorizationCredentials = Depends(security), db: sqlite3.Connection = Depends(get_db)):
+def crear_preferencia_carrito(datos: dict, credentials: HTTPAuthorizationCredentials = Depends(security), db = Depends(get_db)):
     entrada_ids = datos.get("entrada_ids", [])
     
     if not entrada_ids:
@@ -1325,7 +1328,7 @@ def crear_preferencia_carrito(datos: dict, credentials: HTTPAuthorizationCredent
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/api/pagos/crear-preferencia")
-def crear_preferencia_pago(datos: dict, credentials: HTTPAuthorizationCredentials = Depends(security), db: sqlite3.Connection = Depends(get_db)):
+def crear_preferencia_pago(datos: dict, credentials: HTTPAuthorizationCredentials = Depends(security), db = Depends(get_db)):
     entrada_id = datos.get("entrada_id")
     
     cursor = db.execute("""
@@ -1380,7 +1383,7 @@ def generar_token_reset():
     return ''.join(random.choices(string.ascii_letters + string.digits, k=64))
 
 @app.post("/api/auth/recuperar")
-def recuperar_password(datos: dict, request: Request, db: sqlite3.Connection = Depends(get_db)):
+def recuperar_password(datos: dict, request: Request, db = Depends(get_db)):
     client_id = request.client.host if request.client else "unknown"
     if not check_rate_limit(client_id):
         raise HTTPException(status_code=429, detail="Demasiadas solicitudes. Intenta más tarde.")
@@ -1440,7 +1443,7 @@ def recuperar_password(datos: dict, request: Request, db: sqlite3.Connection = D
     return {"message": "Si el email existe, recibirás un enlace de recuperación"}
 
 @app.post("/api/auth/restablecer")
-def restablecer_password(datos: dict, db: sqlite3.Connection = Depends(get_db)):
+def restablecer_password(datos: dict, db = Depends(get_db)):
     token = datos.get("token")
     nueva_password = datos.get("nueva_password")
     
@@ -1477,7 +1480,7 @@ def restablecer_password(datos: dict, db: sqlite3.Connection = Depends(get_db)):
 ADMIN_SECRET = "access_on_admin_secret_2026"
 
 @app.post("/api/admin/hacer-admin")
-def hacer_admin(datos: dict, db: sqlite3.Connection = Depends(get_db)):
+def hacer_admin(datos: dict, db = Depends(get_db)):
     secret = datos.get("secret")
     email = datos.get("email")
     
@@ -1503,7 +1506,7 @@ class ValidarEntradaRequest(BaseModel):
     evento_id: Optional[int] = None
 
 @app.post("/api/validar-entrada")
-def validar_entrada(datos: ValidarEntradaRequest, credentials: HTTPAuthorizationCredentials = Depends(security), db: sqlite3.Connection = Depends(get_db)):
+def validar_entrada(datos: ValidarEntradaRequest, credentials: HTTPAuthorizationCredentials = Depends(security), db = Depends(get_db)):
     token = credentials.credentials
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
@@ -1587,7 +1590,7 @@ def validar_entrada(datos: ValidarEntradaRequest, credentials: HTTPAuthorization
     }
 
 @app.get("/api/validar/{codigo}")
-def consultar_entrada(codigo: str, db: sqlite3.Connection = Depends(get_db)):
+def consultar_entrada(codigo: str, db = Depends(get_db)):
     parts = codigo.split("-")
     
     if len(parts) != 3 or parts[0] != "GA":
@@ -1632,7 +1635,7 @@ def consultar_entrada(codigo: str, db: sqlite3.Connection = Depends(get_db)):
     }
 
 @app.get("/api/eventos/{evento_id}/estadisticas")
-def estadisticas_evento(evento_id: int, db: sqlite3.Connection = Depends(get_db)):
+def estadisticas_evento(evento_id: int, db = Depends(get_db)):
     cursor = db.execute("SELECT id, nombre FROM eventos WHERE id = ?", (evento_id,))
     evento = cursor.fetchone()
     
@@ -1668,7 +1671,7 @@ def estadisticas_evento(evento_id: int, db: sqlite3.Connection = Depends(get_db)
     }
 
 @app.get("/api/validaciones/historial")
-def historial_validaciones(evento_id: int = None, db: sqlite3.Connection = Depends(get_db)):
+def historial_validaciones(evento_id: int = None, db = Depends(get_db)):
     from datetime import datetime, timedelta
     
     fecha_limite = (datetime.now() - timedelta(days=7)).strftime('%Y-%m-%d %H:%M:%S')
@@ -1706,7 +1709,7 @@ def historial_validaciones(evento_id: int = None, db: sqlite3.Connection = Depen
     ]
 
 @app.get("/api/eventos/{evento_id}/codigos-validos")
-def get_codigos_validos(evento_id: int, credentials: HTTPAuthorizationCredentials = Depends(security), db: sqlite3.Connection = Depends(get_db)):
+def get_codigos_validos(evento_id: int, credentials: HTTPAuthorizationCredentials = Depends(security), db = Depends(get_db)):
     try:
         payload = jwt.decode(credentials.credentials, SECRET_KEY, algorithms=[ALGORITHM])
         user_id = int(payload.get("sub"))
@@ -1732,7 +1735,7 @@ def get_codigos_validos(evento_id: int, credentials: HTTPAuthorizationCredential
 
 # === ANALYTICS ===
 @app.get("/api/analytics/{tipo}")
-def get_analytics_general(tipo: str, credentials: HTTPAuthorizationCredentials = Depends(security), db: sqlite3.Connection = Depends(get_db)):
+def get_analytics_general(tipo: str, credentials: HTTPAuthorizationCredentials = Depends(security), db = Depends(get_db)):
     try:
         payload = jwt.decode(credentials.credentials, SECRET_KEY, algorithms=[ALGORITHM])
         user_id = int(payload.get("sub"))
@@ -1806,7 +1809,7 @@ def get_analytics_general(tipo: str, credentials: HTTPAuthorizationCredentials =
     }
 
 @app.get("/api/analytics/evento/{evento_id}")
-def get_analytics_evento(evento_id: int, credentials: HTTPAuthorizationCredentials = Depends(security), db: sqlite3.Connection = Depends(get_db)):
+def get_analytics_evento(evento_id: int, credentials: HTTPAuthorizationCredentials = Depends(security), db = Depends(get_db)):
     try:
         payload = jwt.decode(credentials.credentials, SECRET_KEY, algorithms=[ALGORITHM])
         user_id = int(payload.get("sub"))
@@ -1865,7 +1868,7 @@ def generar_qr_base64(codigo: str) -> str:
     return base64.b64encode(buffer.getvalue()).decode()
 
 @app.post("/api/email/enviar-ticket")
-def enviar_ticket(entrada_id: int, credentials: HTTPAuthorizationCredentials = Depends(security), db: sqlite3.Connection = Depends(get_db)):
+def enviar_ticket(entrada_id: int, credentials: HTTPAuthorizationCredentials = Depends(security), db = Depends(get_db)):
     token = credentials.credentials
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
@@ -1980,7 +1983,7 @@ def enviar_ticket(entrada_id: int, credentials: HTTPAuthorizationCredentials = D
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/api/email/reenviar-ticket")
-def reenviar_ticket_sin_auth(entrada_id: int, email: str, db: sqlite3.Connection = Depends(get_db)):
+def reenviar_ticket_sin_auth(entrada_id: int, email: str, db = Depends(get_db)):
     cursor = db.execute("""
         SELECT e.id, e.cantidad, e.total, e.estado, ev.nombre, ev.fecha, ev.lugar, u.email, u.nombre, u.apellido
         FROM entradas e
