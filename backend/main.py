@@ -677,7 +677,9 @@ def listar_eventos(categoria: str = None, busqueda: str = None, db = Depends(get
 @app.get("/api/eventos/categorias")
 def listar_categorias(db = Depends(get_db)):
     cursor = db.execute("SELECT DISTINCT categoria FROM eventos WHERE categoria IS NOT NULL AND categoria != ''")
-    return [r[0] for r in cursor.fetchall()]
+    rows = cursor.fetchall()
+    # rows puede ser dict (PostgreSQL) o tuple (SQLite)
+    return [r['categoria'] if isinstance(r, dict) else r[0] for r in rows]
 
 @app.get("/api/eventos/{evento_id}")
 def obtener_evento(evento_id: int, db = Depends(get_db)):
