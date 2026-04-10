@@ -1,11 +1,11 @@
 # Notas del Proyecto Get Access
 
-## 📌 PROYECTO PRIORITARIO ACTUAL: Base de datos persistente
+## 📌 PROYECTO PRIORITARIO ACTUAL: ✅ COMPLETADO - Base de datos persistente
 
-### Problema actual
-- Render tiene sistema de archivos efímero
-- Cada deploy elimina la base de datos SQLite (access_on.db)
-- Los eventos y compras se pierden al hacer deploy
+### Solución implementada
+- **Migración a Supabase PostgreSQL** completada
+- Los datos ahora persisten entre deploys
+- Conexión: postgresql://postgres.xgwbcepopluehupublkz:*@aws-1-sa-east-1.pooler.supabase.com:5432/postgres
 
 ### Estado de funcionalidades implementadas
 - ✅ Carrito de compras con MercadoPago
@@ -13,15 +13,15 @@
 - ✅ Código único por entrada (GA-XXXXXX)
 - ✅ QR en email de entrada
 - ✅ Botón Carrito solo visible para usuarios logueados
+- ✅ Base de datos persistente (Supabase PostgreSQL)
 
-### Próximos pasos para mañana
-1. Configurar base de datos externa (Supabase PostgreSQL)
-2. Migrar de SQLite a PostgreSQL
-3. Actualizar backend para conectar a Supabase
+### Estado actual
+- ✅ Deploy en producción funcionando con Supabase
+- ✅ Los eventos y datos se mantendrán después de cada deploy
 
 ---
 
-## Fecha Última Actualización: Jueves 9 de Abril de 2026 - 21:30 hs
+## Fecha Última Actualización: Viernes 10 de Abril de 2026 - 18:30 hs
 
 ---
 

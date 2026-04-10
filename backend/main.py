@@ -125,8 +125,9 @@ def get_db():
     if DATABASE_URL.startswith("postgresql"):
         # Producción: Supabase PostgreSQL
         conn = psycopg2.connect(DATABASE_URL, cursor_factory=RealDictCursor)
+        conn.autocommit = False
         try:
-            yield conn
+            yield DbWrapper(conn, is_postgres=True)
         finally:
             conn.close()
     else:
@@ -134,9 +135,58 @@ def get_db():
         conn = sqlite3.connect(DATABASE_URL, check_same_thread=False)
         conn.row_factory = sqlite3.Row
         try:
-            yield conn
+            yield DbWrapper(conn, is_postgres=False)
         finally:
             conn.close()
+
+class DbWrapper:
+    """Wrapper para compatibilidad entre SQLite y PostgreSQL"""
+    def __init__(self, conn, is_postgres=False):
+        self._conn = conn
+        self._is_postgres = is_postgres
+    
+    @property
+    def is_postgres(self):
+        return self._is_postgres
+    
+    def execute(self, query, params=None):
+        # Convertir ? a %s para PostgreSQL
+        if self._is_postgres and params:
+            query = query.replace('?', '%s')
+        elif self._is_postgres and '?' in query:
+            # Query sin params - convertir todos los ?
+            parts = query.split('?')
+            query = '%s'.join(parts[:-1]) + parts[-1]
+        
+        if self._is_postgres:
+            cur = self._conn.cursor()
+            cur.execute(query, params or [])
+            return CursorWrapper(cur, self._conn)
+        else:
+            return self._conn.execute(query, params or [])
+    
+    def commit(self):
+        self._conn.commit()
+
+class CursorWrapper:
+    """Wrapper para el cursor de PostgreSQL"""
+    def __init__(self, cursor, conn):
+        self._cursor = cursor
+        self._conn = conn
+    
+    def fetchall(self):
+        rows = self._cursor.fetchall()
+        return [dict(r) for r in rows]
+    
+    def fetchone(self):
+        row = self._cursor.fetchone()
+        if row:
+            return dict(row)
+        return None
+    
+    def fetchmany(self, size=5):
+        rows = self._cursor.fetchmany(size)
+        return [dict(r) for r in rows]
 
 # Tipos de conexión compatibles
 try:
@@ -154,19 +204,19 @@ def is_postgres():
     return DATABASE_URL.startswith("postgresql")
 
 def execute_query(db, query, params=None):
-    """Ejecuta query de forma兼容 con SQLite y PostgreSQL"""
-    if is_postgres():
-        cur = db.cursor()
-        cur.execute(query, params or [])
+    """Ejecuta query de forma compatible con SQLite y PostgreSQL"""
+    if db.is_postgres:
+        cur = db._conn.cursor()
+        cur.execute(query.replace('?', '%s') if '?' in query else query, params or [])
         return cur
     else:
         return db.execute(query, params or [])
 
 def fetch_all(db, query, params=None):
     """Fetch all rows compatible with both SQLite and PostgreSQL"""
-    if is_postgres():
-        cur = db.cursor()
-        cur.execute(query, params or [])
+    if db.is_postgres:
+        cur = db._conn.cursor()
+        cur.execute(query.replace('?', '%s') if '?' in query else query, params or [])
         rows = cur.fetchall()
         return [dict(r) for r in rows]
     else:
@@ -174,22 +224,41 @@ def fetch_all(db, query, params=None):
         return cursor.fetchall()
 
 def fetch_one(db, query, params=None):
-    """Fetch one row compatible with both SQLite and PostgreSQL"""
-    if is_postgres():
-        cur = db.cursor()
-        cur.execute(query, params or [])
+    """Fetch one row compatible with both SQLite y PostgreSQL"""
+    if db.is_postgres:
+        cur = db._conn.cursor()
+        cur.execute(query.replace('?', '%s') if '?' in query else query, params or [])
         row = cur.fetchone()
         return dict(row) if row else None
     else:
         cursor = db.execute(query, params or [])
         return cursor.fetchone()
 
+def run_query(db, query, params=None):
+    """Ejecuta query sin return (INSERT, UPDATE, DELETE)"""
+    if db.is_postgres:
+        cur = db._conn.cursor()
+        cur.execute(query.replace('?', '%s') if '?' in query else query, params or [])
+        db.commit()
+    else:
+        db.execute(query, params or [])
+        db.commit()
+    else:
+        db.execute(query, params or [])
+        db.commit()
+
 def last_row_id(db):
     """Get last inserted ID"""
-    if is_postgres():
-        return db.cursor().fetchone()[0] if hasattr(db, 'cursor') else None
+    if db.is_postgres:
+        cur = db._conn.cursor()
+        cur.execute("SELECT lastval()")
+        result = cur.fetchone()
+        return result[0] if result else None
     else:
-        return db.execute("SELECT last_insert_rowid()").fetchone()[0]
+        return db._conn.execute("SELECT last_insert_rowid()").fetchone()[0]
+
+# Acceso directo a execute para compatibilidad
+# Pero vamos a usarlo solo con las funciones helper
 
 def hash_password(password: str) -> str:
     return bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
