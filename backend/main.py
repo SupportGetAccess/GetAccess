@@ -9,6 +9,8 @@ from collections import defaultdict
 from datetime import datetime, timedelta
 import uvicorn
 import sqlite3
+import psycopg2
+from psycopg2.extras import RealDictCursor
 import bcrypt
 from jose import jwt
 import datetime
@@ -119,12 +121,75 @@ def get_email_template(content: str) -> str:
 </html>"""
 
 def get_db():
-    conn = sqlite3.connect(DATABASE_URL, check_same_thread=False)
-    conn.row_factory = sqlite3.Row
-    try:
-        yield conn
-    finally:
-        conn.close()
+    """Devuelve conexión a la base de datos (SQLite local o PostgreSQL Supabase)"""
+    if DATABASE_URL.startswith("postgresql"):
+        # Producción: Supabase PostgreSQL
+        conn = psycopg2.connect(DATABASE_URL, cursor_factory=RealDictCursor)
+        try:
+            yield conn
+        finally:
+            conn.close()
+    else:
+        # Desarrollo: SQLite local
+        conn = sqlite3.connect(DATABASE_URL, check_same_thread=False)
+        conn.row_factory = sqlite3.Row
+        try:
+            yield conn
+        finally:
+            conn.close()
+
+# Tipos de conexión compatibles
+try:
+    from sqlite3 import Connection as SqliteConnection
+except:
+    SqliteConnection = object
+
+try:
+    import psycopg2
+    from psycopg2.extensions import connection as PsycopgConnection
+except:
+    PsycopgConnection = object
+
+def is_postgres():
+    return DATABASE_URL.startswith("postgresql")
+
+def execute_query(db, query, params=None):
+    """Ejecuta query de forma兼容 con SQLite y PostgreSQL"""
+    if is_postgres():
+        cur = db.cursor()
+        cur.execute(query, params or [])
+        return cur
+    else:
+        return db.execute(query, params or [])
+
+def fetch_all(db, query, params=None):
+    """Fetch all rows compatible with both SQLite and PostgreSQL"""
+    if is_postgres():
+        cur = db.cursor()
+        cur.execute(query, params or [])
+        rows = cur.fetchall()
+        return [dict(r) for r in rows]
+    else:
+        cursor = db.execute(query, params or [])
+        return cursor.fetchall()
+
+def fetch_one(db, query, params=None):
+    """Fetch one row compatible with both SQLite and PostgreSQL"""
+    if is_postgres():
+        cur = db.cursor()
+        cur.execute(query, params or [])
+        row = cur.fetchone()
+        return dict(row) if row else None
+    else:
+        cursor = db.execute(query, params or [])
+        return cursor.fetchone()
+
+def last_row_id(db):
+    """Get last inserted ID"""
+    if is_postgres():
+        return db.cursor().fetchone()[0] if hasattr(db, 'cursor') else None
+    else:
+        return db.execute("SELECT last_insert_rowid()").fetchone()[0]
 
 def hash_password(password: str) -> str:
     return bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
@@ -512,23 +577,30 @@ class EventoResponse(BaseModel):
     disponibles: int
 
 @app.get("/api/eventos/")
-def listar_eventos(categoria: str = None, busqueda: str = None, db: sqlite3.Connection = Depends(get_db)):
+def listar_eventos(categoria: str = None, busqueda: str = None, db = Depends(get_db)):
     query = "SELECT id, nombre, descripcion, fecha, lugar, precio, capacidad, vendidos, COALESCE(imagen, '') as imagen, COALESCE(categoria, '') as categoria FROM eventos WHERE 1=1"
     params = []
     if categoria:
-        query += " AND categoria = ?"
+        query += " AND categoria = " + ("%s" if is_postgres() else "?")
         params.append(categoria)
     if busqueda:
-        query += " AND (nombre LIKE ? OR descripcion LIKE ? OR lugar LIKE ?)"
+        query += " AND (nombre LIKE " + ("%s" if is_postgres() else "?") + " OR descripcion LIKE " + ("%s" if is_postgres() else "?") + " OR lugar LIKE " + ("%s" if is_postgres() else "?") + ")"
         params.extend([f"%{busqueda}%", f"%{busqueda}%", f"%{busqueda}%"])
     query += " ORDER BY fecha"
-    cursor = db.execute(query, params)
-    rows = cursor.fetchall()
-    print(f">>> LISTAR EVENTOS: {len(rows)} eventos encontrados")
-    return [
-        {"id": r[0], "nombre": r[1], "descripcion": r[2], "fecha": r[3], "lugar": r[4], "precio": r[5], "disponibles": r[6] - r[7], "imagen": r[8], "categoria": r[9], "capacidad": r[6], "vendidos": r[7]}
-        for r in rows
-    ]
+    
+    if is_postgres():
+        rows = fetch_all(db, query, params)
+        return [
+            {"id": r["id"], "nombre": r["nombre"], "descripcion": r["descripcion"], "fecha": r["fecha"], "lugar": r["lugar"], "precio": r["precio"], "disponibles": r["capacidad"] - r["vendidos"], "imagen": r["imagen"], "categoria": r["categoria"], "capacidad": r["capacidad"], "vendidos": r["vendidos"]}
+            for r in rows
+        ]
+    else:
+        cursor = db.execute(query, params)
+        rows = cursor.fetchall()
+        return [
+            {"id": r[0], "nombre": r[1], "descripcion": r[2], "fecha": r[3], "lugar": r[4], "precio": r[5], "disponibles": r[6] - r[7], "imagen": r[8], "categoria": r[9], "capacidad": r[6], "vendidos": r[7]}
+            for r in rows
+        ]
 
 @app.get("/api/eventos/categorias")
 def listar_categorias(db: sqlite3.Connection = Depends(get_db)):
@@ -1964,113 +2036,237 @@ def reenviar_ticket_sin_auth(entrada_id: int, email: str, db: sqlite3.Connection
 
 if __name__ == "__main__":
     # Initialize database
-    conn = sqlite3.connect(DATABASE_URL)
-    conn.execute("""
-        CREATE TABLE IF NOT EXISTS usuarios (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            email TEXT UNIQUE NOT NULL,
-            nombre TEXT NOT NULL,
-            apellido TEXT NOT NULL,
-            password TEXT NOT NULL,
-            verificado INTEGER DEFAULT 0,
-            codigo_verificacion TEXT
-        )
-    """)
-    conn.execute("""
-        CREATE TABLE IF NOT EXISTS eventos (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            nombre TEXT NOT NULL,
-            descripcion TEXT,
-            fecha TEXT,
-            lugar TEXT,
-            precio REAL,
-            capacidad INTEGER DEFAULT 100,
-            vendidos INTEGER DEFAULT 0,
-            imagen TEXT,
-            categoria TEXT
-        )
-    """)
-    conn.execute("""
-        CREATE TABLE IF NOT EXISTS evento_imagenes (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            evento_id INTEGER NOT NULL,
-            url TEXT NOT NULL,
-            orden INTEGER DEFAULT 0,
-            created_at TEXT DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY (evento_id) REFERENCES eventos(id) ON DELETE CASCADE
-        )
-    """)
-    conn.execute("""
-        CREATE TABLE IF NOT EXISTS validaciones (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            entrada_id INTEGER NOT NULL,
-            scanner_id INTEGER NOT NULL,
-            cantidad_original INTEGER,
-            timestamp TEXT DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY (entrada_id) REFERENCES entradas(id),
-            FOREIGN KEY (scanner_id) REFERENCES usuarios(id)
-        )
-    """)
-    conn.commit()
-    
-    cursor = conn.execute("PRAGMA table_info(entradas)")
-    columns = [col[1] for col in cursor.fetchall()]
-    if 'usada' not in columns:
-        conn.execute("ALTER TABLE entradas ADD COLUMN usada INTEGER DEFAULT 0")
-        conn.commit()
-    
-    cursor = conn.execute("PRAGMA table_info(usuarios)")
-    columns = [col[1] for col in cursor.fetchall()]
-    if 'rol' not in columns:
-        conn.execute("ALTER TABLE usuarios ADD COLUMN rol TEXT DEFAULT 'usuario'")
-        conn.commit()
-    
-    cursor = conn.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='transferencias'")
-    if not cursor.fetchone():
-        conn.execute("""
-            CREATE TABLE transferencias (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
+    if DATABASE_URL.startswith("postgresql"):
+        # PostgreSQL - Supabase
+        conn = psycopg2.connect(DATABASE_URL)
+        cur = conn.cursor()
+        
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS usuarios (
+                id SERIAL PRIMARY KEY,
+                email TEXT UNIQUE NOT NULL,
+                nombre TEXT NOT NULL,
+                apellido TEXT NOT NULL,
+                password TEXT NOT NULL,
+                verificado INTEGER DEFAULT 0,
+                codigo_verificacion TEXT,
+                rol TEXT DEFAULT 'usuario'
+            )
+        """)
+        
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS eventos (
+                id SERIAL PRIMARY KEY,
+                nombre TEXT NOT NULL,
+                descripcion TEXT,
+                fecha TEXT,
+                lugar TEXT,
+                precio REAL,
+                capacidad INTEGER DEFAULT 100,
+                vendidos INTEGER DEFAULT 0,
+                imagen TEXT,
+                categoria TEXT
+            )
+        """)
+        
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS evento_imagenes (
+                id SERIAL PRIMARY KEY,
+                evento_id INTEGER NOT NULL,
+                url TEXT NOT NULL,
+                orden INTEGER DEFAULT 0,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (evento_id) REFERENCES eventos(id) ON DELETE CASCADE
+            )
+        """)
+        
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS entradas (
+                id SERIAL PRIMARY KEY,
+                evento_id INTEGER NOT NULL,
+                usuario_id INTEGER NOT NULL,
+                cantidad INTEGER NOT NULL,
+                total REAL NOT NULL,
+                estado TEXT DEFAULT 'comprada',
+                preference_id TEXT,
+                payment_id TEXT,
+                creada_en TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                usada INTEGER DEFAULT 0,
+                transferida INTEGER DEFAULT 0,
+                FOREIGN KEY (evento_id) REFERENCES eventos(id),
+                FOREIGN KEY (usuario_id) REFERENCES usuarios(id)
+            )
+        """)
+        
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS validaciones (
+                id SERIAL PRIMARY KEY,
+                entrada_id INTEGER NOT NULL,
+                scanner_id INTEGER NOT NULL,
+                cantidad_original INTEGER,
+                timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (entrada_id) REFERENCES entradas(id),
+                FOREIGN KEY (scanner_id) REFERENCES usuarios(id)
+            )
+        """)
+        
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS transferencias (
+                id SERIAL PRIMARY KEY,
                 entrada_id INTEGER NOT NULL,
                 usuario_origen INTEGER NOT NULL,
                 usuario_destino INTEGER NOT NULL,
                 token TEXT UNIQUE NOT NULL,
                 estado TEXT DEFAULT 'pendiente',
-                created_at TEXT DEFAULT CURRENT_TIMESTAMP,
-                accepted_at TEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                accepted_at TIMESTAMP,
                 FOREIGN KEY (entrada_id) REFERENCES entradas(id),
                 FOREIGN KEY (usuario_origen) REFERENCES usuarios(id),
                 FOREIGN KEY (usuario_destino) REFERENCES usuarios(id)
             )
         """)
+        
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS password_reset (
+                id SERIAL PRIMARY KEY,
+                email TEXT NOT NULL,
+                token TEXT UNIQUE NOT NULL,
+                usado INTEGER DEFAULT 0,
+                expires_at TIMESTAMP NOT NULL
+            )
+        """)
+        
         conn.commit()
-    
-    # Check if eventos table has categoria column
-    cursor = conn.execute("PRAGMA table_info(eventos)")
-    columns = [col[1] for col in cursor.fetchall()]
-    if 'categoria' not in columns:
-        conn.execute("ALTER TABLE eventos ADD COLUMN categoria TEXT")
+        
+        # Seed eventos if empty
+        cur.execute("SELECT COUNT(*) FROM eventos")
+        if cur.fetchone()[0] == 0:
+            eventos_seed = [
+                ("Coldplay - Music of the Spheres", "Gira mundial con producción spectacular. Ponte en órbita con Chris Martin y la banda.", "2026-06-15", "Estadio River Plate, Buenos Aires", 45000, 50000, 5000, DEFAULT_EVENT_IMAGES[0], "musica"),
+                ("Flamenco en Buenos Aires", "Una noche mágica con los mejores artistas del flamenco español.", "2026-04-20", "Teatro Colón, Buenos Aires", 8500, 800, 150, DEFAULT_EVENT_IMAGES[1], "teatro"),
+                ("Superclásico Boca vs River", "El partido más apasionante del fútbol mundial. No te lo pierdas!", "2026-05-10", "La Bombonera, Buenos Aires", 12000, 49000, 45000, DEFAULT_EVENT_IMAGES[2], "deportes"),
+                ("Show de Stand Up - Fabian Pamberino", "El comediante más gracioso del país presenta su nuevo show.", "2026-04-05", "Teatro Metropolitan, Buenos Aires", 3500, 500, 200, DEFAULT_EVENT_IMAGES[3], "comedia"),
+                ("Festival Electrónico 2026", "3 escenarios, 20 DJs internacionales, 12 horas de música continua.", "2026-07-20", "Rural Palermo, Buenos Aires", 8000, 15000, 8000, DEFAULT_EVENT_IMAGES[4], "musica"),
+                ("Cirque du Soleil - O", "El espectáculo acuático más impresionante del mundo.", "2026-05-25", "Estadio GEBA, Buenos Aires", 12000, 3000, 1200, DEFAULT_EVENT_IMAGES[5], "espectaculo"),
+                ("Conferencia Tech Summit 2026", "Los líderes tecnológicos del mundo comparten el futuro de la IA.", "2026-08-10", "Centro de Convenciones, Buenos Aires", 25000, 2000, 500, DEFAULT_EVENT_IMAGES[6], "conferencia"),
+                ("Roger Waters - This Is Not A Drill", "El legendario líder de Pink Floyd presenta su gira de regreso.", "2026-09-15", "Estadio Monumental, Buenos Aires", 38000, 65000, 60000, DEFAULT_EVENT_IMAGES[7], "musica"),
+            ]
+            cur.executemany(
+                "INSERT INTO eventos (nombre, descripcion, fecha, lugar, precio, capacidad, vendidos, imagen, categoria) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)",
+                eventos_seed
+            )
+            conn.commit()
+            print(">>> Eventos de prueba creados en PostgreSQL")
+        
+        cur.close()
+        conn.close()
+    else:
+        # SQLite - Desarrollo local
+        conn = sqlite3.connect(DATABASE_URL)
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS usuarios (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                email TEXT UNIQUE NOT NULL,
+                nombre TEXT NOT NULL,
+                apellido TEXT NOT NULL,
+                password TEXT NOT NULL,
+                verificado INTEGER DEFAULT 0,
+                codigo_verificacion TEXT
+            )
+        """)
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS eventos (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                nombre TEXT NOT NULL,
+                descripcion TEXT,
+                fecha TEXT,
+                lugar TEXT,
+                precio REAL,
+                capacidad INTEGER DEFAULT 100,
+                vendidos INTEGER DEFAULT 0,
+                imagen TEXT,
+                categoria TEXT
+            )
+        """)
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS evento_imagenes (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                evento_id INTEGER NOT NULL,
+                url TEXT NOT NULL,
+                orden INTEGER DEFAULT 0,
+                created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (evento_id) REFERENCES eventos(id) ON DELETE CASCADE
+            )
+        """)
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS validaciones (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                entrada_id INTEGER NOT NULL,
+                scanner_id INTEGER NOT NULL,
+                cantidad_original INTEGER,
+                timestamp TEXT DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (entrada_id) REFERENCES entradas(id),
+                FOREIGN KEY (scanner_id) REFERENCES usuarios(id)
+            )
+        """)
         conn.commit()
-    
-    # Seed eventos if empty
-    cursor = conn.execute("SELECT COUNT(*) FROM eventos")
-    if cursor.fetchone()[0] == 0:
-        eventos_seed = [
-            ("Coldplay - Music of the Spheres", "Gira mundial con producción spectacular. Ponte en órbita con Chris Martin y la banda.", "2026-06-15", "Estadio River Plate, Buenos Aires", 45000, 50000, 5000, DEFAULT_EVENT_IMAGES[0], "musica"),
-            ("Flamenco en Buenos Aires", "Una noche mágica con los mejores artistas del flamenco español.", "2026-04-20", "Teatro Colón, Buenos Aires", 8500, 800, 150, DEFAULT_EVENT_IMAGES[1], "teatro"),
-            ("Superclásico Boca vs River", "El partido más apasionante del fútbol mundial. No te lo pierdas!", "2026-05-10", "La Bombonera, Buenos Aires", 12000, 49000, 45000, DEFAULT_EVENT_IMAGES[2], "deportes"),
-            ("Show de Stand Up - Fabian Pamberino", "El comediante más gracioso del país presenta su nuevo show.", "2026-04-05", "Teatro Metropolitan, Buenos Aires", 3500, 500, 200, DEFAULT_EVENT_IMAGES[3], "comedia"),
-            ("Festival Electrónico 2026", "3 escenarios, 20 DJs internacionales, 12 horas de música continua.", "2026-07-20", "Rural Palermo, Buenos Aires", 8000, 15000, 8000, DEFAULT_EVENT_IMAGES[4], "musica"),
-            ("Cirque du Soleil - O", "El espectáculo acuático más impresionante del mundo.", "2026-05-25", "Estadio GEBA, Buenos Aires", 12000, 3000, 1200, DEFAULT_EVENT_IMAGES[5], "espectaculo"),
-            ("Conferencia Tech Summit 2026", "Los líderes tecnológicos del mundo comparten el futuro de la IA.", "2026-08-10", "Centro de Convenciones, Buenos Aires", 25000, 2000, 500, DEFAULT_EVENT_IMAGES[6], "conferencia"),
-            ("Roger Waters - This Is Not A Drill", "El legendario líder de Pink Floyd presenta su gira de regreso.", "2026-09-15", "Estadio Monumental, Buenos Aires", 38000, 65000, 60000, DEFAULT_EVENT_IMAGES[7], "musica"),
-        ]
-        conn.executemany(
-            "INSERT INTO eventos (nombre, descripcion, fecha, lugar, precio, capacidad, vendidos, imagen, categoria) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
-            eventos_seed
-        )
-        conn.commit()
-        print(">>> Eventos de prueba creados")
-    
-    conn.close()
+        
+        cursor = conn.execute("PRAGMA table_info(entradas)")
+        columns = [col[1] for col in cursor.fetchall()]
+        if 'usada' not in columns:
+            conn.execute("ALTER TABLE entradas ADD COLUMN usada INTEGER DEFAULT 0")
+            conn.commit()
+        
+        cursor = conn.execute("PRAGMA table_info(usuarios)")
+        columns = [col[1] for col in cursor.fetchall()]
+        if 'rol' not in columns:
+            conn.execute("ALTER TABLE usuarios ADD COLUMN rol TEXT DEFAULT 'usuario'")
+            conn.commit()
+        
+        cursor = conn.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='transferencias'")
+        if not cursor.fetchone():
+            conn.execute("""
+                CREATE TABLE transferencias (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    entrada_id INTEGER NOT NULL,
+                    usuario_origen INTEGER NOT NULL,
+                    usuario_destino INTEGER NOT NULL,
+                    token TEXT UNIQUE NOT NULL,
+                    estado TEXT DEFAULT 'pendiente',
+                    created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+                    accepted_at TEXT,
+                    FOREIGN KEY (entrada_id) REFERENCES entradas(id),
+                    FOREIGN KEY (usuario_origen) REFERENCES usuarios(id),
+                    FOREIGN KEY (usuario_destino) REFERENCES usuarios(id)
+                )
+            """)
+            conn.commit()
+        
+        cursor = conn.execute("PRAGMA table_info(eventos)")
+        columns = [col[1] for col in cursor.fetchall()]
+        if 'categoria' not in columns:
+            conn.execute("ALTER TABLE eventos ADD COLUMN categoria TEXT")
+            conn.commit()
+        
+        cursor = conn.execute("SELECT COUNT(*) FROM eventos")
+        if cursor.fetchone()[0] == 0:
+            eventos_seed = [
+                ("Coldplay - Music of the Spheres", "Gira mundial con producción spectacular. Ponte en órbita con Chris Martin y la banda.", "2026-06-15", "Estadio River Plate, Buenos Aires", 45000, 50000, 5000, DEFAULT_EVENT_IMAGES[0], "musica"),
+                ("Flamenco en Buenos Aires", "Una noche mágica con los mejores artistas del flamenco español.", "2026-04-20", "Teatro Colón, Buenos Aires", 8500, 800, 150, DEFAULT_EVENT_IMAGES[1], "teatro"),
+                ("Superclásico Boca vs River", "El partido más apasionante del fútbol mundial. No te lo pierdas!", "2026-05-10", "La Bombonera, Buenos Aires", 12000, 49000, 45000, DEFAULT_EVENT_IMAGES[2], "deportes"),
+                ("Show de Stand Up - Fabian Pamberino", "El comediante más gracioso del país presenta su nuevo show.", "2026-04-05", "Teatro Metropolitan, Buenos Aires", 3500, 500, 200, DEFAULT_EVENT_IMAGES[3], "comedia"),
+                ("Festival Electrónico 2026", "3 escenarios, 20 DJs internacionales, 12 horas de música continua.", "2026-07-20", "Rural Palermo, Buenos Aires", 8000, 15000, 8000, DEFAULT_EVENT_IMAGES[4], "musica"),
+                ("Cirque du Soleil - O", "El espectáculo acuático más impresionante del mundo.", "2026-05-25", "Estadio GEBA, Buenos Aires", 12000, 3000, 1200, DEFAULT_EVENT_IMAGES[5], "espectaculo"),
+                ("Conferencia Tech Summit 2026", "Los líderes tecnológicos del mundo comparten el futuro de la IA.", "2026-08-10", "Centro de Convenciones, Buenos Aires", 25000, 2000, 500, DEFAULT_EVENT_IMAGES[6], "conferencia"),
+                ("Roger Waters - This Is Not A Drill", "El legendario líder de Pink Floyd presenta su gira de regreso.", "2026-09-15", "Estadio Monumental, Buenos Aires", 38000, 65000, 60000, DEFAULT_EVENT_IMAGES[7], "musica"),
+            ]
+            conn.executemany(
+                "INSERT INTO eventos (nombre, descripcion, fecha, lugar, precio, capacidad, vendidos, imagen, categoria) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                eventos_seed
+            )
+            conn.commit()
+            print(">>> Eventos de prueba creados")
+        
+        conn.close()
     
     uvicorn.run(app, host="0.0.0.0", port=8000, reload=True)

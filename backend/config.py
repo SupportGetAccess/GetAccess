@@ -86,7 +86,18 @@ RATE_LIMIT_MAX = 100    # requests por ventana
 # BASE DE DATOS
 # ============================================
 
-DATABASE_URL = "access_on.db"
+import os
+
+# En producción: Supabase PostgreSQL (usar Direct URL para evitar problemas de pooling)
+# Format: postgresql://postgres.xgwbcepopluehupublkz:[PASSWORD]@aws-1-sa-east-1.pooler.supabase.com:5432/postgres
+SUPABASE_URI = os.environ.get("SUPABASE_URI", "postgresql://postgres.xgwbcepopluehupublkz:%40Supabase1982@aws-1-sa-east-1.pooler.supabase.com:5432/postgres")
+
+if os.environ.get("RENDER"):
+    # Producción: usar Supabase
+    DATABASE_URL = SUPABASE_URI
+else:
+    # Desarrollo: archivo local SQLite
+    DATABASE_URL = "access_on.db"
 
 # ============================================
 # RUTAS DE ARCHIVOS
