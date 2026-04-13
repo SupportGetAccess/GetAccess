@@ -701,7 +701,7 @@
                             showToast('Bienvenido admin', 'success');
                         } else {
                             logout();
-                            showToast('Acceso no autorizado. Solo administradores.', 'error');
+                            alert('Acceso no autorizado. Solo administradores.');
                         }
                     } else {
                         logout();
@@ -728,9 +728,7 @@ setToken(data.access_token);
                             setUser(data.user);
                             setLoggedIn(true);
                         } else {
-                            console.log('No admin, data:', data);
                             alert('Acceso no autorizado. Solo administradores.');
-                            showToast('Acceso no autorizado. Solo administradores.', 'error');
                         }
                     } else {
                         showToast(data.detail || 'Error', 'error');
