@@ -1574,17 +1574,13 @@ def validar_entrada(datos: ValidarEntradaRequest, credentials: HTTPAuthorization
     if not es_admin(db, user_id):
         raise HTTPException(status_code=403, detail="Solo administradores pueden validar entradas")
     
-    codigo = datos.codigo.strip()
+    codigo = datos.codigo.strip().upper()
     parts = codigo.split("-")
     
-    if len(parts) != 3 or parts[0] != "GA":
+    if len(parts) != 2 or parts[0] != "GA":
         raise HTTPException(status_code=400, detail="Código QR inválido")
     
-    try:
-        entrada_id = int(parts[1])
-        cantidad = int(parts[2])
-    except ValueError:
-        raise HTTPException(status_code=400, detail="Código QR malformado")
+    codigo_buscar = codigo
     
     cursor = db.execute("""
         SELECT e.id, e.cantidad, e.estado, e.evento_id, ev.nombre, ev.fecha, 
@@ -1592,8 +1588,8 @@ def validar_entrada(datos: ValidarEntradaRequest, credentials: HTTPAuthorization
         FROM entradas e
         JOIN eventos ev ON e.evento_id = ev.id
         JOIN usuarios u ON e.usuario_id = u.id
-        WHERE e.id = ?
-    """, (entrada_id,))
+        WHERE e.preference_id = ?
+    """, (codigo_buscar,))
     entrada = cursor.fetchone()
     
     if not entrada:
@@ -1606,6 +1602,8 @@ def validar_entrada(datos: ValidarEntradaRequest, credentials: HTTPAuthorization
             "mensaje": f"La entrada no ha sido pagada (Estado: {entrada[2]})",
             "entrada_id": entrada[0]
         }
+    
+    entrada_id = entrada[0]
     
     if entrada[8]:
         cursor_validaciones = db.execute("""
@@ -1648,15 +1646,11 @@ def validar_entrada(datos: ValidarEntradaRequest, credentials: HTTPAuthorization
 
 @app.get("/api/validar/{codigo}")
 def consultar_entrada(codigo: str, db = Depends(get_db)):
+    codigo = codigo.strip().upper()
     parts = codigo.split("-")
     
-    if len(parts) != 3 or parts[0] != "GA":
+    if len(parts) != 2 or parts[0] != "GA":
         raise HTTPException(status_code=400, detail="Código QR inválido")
-    
-    try:
-        entrada_id = int(parts[1])
-    except ValueError:
-        raise HTTPException(status_code=400, detail="Código QR malformado")
     
     cursor = db.execute("""
         SELECT e.id, e.cantidad, e.estado, e.evento_id, ev.nombre, ev.fecha, ev.lugar,
@@ -1664,8 +1658,8 @@ def consultar_entrada(codigo: str, db = Depends(get_db)):
         FROM entradas e
         JOIN eventos ev ON e.evento_id = ev.id
         JOIN usuarios u ON e.usuario_id = u.id
-        WHERE e.id = ?
-    """, (entrada_id,))
+        WHERE e.preference_id = ?
+    """, (codigo,))
     entrada = cursor.fetchone()
     
     if not entrada:
