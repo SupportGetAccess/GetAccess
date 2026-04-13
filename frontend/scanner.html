@@ -72,6 +72,29 @@
             border-color: rgba(99, 102, 241, 0.3);
         }
         
+        .btn { 
+            background: linear-gradient(135deg, #6366f1, #ec4899); 
+            color: white; 
+            border: none; 
+            padding: 0.9rem 1.8rem; 
+            border-radius: 14px; 
+            cursor: pointer; 
+            font-weight: 700;
+            font-size: 0.95rem;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(99, 102, 241, 0.3);
+        }
+        .btn:hover { 
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(99, 102, 241, 0.4);
+        }
+        .btn:disabled { 
+            background: #374151; 
+            cursor: not-allowed;
+            box-shadow: none;
+            transform: none;
+        }
+        
         .container { max-width: 800px; margin: 0 auto; padding: 2rem; }
         
         .hero {
@@ -985,7 +1008,7 @@ setToken(data.access_token);
                         <form onSubmit={login}>
                             <input name="email" type="email" placeholder="Email" required />
                             <input name="password" type="password" placeholder="Contraseña" required />
-                            <button type="submit">Iniciar Sesion</button>
+                            <button type="submit" className="btn">Iniciar Sesion</button>
                         </form>
                     </div>
                 </div>
