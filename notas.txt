@@ -53,6 +53,7 @@
 11. Fix spinner y loading en login scanner
 12. Corregir password usuario aantoniaa1982@gmail.com
 13. Fix duplicate loading (declarar loading dos veces) → usar loginLoading
+14. Fix código residual en login (duplicado)
 
 ---
 
@@ -77,21 +78,35 @@
 
 ## 🔜 PENDIENTE PARA MAÑANA
 
-### Circuitos a probar:
-1. [ ] Crear usuario nuevo (registro completo)
-2. [ ] Compra real con MercadoPago
-3. [ ] Recibir email con QR
-4. [ ] Ver en Mis Entradas
-5. [ ] Reenviar ticket
-6. [ ] Transferir entrada
-7. [ ] Aceptar transferencia
-8. [ ] Scanner: validar entrada
-9. [ ] Analytics
+### Circuitos a probar (PRUEBA COMPLETA):
+⚠️ IMPORTANTE: Usar email REAL (noadmin@getaccess.com) para crear evento, y email distinto para comprar.
+
+1. [ ] Crear evento nuevo (desde admin)
+2. [ ] Crear usuario de prueba (registro + verificar email)
+3. [ ] Login con nuevo usuario
+4. [ ] Compra real con MercadoPago (tarjeta prueba: 4509 9535 6621 0551)
+5. [ ] Verificar webhook confirma pago
+6. [ ] Recibir email con QR (ver diseño)
+7. [ ] Ver en Mis Entradas
+8. [ ] Reenviar ticket por email
+9. [ ] Scanner: validar entrada
+10. [ ] Transferir entrada a otro usuario
+11. [ ] Aceptar transferencia
+12. [ ] Analytics: ver ventas
+
+### URLs para probar:
+- Frontend: https://getaccess-d3um.onrender.com
+- Scanner: https://getaccess-d3um.onrender.com/scanner.html
+- Backend API: https://getaccess-d3um.onrender.com/api
+
+### Credenciales:
+- Admin: admin@getaccess.com / admin123
+- Usuario prueba: guilles10@yahoo.com.ar / guille123
+- Antonia: aantoniaa1982@gmail.com / guille123
 
 ### Issues a resolver:
 - [ ] Auto-deploy en Render (configurar webhook)
 - [ ] Toast no aparece en scanner (usar alert por ahora)
-- [ ] Agregar Analytics al frontend
 
 ---
 
