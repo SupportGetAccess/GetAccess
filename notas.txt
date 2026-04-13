@@ -1,11 +1,22 @@
 # Notas del Proyecto Get Access
 
-## 📌 PROYECTO PRIORITARIO ACTUAL: ✅ COMPLETADO - Base de datos persistente
+## 📌 PROYECTO PRIORITARIO ACTUAL: Migración a PostgreSQL - Phase de Testing
+
+### Estado: 🧪 Probando todas las funcionalidades post-migración
+
+**IMPORTANTE:** Estamos probando todas las funcionalidades debido a la migración de SQLite a PostgreSQL (Supabase). Puede haber errores de compatibilidad.
 
 ### Solución implementada
 - **Migración a Supabase PostgreSQL** completada
 - Los datos ahora persisten entre deploys
 - Conexión: postgresql://postgres.xgwbcepopluehupublkz:*@aws-1-sa-east-1.pooler.supabase.com:5432/postgres
+
+### Correcciones aplicadas durante testing:
+- ✅ Fix login - compatibilidad dict/tupla
+- ✅ Fix categorias - compatibility with PostgreSQL tuples
+- ✅ Fix transferencias - usuario_destino es INTEGER, no email
+- ✅ Fix eventos - PostgreSQL tuples
+- ✅ Fix lastrowid - added SELECT lastval() for PostgreSQL
 
 ### Estado de funcionalidades implementadas
 - ✅ Carrito de compras con MercadoPago
@@ -15,13 +26,71 @@
 - ✅ Botón Carrito solo visible para usuarios logueados
 - ✅ Base de datos persistente (Supabase PostgreSQL)
 
-### Estado actual
-- ✅ Deploy en producción funcionando con Supabase
-- ✅ Los eventos y datos se mantendrán después de cada deploy
+---
+
+## Fecha Última Actualización: Lunes 13 de Abril de 2026 - 21:00 hs
 
 ---
 
-## Fecha Última Actualización: Viernes 10 de Abril de 2026 - 18:30 hs
+## 📝 PENDIENTE DE RECORDAR
+
+- Crear evento "Evento Prueba" - ✅ YA CREADO (ID=9)
+
+---
+
+## 🔧 FALLAS CORREGIDAS HOY (13/04/2026)
+
+1. Fix verificado: False → 0 (PostgreSQL integer)
+2. Fix columnas usadas/transferida en INSERT entradas
+3. Fix generar código GA- solo cuando pago confirmado (no en pendiente)
+4. Fix email QR: usar quickchart.io URL externa (no base64 embebido)
+5. Fix pasar entrada_id en webhook email
+6. Fix código GA-10chars (alfanumérico)
+7. Fix validar entrada por preference_id (no por ID)
+8. Fix cantidad en validaciones
+9. Fix scanner solo admin (mostrar alert)
+10. Fix estilos botón login scanner
+11. Fix spinner y loading en login scanner
+12. Corregir password usuario aantoniaa1982@gmail.com
+
+---
+
+## 📋 CIRCUITO COMPLETO - ESTADO ACTUAL
+
+| Funcionalidad | Estado |
+|-------------|--------|
+| Registro/Login | ✅ |
+| Ver eventos | ✅ |
+| Compra + MercadoPago | ✅ |
+| Email con QR | ✅ (quickchart.io) |
+| Reenviar ticket | ✅ |
+| Código GA-10chars | ✅ |
+| Mis entradas (solo pagadas) | ✅ |
+| Scanner QR | ✅ (solo admin) |
+| Scanner: validar entrada | ✅ |
+| Webhook: genera código | ✅ |
+| Analytics | ⏳ |
+| Transferencia | ⏳ |
+
+---
+
+## 🔜 PENDIENTE PARA MAÑANA
+
+### Circuitos a probar:
+1. [ ] Crear usuario nuevo (registro completo)
+2. [ ] Compra real con MercadoPago
+3. [ ] Recibir email con QR
+4. [ ] Ver en Mis Entradas
+5. [ ] Reenviar ticket
+6. [ ] Transferir entrada
+7. [ ] Aceptar transferencia
+8. [ ] Scanner: validar entrada
+9. [ ] Analytics
+
+### Issues a resolver:
+- [ ] Auto-deploy en Render (configurar webhook)
+- [ ] Toast no aparece en scanner (usar alert por ahora)
+- [ ] Agregar Analytics al frontend
 
 ---
 
