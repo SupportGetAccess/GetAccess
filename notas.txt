@@ -49,9 +49,10 @@
 7. Fix validar entrada por preference_id (no por ID)
 8. Fix cantidad en validaciones
 9. Fix scanner solo admin (mostrar alert)
-10. Fix estilos botón login scanner
+10. Fix estilos botón login scanner (gradiente, btn-block)
 11. Fix spinner y loading en login scanner
 12. Corregir password usuario aantoniaa1982@gmail.com
+13. Fix duplicate loading (declarar loading dos veces) → usar loginLoading
 
 ---
 
