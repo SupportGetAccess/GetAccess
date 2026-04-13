@@ -970,7 +970,8 @@ def crear_entrada(entrada: EntradaCreate, credentials: HTTPAuthorizationCredenti
     total = evento[1] * entrada.cantidad
     print(f">>> TOTAL: {total}")
     
-    codigo = f"GA-{random.randint(100000, 999999)}"
+    import string
+    codigo = f"GA-{''.join(random.choices(string.ascii_uppercase + string.digits, k=10))}"
     print(f">>> CODIGO: {codigo}")
     
     cursor = db.execute(
