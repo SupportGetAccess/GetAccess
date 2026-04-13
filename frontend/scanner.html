@@ -95,6 +95,22 @@
             transform: none;
         }
         .btn-block { width: 100%; }
+        .spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        .btn:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+        }
         
         .container { max-width: 800px; margin: 0 auto; padding: 2rem; }
         
@@ -649,6 +665,7 @@
             const [cachedCodes, setCachedCodes] = React.useState([]);
             const [pendingValidations, setPendingValidations] = React.useState([]);
             const [loggedIn, setLoggedIn] = React.useState(false);
+            const [loading, setLoading] = React.useState(false);
             
             const html5QrCodeScannerRef = React.useRef(null);
             
@@ -735,8 +752,9 @@
                 setLoading(false);
             }
             
-            async function login(e) {
+async function login(e) {
                 e.preventDefault();
+                setLoading(true);
                 const email = e.target.email.value;
                 const password = e.target.password.value;
                 try {
@@ -745,20 +763,22 @@
                         body: JSON.stringify({ email, password })
                     });
                     const data = await res.json();
+                    setLoading(false);
                     if (res.ok) {
                         if (data.user && data.user.rol === 'admin') {
                             sessionStorage.setItem('token', data.access_token);
-setToken(data.access_token);
+                            setToken(data.access_token);
                             setUser(data.user);
                             setLoggedIn(true);
                         } else {
                             alert('Acceso no autorizado. Solo administradores.');
                         }
                     } else {
-                        showToast(data.detail || 'Error', 'error');
+                        alert(data.detail || 'Error al iniciar sesion');
                     }
                 } catch (err) { 
-                    showToast('Error de conexion', 'error'); 
+                    setLoading(false);
+                    alert('Error de conexion'); 
                 }
             }
             
@@ -1009,7 +1029,7 @@ setToken(data.access_token);
                         <form onSubmit={login}>
                             <input name="email" type="email" placeholder="Email" required />
                             <input name="password" type="password" placeholder="Contraseña" required />
-                            <button type="submit" className="btn btn-block">Iniciar Sesion</button>
+                            <button type="submit" className="btn btn-block" disabled={loading}>{loading ? <span className="spinner"></span> : '🔐 Iniciar Sesion'}</button>
                         </form>
                     </div>
                 </div>
