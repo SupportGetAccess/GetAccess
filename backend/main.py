@@ -970,13 +970,9 @@ def crear_entrada(entrada: EntradaCreate, credentials: HTTPAuthorizationCredenti
     total = evento[1] * entrada.cantidad
     print(f">>> TOTAL: {total}")
     
-    import string
-    codigo = f"GA-{''.join(random.choices(string.ascii_uppercase + string.digits, k=10))}"
-    print(f">>> CODIGO: {codigo}")
-    
     cursor = db.execute(
-        "INSERT INTO entradas (evento_id, usuario_id, cantidad, total, estado, preference_id, usada, transferida) VALUES (?, ?, ?, ?, ?, ?, 0, 0)",
-        (entrada.evento_id, user_id, entrada.cantidad, total, "pendiente", codigo)
+        "INSERT INTO entradas (evento_id, usuario_id, cantidad, total, estado, preference_id, usada, transferida) VALUES (?, ?, ?, ?, ?, NULL, 0, 0)",
+        (entrada.evento_id, user_id, entrada.cantidad, total, "pendiente")
     )
     db.commit()
     try:
@@ -989,7 +985,7 @@ def crear_entrada(entrada: EntradaCreate, credentials: HTTPAuthorizationCredenti
     db.execute("UPDATE eventos SET vendidos = vendidos + ? WHERE id = ?", (entrada.cantidad, entrada.evento_id))
     db.commit()
     
-    return {"id": entrada_id, "evento_id": entrada.evento_id, "usuario_id": user_id, "cantidad": entrada.cantidad, "total": total, "estado": "pendiente", "codigo": codigo}
+    return {"id": entrada_id, "evento_id": entrada.evento_id, "usuario_id": user_id, "cantidad": entrada.cantidad, "total": total, "estado": "pendiente", "codigo": None}
 
 # === TRANSFERENCIA DE ENTRADAS ===
 import secrets
@@ -1222,7 +1218,13 @@ async def webhook_mercadopago(request: Request, db = Depends(get_db)):
                                 """, (ext_id,))
                                 row = cursor.fetchone()
                                 if row:
-                                    codigo = row[8] if row[8] else f"GA-{ext_id:06d}"
+                                    import string
+                                    if not row[8]:
+                                        codigo = f"GA-{''.join(random.choices(string.ascii_uppercase + string.digits, k=10))}"
+                                        db.execute("UPDATE entradas SET preference_id = ? WHERE id = ?", (codigo, ext_id))
+                                        db.commit()
+                                    else:
+                                        codigo = row[8]
                                     enviar_ticket_email(
                                         row[0], row[1], row[2], row[3], row[4], row[5], row[6], row[7], ext_id, codigo
                                     )
