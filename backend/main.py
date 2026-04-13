@@ -1227,7 +1227,7 @@ async def webhook_mercadopago(request: Request, db = Depends(get_db)):
                                 if row:
                                     codigo = row[8] if row[8] else f"GA-{ext_id:06d}"
                                     enviar_ticket_email(
-                                        row[0], row[1], row[2], row[3], row[4], row[5], row[6], row[7], codigo
+                                        row[0], row[1], row[2], row[3], row[4], row[5], row[6], row[7], ext_id, codigo
                                     )
                         
         return {"status": "ok"}
