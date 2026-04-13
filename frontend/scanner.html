@@ -624,6 +624,7 @@
             const [isOnline, setIsOnline] = React.useState(navigator.onLine);
             const [cachedCodes, setCachedCodes] = React.useState([]);
             const [pendingValidations, setPendingValidations] = React.useState([]);
+            const [loggedIn, setLoggedIn] = React.useState(false);
             
             const html5QrCodeScannerRef = React.useRef(null);
             
@@ -694,9 +695,18 @@
                     const res = await fetch(`${API_URL}/api/auth/me`, { headers: { Authorization: `Bearer ${token}` } });
                     if (res.ok) {
                         const data = await res.json();
-                        if (data.rol === 'admin') setUser(data);
-                        else logout();
-                    } else logout();
+                        if (data.rol === 'admin') {
+                            setUser(data);
+                            setLoggedIn(true);
+                            showToast('Bienvenido admin', 'success');
+                        } else {
+                            logout();
+                            showToast('Acceso no autorizado. Solo administradores.', 'error');
+                        }
+                    } else {
+                        logout();
+                        showToast('Sesion expirada', 'error');
+                    }
                 } catch { logout(); }
                 setLoading(false);
             }
@@ -712,9 +722,14 @@
                     });
                     const data = await res.json();
                     if (res.ok) {
-                        sessionStorage.setItem('token', data.access_token);
-                        setToken(data.access_token);
-                        setUser(data.user);
+                        if (data.user && data.user.rol === 'admin') {
+                            sessionStorage.setItem('token', data.access_token);
+setToken(data.access_token);
+                            setUser(data.user);
+                            setLoggedIn(true);
+                        } else {
+                            showToast('Acceso no autorizado. Solo administradores.', 'error');
+                        }
                     } else {
                         showToast(data.detail || 'Error', 'error');
                     }
@@ -728,6 +743,7 @@
                 sessionStorage.removeItem('token');
                 setToken(null);
                 setUser(null);
+                setLoggedIn(false);
             }
             
             async function cargarEventos() {
