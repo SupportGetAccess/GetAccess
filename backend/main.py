@@ -986,10 +986,6 @@ def crear_entrada(entrada: EntradaCreate, credentials: HTTPAuthorizationCredenti
         print(f">>> ERROR LASTROWID: {e}")
         entrada_id = random.randint(100000, 999999)
     
-    codigo = f"GA-{entrada_id:06d}"
-    db.execute("UPDATE entradas SET preference_id = ? WHERE id = ?", (codigo, entrada_id))
-    db.commit()
-    
     db.execute("UPDATE eventos SET vendidos = vendidos + ? WHERE id = ?", (entrada.cantidad, entrada.evento_id))
     db.commit()
     
