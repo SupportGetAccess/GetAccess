@@ -1236,20 +1236,11 @@ async def webhook_mercadopago(request: Request, db = Depends(get_db)):
         return {"status": "error", "detail": str(e)}
 
 def enviar_ticket_email(email, nombre, apellido, evento_nombre, fecha, lugar, cantidad, total, entrada_id, codigo=None):
-    import qrcode
-    import base64
-    import io
     import datetime
     
     codigo_display = codigo or f"GA-{entrada_id:06d}"
     
-    qr = qrcode.QRCode(version=1, box_size=10, border=4)
-    qr.add_data(codigo_display)
-    qr.make(fit=True)
-    img = qr.make_image(fill_color='black', back_color='white')
-    buffer = io.BytesIO()
-    img.save(buffer, format='PNG')
-    qr_base64 = base64.b64encode(buffer.getvalue()).decode('utf-8')
+    qr_url = f"{QUICKCHART_URL}?size=300x300&text={codigo_display}"
     
     fecha_formateada = str(fecha)
     try:
@@ -1270,7 +1261,7 @@ def enviar_ticket_email(email, nombre, apellido, evento_nombre, fecha, lugar, ca
         <div style="text-align: center; margin: 25px 0;">
             <p style="color: #6366f1; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 2px; margin: 0 0 15px 0;">Escaneá este código en la entrada</p>
             <div style="background-color: #ffffff; display: inline-block; padding: 15px; border-radius: 12px; border: 2px solid #6366f1;">
-                <img src="data:image/png;base64,{qr_base64}" alt="Código QR" style="width: 180px; height: 180px; display: block;">
+                <img src="{qr_url}" alt="Código QR" style="width: 180px; height: 180px; display: block;">
             </div>
             <p style="color: #6366f1; font-size: 22px; font-weight: bold; margin: 15px 0 0 0; letter-spacing: 3px;">{codigo_display}</p>
         </div>
@@ -1982,7 +1973,7 @@ def enviar_ticket(entrada_id: int, credentials: HTTPAuthorizationCredentials = D
         <div style="text-align: center; margin: 25px 0;">
             <p style="color: #6366f1; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 2px; margin: 0 0 15px 0;">Escaneá este código en la entrada</p>
             <div style="background-color: #ffffff; display: inline-block; padding: 15px; border-radius: 12px; border: 2px solid #6366f1;">
-                <img src="data:image/png;base64,{qr_base64}" alt="Código QR" style="width: 180px; height: 180px; display: block;">
+                <img src="{qr_url}" alt="Código QR" style="width: 180px; height: 180px; display: block;">
             </div>
             <p style="color: #6366f1; font-size: 22px; font-weight: bold; margin: 15px 0 0 0; letter-spacing: 3px;">{codigo_qr}</p>
         </div>
