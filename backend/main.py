@@ -969,7 +969,7 @@ def crear_entrada(entrada: EntradaCreate, credentials: HTTPAuthorizationCredenti
     codigo = f"GA-{entrada_id:06d}" if entrada_id else f"GA-{random.randint(100000, 999999)}"
     
     cursor = db.execute(
-        "INSERT INTO entradas (evento_id, usuario_id, cantidad, total, estado, preference_id) VALUES (?, ?, ?, ?, ?, ?)",
+        "INSERT INTO entradas (evento_id, usuario_id, cantidad, total, estado, preference_id, usada, transferida) VALUES (?, ?, ?, ?, ?, ?, 0, 0)",
         (entrada.evento_id, user_id, entrada.cantidad, total, "pendiente", codigo)
     )
     db.commit()
