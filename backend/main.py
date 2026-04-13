@@ -902,7 +902,7 @@ def listar_entradas(credentials: HTTPAuthorizationCredentials = Depends(security
                    ev.nombre, ev.fecha, ev.lugar
             FROM entradas e
             JOIN eventos ev ON e.evento_id = ev.id
-            WHERE e.usuario_id = ? AND (e.transferida IS NULL OR e.transferida = 0)
+            WHERE e.usuario_id = ? AND e.estado = 'pagada' AND (e.transferida IS NULL OR e.transferida = 0)
             ORDER BY e.id DESC
         """, (user_id,))
         rows = cursor.fetchall()
