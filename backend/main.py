@@ -1630,7 +1630,7 @@ def validar_entrada(datos: ValidarEntradaRequest, credentials: HTTPAuthorization
     db.execute("""
         INSERT INTO validaciones (entrada_id, scanner_id, cantidad_original) 
         VALUES (?, ?, ?)
-    """, (entrada_id, user_id, cantidad))
+    """, (entrada_id, user_id, entrada[1]))
     db.execute("UPDATE entradas SET usada = 1 WHERE id = ?", (entrada_id,))
     db.commit()
     
