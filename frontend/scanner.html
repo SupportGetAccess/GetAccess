@@ -659,13 +659,13 @@
             const [manualCode, setManualCode] = React.useState('');
             const [toast, setToast] = React.useState(null);
             const [loading, setLoading] = React.useState(true);
+            const [loginLoading, setLoginLoading] = React.useState(false);
             const [imagePreview, setImagePreview] = React.useState(null);
             const [scanningImage, setScanningImage] = React.useState(false);
             const [isOnline, setIsOnline] = React.useState(navigator.onLine);
             const [cachedCodes, setCachedCodes] = React.useState([]);
             const [pendingValidations, setPendingValidations] = React.useState([]);
             const [loggedIn, setLoggedIn] = React.useState(false);
-            const [loading, setLoading] = React.useState(false);
             
             const html5QrCodeScannerRef = React.useRef(null);
             
@@ -752,28 +752,29 @@
                 setLoading(false);
             }
             
-async function login(e) {
+function login(e) {
                 e.preventDefault();
-                setLoading(true);
+                setLoginLoading(true);
                 const email = e.target.email.value;
                 const password = e.target.password.value;
-                try {
-                    const res = await fetch(`${API_URL}/api/auth/login`, {
-                        method: 'POST', headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ email, password })
-                    });
-                    const data = await res.json();
-                    setLoading(false);
-                    if (res.ok) {
-                        if (data.user && data.user.rol === 'admin') {
-                            sessionStorage.setItem('token', data.access_token);
-                            setToken(data.access_token);
-                            setUser(data.user);
-                            setLoggedIn(true);
-                        } else {
-                            alert('Acceso no autorizado. Solo administradores.');
-                        }
+                fetch(`${API_URL}/api/auth/login`, {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password })
+                }).then(res => res.json()).then(data => {
+                    setLoginLoading(false);
+                    if (data.user && data.user.rol === 'admin') {
+                        sessionStorage.setItem('token', data.access_token);
+                        setToken(data.access_token);
+                        setUser(data.user);
+                        setLoggedIn(true);
                     } else {
+                        alert('Acceso no autorizado. Solo administradores.');
+                    }
+                }).catch(err => {
+                    setLoginLoading(false);
+                    alert('Error de conexion');
+                });
+            }
                         alert(data.detail || 'Error al iniciar sesion');
                     }
                 } catch (err) { 
@@ -1029,7 +1030,7 @@ async function login(e) {
                         <form onSubmit={login}>
                             <input name="email" type="email" placeholder="Email" required />
                             <input name="password" type="password" placeholder="Contraseña" required />
-                            <button type="submit" className="btn btn-block" disabled={loading}>{loading ? <span className="spinner"></span> : '🔐 Iniciar Sesion'}</button>
+                            <button type="submit" className="btn btn-block" disabled={loginLoading}>{loginLoading ? <span className="spinner"></span> : '🔐 Iniciar Sesion'}</button>
                         </form>
                     </div>
                 </div>
