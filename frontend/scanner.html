@@ -94,6 +94,7 @@
             box-shadow: none;
             transform: none;
         }
+        .btn-block { width: 100%; }
         
         .container { max-width: 800px; margin: 0 auto; padding: 2rem; }
         
@@ -1008,7 +1009,7 @@ setToken(data.access_token);
                         <form onSubmit={login}>
                             <input name="email" type="email" placeholder="Email" required />
                             <input name="password" type="password" placeholder="Contraseña" required />
-                            <button type="submit" className="btn">Iniciar Sesion</button>
+                            <button type="submit" className="btn btn-block">Iniciar Sesion</button>
                         </form>
                     </div>
                 </div>
