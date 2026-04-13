@@ -448,7 +448,7 @@ def registro(usuario: UsuarioCreate, request: Request, db = Depends(get_db)):
     cursor = db.execute(
         """INSERT INTO usuarios (email, nombre, apellido, password, verificado, codigo_verificacion) 
            VALUES (?, ?, ?, ?, ?, ?)""",
-        (usuario.email, usuario.nombre, usuario.apellido, hashed_password, False, codigo)
+        (usuario.email, usuario.nombre, usuario.apellido, hashed_password, 0, codigo)
     )
     db.commit()
     user_id = cursor.lastrowid
@@ -1227,38 +1227,89 @@ async def webhook_mercadopago(request: Request, db = Depends(get_db)):
         return {"status": "error", "detail": str(e)}
 
 def enviar_ticket_email(email, nombre, apellido, evento_nombre, fecha, lugar, cantidad, total, entrada_id, codigo=None):
+    import qrcode
+    import base64
+    import io
+    import datetime
+    
     codigo_display = codigo or f"GA-{entrada_id:06d}"
-    qr_data = f"https://getaccess-d3um.onrender.com/validar/{codigo_display}"
-    email_content = f"""<!DOCTYPE html>
-<html>
-<head></head>
-<body style="font-family: Arial, sans-serif; background-color: #f4f4f4; margin: 0; padding: 20px;">
-    <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; padding: 20px; border-radius: 8px;">
-        <h2 style="color: #333333; text-align: center;">🎫 Tu Entrada - Get Access</h2>
-        <p style="color: #555555;">Hola {nombre} {apellido},</p>
-        <p style="color: #555555;">Tu pago fue confirmado! Aquí está tu entrada:</p>
-        <div style="background-color: #f8f9fa; border-radius: 8px; padding: 20px; margin: 20px 0;">
-            <h3 style="color: #007bff; margin-top: 0;">{evento_nombre}</h3>
-            <p><strong>📅 Fecha:</strong> {fecha}</p>
-            <p><strong>📍 Lugar:</strong> {lugar}</p>
-            <p><strong>🎟️ Cantidad:</strong> {cantidad}</p>
-            <p><strong>💵 Total:</strong> ${total:,.2f}</p>
-            <p><strong>✅ Estado:</strong> PAGADA</p>
+    
+    qr = qrcode.QRCode(version=1, box_size=10, border=4)
+    qr.add_data(codigo_display)
+    qr.make(fit=True)
+    img = qr.make_image(fill_color='black', back_color='white')
+    buffer = io.BytesIO()
+    img.save(buffer, format='PNG')
+    qr_base64 = base64.b64encode(buffer.getvalue()).decode('utf-8')
+    
+    fecha_formateada = str(fecha)
+    try:
+        fecha_dt = datetime.datetime.strptime(str(fecha).split('.')[0], "%Y-%m-%d %H:%M:%S")
+        fecha_formateada = fecha_dt.strftime("%d de %B de %Y - %H:%M")
+    except:
+        try:
+            fecha_dt = datetime.datetime.strptime(str(fecha), "%Y-%m-%d")
+            fecha_formateada = fecha_dt.strftime("%d de %B de %Y")
+        except:
+            pass
+    
+    email_content = f"""
+        <h2 style="color: #1f2937; text-align: center; margin-bottom: 15px;">¡Hola {nombre} {apellido}!</h2>
+        <p style="color: #4b5563; font-size: 16px; line-height: 1.6; text-align: center;">
+            Tu entrada para <strong>{evento_nombre}</strong>
+        </p>
+        <div style="text-align: center; margin: 25px 0;">
+            <p style="color: #6366f1; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 2px; margin: 0 0 15px 0;">Escaneá este código en la entrada</p>
+            <div style="background-color: #ffffff; display: inline-block; padding: 15px; border-radius: 12px; border: 2px solid #6366f1;">
+                <img src="data:image/png;base64,{qr_base64}" alt="Código QR" style="width: 180px; height: 180px; display: block;">
+            </div>
+            <p style="color: #6366f1; font-size: 22px; font-weight: bold; margin: 15px 0 0 0; letter-spacing: 3px;">{codigo_display}</p>
         </div>
-        <div style="text-align: center; margin: 20px 0; padding: 20px; background: #f0f0f0; border-radius: 8px;">
-            <p style="font-size: 14px; color: #666; margin: 0 0 10px 0;">🎫 CÓDIGO DE ACCESO</p>
-            <p style="font-size: 28px; font-weight: bold; color: #6366f1; margin: 0;">{codigo_display}</p>
+        <div style="background-color: #f3f4f6; border-radius: 8px; padding: 20px; margin: 25px 0;">
+            <table style="width: 100%; border-collapse: collapse;">
+                <tr>
+                    <td style="padding: 10px 0; border-bottom: 1px solid #d1d5db;">
+                        <strong style="color: #4b5563;">📅 Fecha:</strong>
+                    </td>
+                    <td style="padding: 10px 0; border-bottom: 1px solid #d1d5db; text-align: right; color: #1f2937;">
+                        {fecha_formateada}
+                    </td>
+                </tr>
+                <tr>
+                    <td style="padding: 10px 0; border-bottom: 1px solid #d1d5db;">
+                        <strong style="color: #4b5563;">📍 Lugar:</strong>
+                    </td>
+                    <td style="padding: 10px 0; border-bottom: 1px solid #d1d5db; text-align: right; color: #1f2937;">
+                        {lugar}
+                    </td>
+                </tr>
+                <tr>
+                    <td style="padding: 10px 0; border-bottom: 1px solid #d1d5db;">
+                        <strong style="color: #4b5563;">🎟️ Cantidad:</strong>
+                    </td>
+                    <td style="padding: 10px 0; border-bottom: 1px solid #d1d5db; text-align: right; color: #1f2937;">
+                        {cantidad} entrada{'s' if cantidad > 1 else ''}
+                    </td>
+                </tr>
+                <tr>
+                    <td style="padding: 10px 0;">
+                        <strong style="color: #4b5563;">💵 Total:</strong>
+                    </td>
+                    <td style="padding: 10px 0; text-align: right; color: #10b981; font-weight: 800; font-size: 18px;">
+                        ${total:,.2f}
+                    </td>
+                </tr>
+            </table>
         </div>
-        <div style="text-align: center; margin: 20px 0;">
-            <p style="font-size: 14px; color: #666; margin: 0 0 10px 0;">📱 ESCANEA PARA VALIDAR</p>
-            <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data={qr_data}" alt="QR Code" style="max-width: 200px; border-radius: 8px;">
+        <div style="text-align: center; padding: 12px; background-color: #dcfce7; border-radius: 8px; margin: 20px 0;">
+            <p style="color: #166534; margin: 0; font-weight: 700; font-size: 16px;">✅ PAGADA</p>
         </div>
-        <p style="text-align: center; font-size: 12px; color: #999;">Presenta este código o escanea el QR en la entrada del evento</p>
-        <hr style="border: none; border-top: 1px solid #eeeeee; margin: 20px 0;">
-        <p style="color: #999999; font-size: 12px; text-align: center;">© 2026 Get Access</p>
-    </div>
-</body>
-</html>"""
+        <p style="color: #6b7280; font-size: 14px; text-align: center;">
+            Presentá el código QR en la entrada del evento o mostrá este email en tu celular.
+        </p>
+    """
+    
+    html_content = get_email_template(email_content)
     
     try:
         url = BREVO_API_URL
@@ -1266,8 +1317,8 @@ def enviar_ticket_email(email, nombre, apellido, evento_nombre, fecha, lugar, ca
         data = {
             "sender": {"name": BREVO_SENDER_NAME, "email": BREVO_SENDER_EMAIL},
             "to": [{"email": email}],
-            "subject": f"🎫 Tu entrada para {evento_nombre} - Access ON",
-            "htmlContent": email_content
+            "subject": f"🎫 Tu entrada para {evento_nombre} - Get Access",
+            "htmlContent": html_content
         }
         response = requests.post(url, json=data, headers=headers, timeout=30)
         print(f">>> EMAIL ENVIADO A {email}: {response.status_code}")
