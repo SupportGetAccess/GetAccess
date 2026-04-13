@@ -728,6 +728,7 @@ setToken(data.access_token);
                             setUser(data.user);
                             setLoggedIn(true);
                         } else {
+                            console.log('No admin, data:', data);
                             showToast('Acceso no autorizado. Solo administradores.', 'error');
                         }
                     } else {
