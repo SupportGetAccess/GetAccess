@@ -947,35 +947,44 @@ def buscar_entradas(q: str, db = Depends(get_db)):
 
 @app.post("/api/entradas/")
 def crear_entrada(entrada: EntradaCreate, credentials: HTTPAuthorizationCredentials = Depends(security), db = Depends(get_db)):
+    print(f">>> CREAR ENTRADA: evento_id={entrada.evento_id}, cantidad={entrada.cantidad}")
     token = credentials.credentials
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         user_id = int(payload.get("sub"))
-    except:
+        print(f">>> USER_ID: {user_id}")
+    except Exception as e:
+        print(f">>> ERROR TOKEN: {e}")
         raise HTTPException(status_code=401, detail="Token inválido")
     
     cursor = db.execute("SELECT id, precio, capacidad, vendidos FROM eventos WHERE id = ?", (entrada.evento_id,))
     evento = cursor.fetchone()
     if not evento:
         raise HTTPException(status_code=404, detail="Evento no encontrado")
+    print(f">>> EVENTO: {evento}")
     
     disponibles = evento[2] - evento[3]
     if disponibles < entrada.cantidad:
         raise HTTPException(status_code=400, detail="No hay suficientes entradas disponibles")
     
     total = evento[1] * entrada.cantidad
+    print(f">>> TOTAL: {total}")
     
-    # Generar código único para la entrada
-    codigo = f"GA-{entrada_id:06d}" if entrada_id else f"GA-{random.randint(100000, 999999)}"
+    codigo = f"GA-{random.randint(100000, 999999)}"
+    print(f">>> CODIGO: {codigo}")
     
     cursor = db.execute(
         "INSERT INTO entradas (evento_id, usuario_id, cantidad, total, estado, preference_id, usada, transferida) VALUES (?, ?, ?, ?, ?, ?, 0, 0)",
         (entrada.evento_id, user_id, entrada.cantidad, total, "pendiente", codigo)
     )
     db.commit()
-    entrada_id = cursor.lastrowid
+    try:
+        entrada_id = cursor.lastrowid
+        print(f">>> ENTRADA_ID: {entrada_id}")
+    except Exception as e:
+        print(f">>> ERROR LASTROWID: {e}")
+        entrada_id = random.randint(100000, 999999)
     
-    # Actualizar el código con el ID real
     codigo = f"GA-{entrada_id:06d}"
     db.execute("UPDATE entradas SET preference_id = ? WHERE id = ?", (codigo, entrada_id))
     db.commit()
