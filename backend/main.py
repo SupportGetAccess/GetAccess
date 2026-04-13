@@ -1951,9 +1951,7 @@ def enviar_ticket(entrada_id: int, credentials: HTTPAuthorizationCredentials = D
     preference_id = cursor.fetchone()[0]
     
     codigo_qr = preference_id if preference_id else f"GA-{entrada[0]:06d}"
-    qr_base64 = generar_qr_base64(codigo_qr)
-    qr_binary = base64.b64decode(qr_base64)
-    qr_cid = f"qr-{entrada_id}-{int(datetime.datetime.now().timestamp())}"
+    qr_url = f"{QUICKCHART_URL}?size=300x300&text={codigo_qr}"
     
     fecha_formateada = entrada[5]
     try:
