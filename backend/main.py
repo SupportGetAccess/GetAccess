@@ -1500,6 +1500,14 @@ def recuperar_password(datos: dict, request: Request, db = Depends(get_db)):
     
     return {"message": "Si el email existe, recibirás un enlace de recuperación"}
 
+@app.post("/api/admin/limpiar-tokens")
+def limpiar_tokens(secret: str, db = Depends(get_db)):
+    if secret != ADMIN_SECRET:
+        raise HTTPException(status_code=401, detail="No autorizado")
+    db.execute("DELETE FROM password_reset")
+    db.commit()
+    return {"message": "Tokens de recuperación eliminados"}
+
 @app.post("/api/auth/restablecer")
 def restablecer_password(datos: dict, db = Depends(get_db)):
     token = datos.get("token")
