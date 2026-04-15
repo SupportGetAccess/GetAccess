@@ -1523,10 +1523,19 @@ def restablecer_password(datos: dict, db = Depends(get_db)):
     if usado:
         raise HTTPException(status_code=400, detail="Este enlace ya fue utilizado")
     
-    if isinstance(expires_at, str):
-        expires_at = expires_at.replace('Z', '+00:00')
-    if hasattr(expires_at, 'replace'):
-        expires_at = datetime.datetime.fromisoformat(expires_at)
+    try:
+        if isinstance(expires_at, str):
+            if 'Z' in expires_at:
+                expires_at = expires_at.replace('Z', '+00:00')
+            expires_at = datetime.datetime.fromisoformat(expires_at)
+        elif hasattr(expires_at, 'year'):
+            # Ya es datetime
+            pass
+        else:
+            expires_at = datetime.datetime.fromisoformat(str(expires_at))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error fecha: {str(e)}")
+    
     if datetime.datetime.now() > expires_at:
         raise HTTPException(status_code=400, detail="El enlace ha expirado")
     
