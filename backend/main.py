@@ -1512,7 +1512,7 @@ def restablecer_password(datos: dict, db = Depends(get_db)):
     if not valida:
         raise HTTPException(status_code=400, detail=mensaje)
     
-    cursor = db.execute("SELECT email, expires_at, usado FROM password_reset WHERE token = ?", (token,))
+    cursor = db.execute("SELECT email, expires_at, usado FROM password_reset WHERE token = ? AND usado = 0", (token,))
     row = cursor.fetchone()
     
     if not row:
