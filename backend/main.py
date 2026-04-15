@@ -53,7 +53,7 @@ except ImportError:
     ACCESS_TOKEN_EXPIRE_MINUTES = 30
     ALLOWED_ORIGINS = os.environ.get("ALLOWED_ORIGINS", "http://localhost:3000,https://192.168.1.40:3443").split(",")
     BREVO_API_KEY = os.environ.get("BREVO_API_KEY", "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")
-    BREVO_SENDER_EMAIL = os.environ.get("BREVO_SENDER_EMAIL", "support.getaccess@gmail.com")
+    BREVO_SENDER_EMAIL = os.environ.get("BREVO_SENDER_EMAIL", "soporte@getaccess.com.ar")
     BREVO_SENDER_NAME = "Get Access"
     DATABASE_URL = "access_on.db"
     RATE_LIMIT_WINDOW = 60
@@ -1465,7 +1465,7 @@ def recuperar_password(datos: dict, request: Request, db = Depends(get_db)):
     db.execute("INSERT INTO password_reset (email, token, expires_at) VALUES (?, ?, ?)", (email, token, expires.isoformat()))
     db.commit()
     
-    reset_url = f"http://localhost:3000/?reset={token}"
+    reset_url = f"https://getaccess.com.ar/?reset={token}"
     
     content = f"""
         <h2 style="color: #1f2937; text-align: center; margin-bottom: 20px;">🔐 Restablecer Contraseña</h2>

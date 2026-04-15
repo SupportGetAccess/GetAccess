@@ -1,5 +1,70 @@
 # Notas del Proyecto Get Access
 
+## ☁️ PLATAFORMAS CLOUD UTILIZADAS
+
+| # | Servicio | Uso |
+|---|---------|-----|
+| 1 | Render | Hosting web + API |
+| 2 | Cloudflare | DNS + SSL |
+| 3 | Zoho Mail | Email soporte |
+| 4 | Supabase | Base de datos PostgreSQL |
+| 5 | Brevo | Envío emails transaccionales |
+| 6 | MercadoPago | Pagos |
+
+---
+
+## 📌 DOMINIO CUSTOM CONFIGURADO
+
+### getaccess.com.ar ✅ FUNCIONANDO
+- Dominio configurado con Cloudflare (DNS)
+-托管 en Render (getaccess-d3um.onrender.com)
+- SSL certificado emitido
+- Redirect www.getaccess.com.ar → getaccess.com.ar
+
+### Configuración DNS Cloudflare:
+- Nameservers: marvin.ns.cloudflare.com, sonia.ns.cloudflare.com
+- CNAME: @ → getaccess-d3um.onrender.com
+- CNAME: www → getaccess-d3um.onrender.com
+
+---
+
+## 📌 EMAIL CONFIGURADO
+
+### soporte@getaccess.com.ar ✅ FUNCIONANDO
+- **Remitente emails transaccionales**: Brevo (send-api)
+- **Remitente emails manuales**: Zoho Mail
+- Webmail Zoho: https://mail.zoho.com
+- Login Zoho: soporte@getaccess.com.ar
+- Plan: Free (hasta 5 usuarios, 5GB)
+
+### Configuración DNS (Cloudflare):
+- MX: mx.zoho.com (10), mx2.zoho.com (20), mx3.zoho.com (50)
+- SPF: v=spf1 include:zohomail.com include:brevo.com ~all
+- DKIM: zoho._domainkey → verificado
+- Brevo DKIM: brevo1._domainkey, brevo2._domainkey → verificado
+- Brevo DMARC: _dmarc → verificado
+
+### Remitentes en Brevo:
+- soporte@getaccess.com.ar ✅ Autentificado
+- getaccess.com.ar ✅ Dominio autentificado
+
+---
+
+## 📌 FIRMA EMAIL CONFIGURADA (pendiente imagen)
+
+### Firma actual:
+--
+Get Access - Sistema de Entradas
+> soporte@getaccess.com.ar
+> https://getaccess.com.ar
+> Tu acceso a los mejores eventos
+
+### Pendiente: Agregar logo en imagen
+- Subir logo a URL pública (Imgur o Cloudflare)
+- Configurar firma con imagen en Zoho
+
+---
+
 ## 📌 PROYECTO PRIORITARIO ACTUAL: Migración a PostgreSQL - Phase de Testing
 
 ### Estado: 🧪 Probando todas las funcionalidades post-migración
@@ -28,7 +93,18 @@
 
 ---
 
-## Fecha Última Actualización: Lunes 13 de Abril de 2026 - 21:00 hs
+## ⚠️ IMPORTANTE: TODAS LAS PRUEBAS EN PRODUCCIÓN
+
+**SIEMPRE usar:**
+- Frontend: https://getaccess.com.ar
+- Scanner: https://getaccess.com.ar/scanner.html
+- Backend API: https://getaccess-d3um.onrender.com
+
+**NO usar localhost para pruebas.**
+
+---
+
+## Fecha Última Actualización: Miércoles 15 de Abril de 2026 - Configuración Email
 
 ---
 
@@ -94,10 +170,11 @@
 11. [ ] Aceptar transferencia
 12. [ ] Analytics: ver ventas
 
-### URLs para probar:
-- Frontend: https://getaccess-d3um.onrender.com
-- Scanner: https://getaccess-d3um.onrender.com/scanner.html
+### URLs para probar (NUEVO DOMINIO):
+- Frontend: https://getaccess.com.ar
+- Scanner: https://getaccess.com.ar/scanner.html
 - Backend API: https://getaccess-d3um.onrender.com/api
+- (También disponible en: https://getaccess-d3um.onrender.com)
 
 ### Credenciales:
 - Admin: admin@getaccess.com / admin123
@@ -535,6 +612,32 @@ Valores por defecto (fallback) incluidos en el código para desarrollo.
 - Lotes de precio dinámico
 - Mapas de asientos
 - Wallet digital
+
+---
+
+## 🔜 PENDIENTE PARA LA PRÓXIMA SESIÓN
+
+### Tareas Inmediatas:
+- [ ] Subir logo a URL pública (Imgur o Cloudflare)
+- [ ] Configurar firma con imagen en Zoho Mail
+
+### Circuitos a probar (desde notas anteriores):
+1. [ ] Crear evento nuevo (desde admin)
+2. [ ] Crear usuario de prueba (registro + verificar email)
+3. [ ] Login con nuevo usuario
+4. [ ] Compra real con MercadoPago (tarjeta prueba: 4509 9535 6621 0551)
+5. [ ] Verificar webhook confirma pago
+6. [ ] Recibir email con QR (ver diseño)
+7. [ ] Ver en Mis Entradas
+8. [ ] Reenviar ticket por email
+9. [ ] Scanner: validar entrada
+10. [ ] Transferir entrada a otro usuario
+11. [ ] Aceptar transferencia
+12. [ ] Analytics: ver ventas
+
+### Issues a resolver:
+- [ ] Auto-deploy en Render (configurar webhook)
+- [ ] Toast no aparece en scanner (usar alert por ahora)
 
 ---
 
