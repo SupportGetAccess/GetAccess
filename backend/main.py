@@ -1462,7 +1462,8 @@ def recuperar_password(datos: dict, request: Request, db = Depends(get_db)):
     expires = datetime.datetime.now() + datetime.timedelta(hours=1)
     
     db.execute("DELETE FROM password_reset WHERE email = ?", (email,))
-    db.execute("INSERT INTO password_reset (email, token, expires_at) VALUES (?, ?, ?)", (email, token, expires.isoformat()))
+    expires_str = expires.isoformat()
+    db.execute("INSERT INTO password_reset (email, token, expires_at) VALUES (?, ?, ?)", (email, token, expires_str))
     db.commit()
     
     reset_url = f"https://getaccess.com.ar/?reset={token}"
@@ -1522,7 +1523,11 @@ def restablecer_password(datos: dict, db = Depends(get_db)):
     if usado:
         raise HTTPException(status_code=400, detail="Este enlace ya fue utilizado")
     
-    if datetime.datetime.now() > datetime.datetime.fromisoformat(expires_at):
+    if isinstance(expires_at, str):
+        expires_at = expires_at.replace('Z', '+00:00')
+    if hasattr(expires_at, 'replace'):
+        expires_at = datetime.datetime.fromisoformat(expires_at)
+    if datetime.datetime.now() > expires_at:
         raise HTTPException(status_code=400, detail="El enlace ha expirado")
     
     hashed_password = hash_password(nueva_password)
