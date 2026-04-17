@@ -2543,7 +2543,7 @@ if __name__ == "__main__":
                 cantidad INTEGER NOT NULL,
                 total REAL NOT NULL,
                 estado TEXT DEFAULT 'comprada',
-                preference_id TEXT,
+                preference_id TEXT UNIQUE,
                 payment_id TEXT,
                 creada_en TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 usada INTEGER DEFAULT 0,
