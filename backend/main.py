@@ -120,6 +120,30 @@ def init_brute_force_table(db):
 
 def check_brute_force(email: str, db, es_login: bool = True) -> tuple[bool, str]:
     """Verifica y maneja protección brute-force"""
+    # Crear tabla si no existe
+    try:
+        if is_postgres():
+            db.execute("""
+                CREATE TABLE IF NOT EXISTS brute_force_protection (
+                    email VARCHAR(255) PRIMARY KEY,
+                    intentos INTEGER DEFAULT 0,
+                    bloqueado_hasta TIMESTAMP,
+                    ultimo_intento TIMESTAMP
+                )
+            """)
+        else:
+            db.execute("""
+                CREATE TABLE IF NOT EXISTS brute_force_protection (
+                    email TEXT PRIMARY KEY,
+                    intentos INTEGER DEFAULT 0,
+                    bloqueado_hasta TEXT,
+                    ultimo_intento TEXT
+                )
+            """)
+        db.commit()
+    except:
+        pass  # Tabla ya existe
+    
     now = datetime.datetime.now()
     
     cursor = db.execute("SELECT intentos, bloqueado_hasta, ultimo_intento FROM brute_force_protection WHERE email = ?", (email,))
@@ -220,6 +244,28 @@ def init_rate_limit_table(db):
 
 def check_rate_limit(client_id: str, db) -> bool:
     """Rate limiting con persistencia en base de datos"""
+    # Crear tabla si no existe
+    try:
+        if is_postgres():
+            db.execute("""
+                CREATE TABLE IF NOT EXISTS rate_limits (
+                    client_id VARCHAR(255) PRIMARY KEY,
+                    requests TIMESTAMP[],
+                    window_seconds INTEGER DEFAULT 60
+                )
+            """)
+        else:
+            db.execute("""
+                CREATE TABLE IF NOT EXISTS rate_limits (
+                    client_id TEXT PRIMARY KEY,
+                    requests TEXT,
+                    window_seconds INTEGER DEFAULT 60
+                )
+            """)
+        db.commit()
+    except:
+        pass  # Tabla ya existe
+    
     now = datetime.datetime.now()
     
     cursor = db.execute("SELECT requests, window_seconds FROM rate_limits WHERE client_id = ?", (client_id,))
