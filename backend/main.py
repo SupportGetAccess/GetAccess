@@ -919,11 +919,11 @@ def listar_eventos(categoria: str = None, busqueda: str = None, db = Depends(get
         query = "SELECT id, nombre, descripcion, fecha, lugar, precio, capacidad, vendidos, COALESCE(imagen, '') as imagen, COALESCE(categoria, '') as categoria FROM eventos WHERE 1=1"
         params = []
         if categoria:
-            query += " AND categoria = %s"
+            query += " AND categoria = ?"
             params.append(categoria)
         if busqueda:
             busqueda_lower = busqueda.lower()
-            query += " AND (LOWER(nombre) LIKE %s OR LOWER(descripcion) LIKE %s OR LOWER(lugar) LIKE %s)"
+            query += " AND (LOWER(nombre) LIKE ? OR LOWER(descripcion) LIKE ? OR LOWER(lugar) LIKE ?)"
             params.extend([f"%{busqueda_lower}%", f"%{busqueda_lower}%", f"%{busqueda_lower}%"])
         query += " ORDER BY fecha"
         
