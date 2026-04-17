@@ -2239,13 +2239,14 @@
                         </div>
                     )}
                     
-                    <div style={{marginTop: '2rem', padding: '1.5rem', background: 'var(--card-bg)', borderRadius: '12px'}}>
+                    <div style={{marginTop: '2rem', padding: '1.5rem', background: 'var(--card-bg)', borderRadius: '12px', opacity: 0.6}}>
                         <h3 style={{marginBottom: '1rem'}}>📥 Aceptar Transferencia</h3>
                         <p style={{color: 'var(--text-muted)', marginBottom: '1rem'}}>Si te enviaron una entrada, ingresa el código que recibiste por email:</p>
                         <div style={{display: 'flex', gap: '0.5rem'}}>
-                            <input type="text" value={acceptToken} onChange={e => setAcceptToken(e.target.value)} placeholder="Código de transferencia" style={{flex: 1, padding: '12px', borderRadius: '8px', border: '1px solid #ddd', fontSize: '14px'}} />
-                            <button className="btn" onClick={aceptarTransferencia} disabled={accepting}>{accepting ? 'Aceptando...' : '✅ Aceptar'}</button>
+                            <input type="text" value={acceptToken} onChange={e => setAcceptToken(e.target.value)} placeholder="Código de transferencia" disabled style={{flex: 1, padding: '12px', borderRadius: '8px', border: '1px solid #ddd', fontSize: '14px', background: '#f5f5f5'}} />
+                            <button className="btn" onClick={aceptarTransferencia} disabled style={{opacity: 0.5}}>✅ Aceptar</button>
                         </div>
+                        <p style={{color: '#f59e0b', marginTop: '0.75rem', fontSize: '0.85rem'}}>🔒 Funcionalidad de transferencias temporalmente deshabilitada</p>
                     </div>
                 </>
             );
