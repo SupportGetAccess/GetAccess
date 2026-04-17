@@ -2,6 +2,17 @@
 
 ⚠️⚠️⚠️ IMPORTANTE: Cada vez que hagas UNA SOLA modificación en cualquier archivo (backend/main.py, frontend/*.html), DEBES reiniciar los servicios antes de decir "Listo" o "Listo, servicios iniciados". Si no lo haces, el usuario no podrá probar los cambios. ⚠️⚠️⚠️
 
+## 🏭 PRUEBAS EN PRODUCCIÓN - NO HAY LOCAL
+**TODAS las pruebas se realizan en producción:** https://getaccess.com.ar
+- NO se prueba en localhost
+- NO se hace debug local
+- Solo se desarrolla local y se sube a producción para probar
+
+## URLs de Producción
+- **Frontend**: https://getaccess.com.ar
+- **Scanner**: https://getaccess.com.ar/scanner.html
+- **Backend API**: https://getaccess-d3um.onrender.com
+
 ## Estructura del Proyecto
 - **Backend**: C:\Users\guill\eventos_tickets_full\backend\main.py
 - **Frontend**: C:\Users\guill\eventos_tickets_full\frontend\index.html

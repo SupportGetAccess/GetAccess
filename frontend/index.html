@@ -2325,7 +2325,7 @@
         }
 
         function AdminPanel() {
-            const { token, showToast, irADetalle } = useContext(AuthContext);
+            const { user, token, showToast, irADetalle } = useContext(AuthContext);
             const [eventos, setEventos] = useState([]);
             const [loading, setLoading] = useState(true);
             const [form, setForm] = useState({ nombre: '', descripcion: '', fecha: '', lugar: '', precio: '', capacidad: '', imagen: '', categoria: '' });

@@ -1,5 +1,51 @@
 # Notas del Proyecto Get Access
 
+## ⚠️ IMPORTANTE: TODAS LAS PRUEBAS EN PRODUCCIÓN
+
+**SIEMPRE usar:**
+- Frontend: https://getaccess.com.ar
+- Scanner: https://getaccess.com.ar/scanner.html
+- Backend API: https://getaccess-d3um.onrender.com
+
+**NO usar localhost para pruebas.**
+
+---
+
+## ☁️ PLATAFORMAS CLOUD UTILIZADAS
+
+| # | Servicio | Uso |
+|---|---------|-----|
+| 1 | Render | Hosting web + API |
+| 2 | Cloudflare | DNS + SSL |
+| 3 | Zoho Mail | Email soporte |
+| 4 | Supabase | Base de datos PostgreSQL |
+| 5 | Brevo | Envío emails transaccionales |
+| 6 | MercadoPago | Pagos
+
+---
+
+## 📌 EMAIL CONFIGURADO (15/04/2026)
+
+### Remitente: soporte@getaccess.com.ar ✅ FUNCIONANDO
+- **Remitente emails transaccionales**: Brevo
+- **Remitente emails manuales**: Zoho Mail
+
+### Configuración DNS (Cloudflare):
+- ✅ SPF: v=spf1 include:zohomail.com include:brevo.com ~all
+- ✅ DKIM: zoho._domainkey + brevo1._domainkey + brevo2._domainkey
+- ✅ DMARC: _dmarc
+
+### Remitentes en Brevo:
+- ✅ soporte@getaccess.com.ar (autentificado)
+- ✅ getaccess.com.ar (dominio autentificado)
+
+### Variables en Render:
+```
+BREVO_SENDER_EMAIL = soporte@getaccess.com.ar
+```
+
+---
+
 ## ☁️ PLATAFORMAS CLOUD UTILIZADAS
 
 | # | Servicio | Uso |
@@ -638,6 +684,45 @@ Valores por defecto (fallback) incluidos en el código para desarrollo.
 ### Issues a resolver:
 - [ ] Auto-deploy en Render (configurar webhook)
 - [ ] Toast no aparece en scanner (usar alert por ahora)
+
+---
+
+---
+
+## 🛠️ MANTENER SERVICIO ACTIVO (Evitar cold start)
+
+### Opción: UptimeRobot (recomendado - gratis)
+1. Ir a https://uptimerobot.com
+2. Agregar monitor: https://getaccess-d3um.onrender.com/health
+3. Intervalo: cada 15 min (plan gratuito)
+
+### Alternativa: PowerShell local
+```powershell
+$action = New-ScheduledTaskAction -Execute "powershell" -Argument "-Command Invoke-WebRequest -Uri 'https://getaccess-d3um.onrender.com/health' -UseBasicParsing"
+$trigger = New-ScheduledTaskTrigger -Once -At "09:00" -RepetitionInterval (New-TimeSpan -Minutes 10)
+Register-ScheduledTask -Action $action -Trigger $trigger -TaskName "PingGetAccess"
+```
+
+---
+
+## 🗄️ ADMINISTACIÓN BASES DE DATOS
+
+### Limpiar tokens de recuperación (Supabase SQL):
+```sql
+DELETE FROM password_reset;
+```
+
+### Ver tokens pendientes:
+```sql
+SELECT * FROM password_reset;
+```
+
+---
+
+## 📝 PENDIENTE
+
+- [ ] UptimeRobot configurado
+- [ ] Limpiar tokens pruebareset (cuenta aantoniaa1982@gmail.com)
 
 ---
 
