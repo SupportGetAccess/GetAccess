@@ -5,7 +5,7 @@
 **SIEMPRE usar:**
 - Frontend: https://getaccess.com.ar
 - Scanner: https://getaccess.com.ar/scanner.html
-- Backend API: https://getaccess-d3um.onrender.com
+- Backend API: https://getaccess-d3um.onrender.com (solo API/webhooks) (solo API/webhooks)
 
 **NO usar localhost para pruebas.**
 
@@ -144,7 +144,7 @@ Get Access - Sistema de Entradas
 **SIEMPRE usar:**
 - Frontend: https://getaccess.com.ar
 - Scanner: https://getaccess.com.ar/scanner.html
-- Backend API: https://getaccess-d3um.onrender.com
+- Backend API: https://getaccess-d3um.onrender.com (solo API/webhooks)
 
 **NO usar localhost para pruebas.**
 
@@ -219,7 +219,7 @@ Get Access - Sistema de Entradas
 ### URLs para probar (NUEVO DOMINIO):
 - Frontend: https://getaccess.com.ar
 - Scanner: https://getaccess.com.ar/scanner.html
-- Backend API: https://getaccess-d3um.onrender.com/api
+- Backend API: https://getaccess-d3um.onrender.com/api (solo API/webhooks)
 - (También disponible en: https://getaccess-d3um.onrender.com)
 
 ### Credenciales:
@@ -252,8 +252,8 @@ Get Access - Sistema de Entradas
 ## 🚀 DEPLOY EN RENDER
 
 ### URL del servicio
-- **Backend API**: https://getaccess-d3um.onrender.com
-- **Frontend**: https://getaccess-d3um.onrender.com (mismo servicio)
+- **Backend API**: https://getaccess-d3um.onrender.com (solo API/webhooks)
+- **Frontend**: https://getaccess.com.ar (dominio custom)
 
 ### Estado actual: 🔧 EN DEBUG
 

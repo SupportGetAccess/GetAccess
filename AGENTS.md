@@ -11,7 +11,7 @@
 ## URLs de Producción
 - **Frontend**: https://getaccess.com.ar
 - **Scanner**: https://getaccess.com.ar/scanner.html
-- **Backend API**: https://getaccess-d3um.onrender.com
+- **Backend API**: https://getaccess-d3um.onrender.com (solo para API/webhooks)
 
 ## Estructura del Proyecto
 - **Backend**: C:\Users\guill\eventos_tickets_full\backend\main.py
