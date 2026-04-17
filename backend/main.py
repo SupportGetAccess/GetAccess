@@ -2096,13 +2096,18 @@ def get_analytics_general(tipo: str, credentials: HTTPAuthorizationCredentials =
     except:
         raise HTTPException(status_code=401, detail="Token inválido")
     
-    cursor = db.execute("SELECT COUNT(*), SUM(total), SUM(cantidad) FROM entradas WHERE estado = 'pagada'")
+    cursor = db.execute("SELECT COUNT(*) as cnt, COALESCE(SUM(total), 0) as total, COALESCE(SUM(cantidad), 0) as cnt_total FROM entradas WHERE estado = 'pagada'")
     row = cursor.fetchone()
-    ventas_total = row[2] or 0
-    ingresos_total = row[1] or 0
+    if isinstance(row, dict):
+        ventas_total = row.get('cnt_total') or 0
+        ingresos_total = row.get('total') or 0
+    else:
+        ventas_total = row[2] or 0
+        ingresos_total = row[1] or 0
     
     cursor = db.execute("SELECT COUNT(*) FROM validaciones")
-    tickets_usados = cursor.fetchone()[0] or 0
+    row = cursor.fetchone()
+    tickets_usados = row[0] if isinstance(row, tuple) else (row.get('count') or row.get('cnt') or 0) if isinstance(row, dict) else 0
     
     cursor = db.execute("""
         SELECT COALESCE(e.categoria, 'sin_categoria') as cat, COUNT(*) as cantidad
@@ -2111,7 +2116,12 @@ def get_analytics_general(tipo: str, credentials: HTTPAuthorizationCredentials =
         WHERE en.estado = 'pagada'
         GROUP BY cat
     """)
-    por_categoria = [{"categoria": r[0] if isinstance(r, dict) else r[0], "cantidad": r[1] if isinstance(r, dict) else r[1]} for r in cursor.fetchall()]
+    por_categoria = []
+    for r in cursor.fetchall():
+        if isinstance(r, dict):
+            por_categoria.append({"categoria": r.get('cat', ''), "cantidad": r.get('cantidad', 0)})
+        else:
+            por_categoria.append({"categoria": r[0], "cantidad": r[1]})
     
     cursor = db.execute("""
         SELECT e.id, e.nombre, e.vendidos, (e.vendidos * e.precio) as ingresos
@@ -2123,7 +2133,7 @@ def get_analytics_general(tipo: str, credentials: HTTPAuthorizationCredentials =
     top_eventos = []
     for r in cursor.fetchall():
         if isinstance(r, dict):
-            top_eventos.append({"id": r["id"], "nombre": r["nombre"], "vendidos": r["vendidos"], "ingresos": r["ingresos"]})
+            top_eventos.append({"id": r.get("id"), "nombre": r.get("nombre"), "vendidos": r.get("vendidos"), "ingresos": r.get("ingresos")})
         else:
             top_eventos.append({"id": r[0], "nombre": r[1], "vendidos": r[2], "ingresos": r[3]})
     
@@ -2149,7 +2159,7 @@ def get_analytics_general(tipo: str, credentials: HTTPAuthorizationCredentials =
     ventas_por_dia = []
     for r in cursor.fetchall():
         if isinstance(r, dict):
-            ventas_por_dia.append({"fecha": str(r["fecha"]) if r["fecha"] else "", "cantidad": r["cantidad"]})
+            ventas_por_dia.append({"fecha": str(r.get("fecha", "")) if r.get("fecha") else "", "cantidad": r.get("cantidad", 0)})
         else:
             ventas_por_dia.append({"fecha": str(r[0]) if r[0] else "", "cantidad": r[1]})
     
