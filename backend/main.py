@@ -38,6 +38,7 @@ try:
     RATE_LIMIT_WINDOW = config.RATE_LIMIT_WINDOW
     RATE_LIMIT_MAX = config.RATE_LIMIT_MAX
     PRODUCTION_URL = config.PRODUCTION_URL
+    RENDER_URL = config.RENDER_URL
     DEV_URLS = config.DEV_URLS
     BREVO_API_URL = config.BREVO_API_URL
     MERCADOPAGO_API_URL = config.MERCADOPAGO_API_URL
@@ -58,7 +59,8 @@ except ImportError:
     DATABASE_URL = "access_on.db"
     RATE_LIMIT_WINDOW = 60
     RATE_LIMIT_MAX = 100
-    PRODUCTION_URL = "https://getaccess-d3um.onrender.com"
+    PRODUCTION_URL = "https://getaccess.com.ar"
+    RENDER_URL = "https://getaccess-d3um.onrender.com"
     DEV_URLS = ["http://localhost:3000", "https://192.168.1.40:3443"]
     BREVO_API_URL = "https://api.brevo.com/v3/smtp/email"
     MERCADOPAGO_API_URL = "https://api.mercadopago.com"
@@ -913,22 +915,42 @@ class EventoResponse(BaseModel):
 
 @app.get("/api/eventos/")
 def listar_eventos(categoria: str = None, busqueda: str = None, db = Depends(get_db)):
-    query = "SELECT id, nombre, descripcion, fecha, lugar, precio, capacidad, vendidos, COALESCE(imagen, '') as imagen, COALESCE(categoria, '') as categoria FROM eventos WHERE 1=1"
-    params = []
-    if categoria:
-        query += " AND categoria = %s"
-        params.append(categoria)
-    if busqueda:
-        query += " AND (nombre LIKE %s OR descripcion LIKE %s OR lugar LIKE %s)"
-        params.extend([f"%{busqueda}%", f"%{busqueda}%", f"%{busqueda}%"])
-    query += " ORDER BY fecha"
-    
-    cursor = db.execute(query, params)
-    rows = cursor.fetchall()
-    return [
-        {"id": r[0], "nombre": r[1], "descripcion": r[2], "fecha": r[3], "lugar": r[4], "precio": r[5], "disponibles": r[6] - r[7], "imagen": r[8], "categoria": r[9], "capacidad": r[6], "vendidos": r[7]}
-        for r in rows
-    ]
+    if is_postgres():
+        query = "SELECT id, nombre, descripcion, fecha, lugar, precio, capacidad, vendidos, COALESCE(imagen, '') as imagen, COALESCE(categoria, '') as categoria FROM eventos WHERE 1=1"
+        params = []
+        if categoria:
+            query += " AND categoria = %s"
+            params.append(categoria)
+        if busqueda:
+            busqueda_lower = busqueda.lower()
+            query += " AND (LOWER(nombre) LIKE %s OR LOWER(descripcion) LIKE %s OR LOWER(lugar) LIKE %s)"
+            params.extend([f"%{busqueda_lower}%", f"%{busqueda_lower}%", f"%{busqueda_lower}%"])
+        query += " ORDER BY fecha"
+        
+        cursor = db.execute(query, params)
+        rows = cursor.fetchall()
+        return [
+            {"id": r["id"], "nombre": r["nombre"], "descripcion": r["descripcion"], "fecha": r["fecha"], "lugar": r["lugar"], "precio": r["precio"], "disponibles": r["capacidad"] - r["vendidos"], "imagen": r["imagen"], "categoria": r["categoria"], "capacidad": r["capacidad"], "vendidos": r["vendidos"]}
+            for r in rows
+        ]
+    else:
+        query = "SELECT id, nombre, descripcion, fecha, lugar, precio, capacidad, vendidos, COALESCE(imagen, '') as imagen, COALESCE(categoria, '') as categoria FROM eventos WHERE 1=1"
+        params = []
+        if categoria:
+            query += " AND categoria = ?"
+            params.append(categoria)
+        if busqueda:
+            busqueda_lower = busqueda.lower()
+            query += " AND (LOWER(nombre) LIKE ? OR LOWER(descripcion) LIKE ? OR LOWER(lugar) LIKE ?)"
+            params.extend([f"%{busqueda_lower}%", f"%{busqueda_lower}%", f"%{busqueda_lower}%"])
+        query += " ORDER BY fecha"
+        
+        cursor = db.execute(query, params)
+        rows = cursor.fetchall()
+        return [
+            {"id": r[0], "nombre": r[1], "descripcion": r[2], "fecha": r[3], "lugar": r[4], "precio": r[5], "disponibles": r[6] - r[7], "imagen": r[8], "categoria": r[9], "capacidad": r[6], "vendidos": r[7]}
+            for r in rows
+        ]
 
 @app.get("/api/eventos/categorias")
 def listar_categorias(db = Depends(get_db)):
@@ -1613,8 +1635,8 @@ def crear_preferencia_carrito(datos: dict, credentials: HTTPAuthorizationCredent
     
     ext_refs = [str(e[0]) for e in entradas]
     
-    back_url_base = os.environ.get("PRODUCTION_URL", "https://getaccess-d3um.onrender.com")
-    webhook_url = f"{back_url_base}/api/pagos/webhook"
+    back_url_base = os.environ.get("PRODUCTION_URL", "https://getaccess.com.ar")
+    webhook_url = f"{RENDER_URL}/api/pagos/webhook"
     
     try:
         preference_data = {
@@ -1658,8 +1680,8 @@ def crear_preferencia_pago(datos: dict, credentials: HTTPAuthorizationCredential
         raise HTTPException(status_code=404, detail="Entrada no encontrada o ya pagada")
     
     try:
-        back_url_base = os.environ.get("PRODUCTION_URL", "https://getaccess-d3um.onrender.com")
-        webhook_url = f"{back_url_base}/api/pagos/webhook"
+        back_url_base = os.environ.get("PRODUCTION_URL", "https://getaccess.com.ar")
+        webhook_url = f"{RENDER_URL}/api/pagos/webhook"
         preference_data = {
             "items": [
                 {
@@ -2081,7 +2103,7 @@ def get_analytics_general(tipo: str, credentials: HTTPAuthorizationCredentials =
     ingresos_total = row[1] or 0
     
     cursor = db.execute("SELECT COUNT(*) FROM validaciones")
-    tickets_usados = cursor.fetchone()[0]
+    tickets_usados = cursor.fetchone()[0] or 0
     
     cursor = db.execute("""
         SELECT COALESCE(e.categoria, 'sin_categoria') as cat, COUNT(*) as cantidad
@@ -2090,7 +2112,7 @@ def get_analytics_general(tipo: str, credentials: HTTPAuthorizationCredentials =
         WHERE en.estado = 'pagada'
         GROUP BY cat
     """)
-    por_categoria = [{"categoria": r[0], "cantidad": r[1]} for r in cursor.fetchall()]
+    por_categoria = [{"categoria": r[0] if isinstance(r, dict) else r[0], "cantidad": r[1] if isinstance(r, dict) else r[1]} for r in cursor.fetchall()]
     
     cursor = db.execute("""
         SELECT e.id, e.nombre, e.vendidos, (e.vendidos * e.precio) as ingresos
@@ -2099,17 +2121,38 @@ def get_analytics_general(tipo: str, credentials: HTTPAuthorizationCredentials =
         ORDER BY e.vendidos DESC
         LIMIT 10
     """)
-    top_eventos = [{"id": r[0], "nombre": r[1], "vendidos": r[2], "ingresos": r[3]} for r in cursor.fetchall()]
+    top_eventos = []
+    for r in cursor.fetchall():
+        if isinstance(r, dict):
+            top_eventos.append({"id": r["id"], "nombre": r["nombre"], "vendidos": r["vendidos"], "ingresos": r["ingresos"]})
+        else:
+            top_eventos.append({"id": r[0], "nombre": r[1], "vendidos": r[2], "ingresos": r[3]})
     
-    cursor = db.execute("""
-        SELECT DATE(creado_en) as fecha, SUM(cantidad) as cantidad
-        FROM entradas
-        WHERE estado = 'pagada' AND creado_en >= DATE('now', '-30 days')
-        GROUP BY fecha
-        ORDER BY fecha DESC
-        LIMIT 14
-    """)
-    ventas_por_dia = [{"fecha": r[0], "cantidad": r[1]} for r in cursor.fetchall()]
+    # Query compatible con SQLite y PostgreSQL
+    if is_postgres():
+        cursor = db.execute("""
+            SELECT DATE(creado_en)::date as fecha, SUM(cantidad) as cantidad
+            FROM entradas
+            WHERE estado = 'pagada' AND creado_en >= CURRENT_DATE - INTERVAL '30 days'
+            GROUP BY fecha
+            ORDER BY fecha DESC
+            LIMIT 14
+        """)
+    else:
+        cursor = db.execute("""
+            SELECT DATE(creado_en) as fecha, SUM(cantidad) as cantidad
+            FROM entradas
+            WHERE estado = 'pagada' AND creado_en >= DATE('now', '-30 days')
+            GROUP BY fecha
+            ORDER BY fecha DESC
+            LIMIT 14
+        """)
+    ventas_por_dia = []
+    for r in cursor.fetchall():
+        if isinstance(r, dict):
+            ventas_por_dia.append({"fecha": str(r["fecha"]) if r["fecha"] else "", "cantidad": r["cantidad"]})
+        else:
+            ventas_por_dia.append({"fecha": str(r[0]) if r[0] else "", "cantidad": r[1]})
     
     precio_promedio = ingresos_total / ventas_total if ventas_total > 0 else 0
     

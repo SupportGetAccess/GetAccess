@@ -8,8 +8,11 @@ from pathlib import Path
 # URLS DEL SITIO
 # ============================================
 
-# URL de producción (Render)
-PRODUCTION_URL = "https://getaccess-d3um.onrender.com"
+# URL de producción (dominio custom)
+PRODUCTION_URL = "https://getaccess.com.ar"
+
+# URL alternativa (Render - solo para API)
+RENDER_URL = "https://getaccess-d3um.onrender.com"
 
 # URLs de desarrollo
 DEV_URLS = [
@@ -76,7 +79,7 @@ _allowed = os.environ.get("ALLOWED_ORIGINS", "")
 if _allowed:
     ALLOWED_ORIGINS = _allowed.split(",")
 else:
-    ALLOWED_ORIGINS = DEV_URLS + [PRODUCTION_URL]
+    ALLOWED_ORIGINS = DEV_URLS + [PRODUCTION_URL, RENDER_URL]
 
 # Rate Limiting
 RATE_LIMIT_WINDOW = 60  # segundos
