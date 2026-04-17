@@ -915,7 +915,7 @@ class EventoResponse(BaseModel):
 
 @app.get("/api/eventos/")
 def listar_eventos(categoria: str = None, busqueda: str = None, db = Depends(get_db)):
-    if is_postgres():
+    try:
         query = "SELECT id, nombre, descripcion, fecha, lugar, precio, capacidad, vendidos, COALESCE(imagen, '') as imagen, COALESCE(categoria, '') as categoria FROM eventos WHERE 1=1"
         params = []
         if categoria:
@@ -929,28 +929,20 @@ def listar_eventos(categoria: str = None, busqueda: str = None, db = Depends(get
         
         cursor = db.execute(query, params)
         rows = cursor.fetchall()
-        return [
-            {"id": r["id"], "nombre": r["nombre"], "descripcion": r["descripcion"], "fecha": r["fecha"], "lugar": r["lugar"], "precio": r["precio"], "disponibles": r["capacidad"] - r["vendidos"], "imagen": r["imagen"], "categoria": r["categoria"], "capacidad": r["capacidad"], "vendidos": r["vendidos"]}
-            for r in rows
-        ]
-    else:
-        query = "SELECT id, nombre, descripcion, fecha, lugar, precio, capacidad, vendidos, COALESCE(imagen, '') as imagen, COALESCE(categoria, '') as categoria FROM eventos WHERE 1=1"
-        params = []
-        if categoria:
-            query += " AND categoria = ?"
-            params.append(categoria)
-        if busqueda:
-            busqueda_lower = busqueda.lower()
-            query += " AND (LOWER(nombre) LIKE ? OR LOWER(descripcion) LIKE ? OR LOWER(lugar) LIKE ?)"
-            params.extend([f"%{busqueda_lower}%", f"%{busqueda_lower}%", f"%{busqueda_lower}%"])
-        query += " ORDER BY fecha"
         
-        cursor = db.execute(query, params)
-        rows = cursor.fetchall()
-        return [
-            {"id": r[0], "nombre": r[1], "descripcion": r[2], "fecha": r[3], "lugar": r[4], "precio": r[5], "disponibles": r[6] - r[7], "imagen": r[8], "categoria": r[9], "capacidad": r[6], "vendidos": r[7]}
-            for r in rows
-        ]
+        if db.is_postgres:
+            return [
+                {"id": r["id"], "nombre": r["nombre"], "descripcion": r["descripcion"], "fecha": r["fecha"], "lugar": r["lugar"], "precio": r["precio"], "disponibles": r["capacidad"] - r["vendidos"], "imagen": r["imagen"], "categoria": r["categoria"], "capacidad": r["capacidad"], "vendidos": r["vendidos"]}
+                for r in rows
+            ]
+        else:
+            return [
+                {"id": r[0], "nombre": r[1], "descripcion": r[2], "fecha": r[3], "lugar": r[4], "precio": r[5], "disponibles": r[6] - r[7], "imagen": r[8], "categoria": r[9], "capacidad": r[6], "vendidos": r[7]}
+                for r in rows
+            ]
+    except Exception as e:
+        print(f">>> ERROR listar_eventos: {e}")
+        raise HTTPException(status_code=500, detail=f"Error: {str(e)}")
 
 @app.get("/api/eventos/categorias")
 def listar_categorias(db = Depends(get_db)):
