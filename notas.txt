@@ -723,33 +723,8 @@ SELECT * FROM password_reset;
 
 - [ ] UptimeRobot configurado
 - [ ] Limpiar tokens prueba (cuenta aantoniaa1982@gmail.com)
+- [ ] Probar formulario de contacto en producción
 
 ---
 
-## 🔒 SEGURIDAD IMPLEMENTADA (Abril 2026)
-
-### Cambios aplicados:
-1. ✅ CORS restringido a orígenes específicos
-2. ✅ Rate limiting con persistencia en BD
-3. ✅ Admin secret movido a header
-4. ✅ Logging de eventos de seguridad
-5. ✅ Brute-force protection (bloqueo tras 5 intentos fallidos)
-6. ✅ UNIQUE constraint en preference_id (evitar duplicados)
-
----
-
-## 📬 PÁGINA DE CONTACTO (Abril 2026)
-
-### Implementado:
-- ✅ Página de contacto con formulario
-- ✅ Campos: Nombre, Email, Asunto (dropdown), Mensaje
-- ✅ Backend endpoint: /api/contacto/enviar
-- ✅ Envía email a soporte@getaccess.com.ar via Brevo
-- ✅ Diseño profesional con gradientes y emojis
-
-### Pendiente:
-- [ ] Prueba completa del formulario de contacto en producción
-
----
-
-*Para más detalles ver análisis de competidores en las notas de sesión.*
+*Última sesión: Viernes 17 de Abril 2026 - Sesión terminada*
