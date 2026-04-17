@@ -930,16 +930,23 @@ def listar_eventos(categoria: str = None, busqueda: str = None, db = Depends(get
         cursor = db.execute(query, params)
         rows = cursor.fetchall()
         
-        if db.is_postgres:
-            return [
-                {"id": r["id"], "nombre": r["nombre"], "descripcion": r["descripcion"], "fecha": r["fecha"], "lugar": r["lugar"], "precio": r["precio"], "disponibles": r["capacidad"] - r["vendidos"], "imagen": r["imagen"], "categoria": r["categoria"], "capacidad": r["capacidad"], "vendidos": r["vendidos"]}
-                for r in rows
-            ]
-        else:
-            return [
-                {"id": r[0], "nombre": r[1], "descripcion": r[2], "fecha": r[3], "lugar": r[4], "precio": r[5], "disponibles": r[6] - r[7], "imagen": r[8], "categoria": r[9], "capacidad": r[6], "vendidos": r[7]}
-                for r in rows
-            ]
+        # Manejar tanto dict (PostgreSQL) como tupla (SQLite)
+        return [
+            {
+                "id": r["id"] if isinstance(r, dict) else r[0],
+                "nombre": r["nombre"] if isinstance(r, dict) else r[1],
+                "descripcion": r["descripcion"] if isinstance(r, dict) else r[2],
+                "fecha": r["fecha"] if isinstance(r, dict) else r[3],
+                "lugar": r["lugar"] if isinstance(r, dict) else r[4],
+                "precio": r["precio"] if isinstance(r, dict) else r[5],
+                "disponibles": (r["capacidad"] if isinstance(r, dict) else r[6]) - (r["vendidos"] if isinstance(r, dict) else r[7]),
+                "imagen": r["imagen"] if isinstance(r, dict) else r[8],
+                "categoria": r["categoria"] if isinstance(r, dict) else r[9],
+                "capacidad": r["capacidad"] if isinstance(r, dict) else r[6],
+                "vendidos": r["vendidos"] if isinstance(r, dict) else r[7]
+            }
+            for r in rows
+        ]
     except Exception as e:
         print(f">>> ERROR listar_eventos: {e}")
         raise HTTPException(status_code=500, detail=f"Error: {str(e)}")
