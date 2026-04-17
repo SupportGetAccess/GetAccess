@@ -76,15 +76,191 @@ except ImportError:
         "https://images.unsplash.com/photo-1598387993441-a364f854c3e1?w=800",
     ]
 
-# Rate Limiting - global storage
-RATE_LIMIT = defaultdict(list)
+# Rate Limiting - tabla en base de datos
+RATE_LIMIT_WINDOW = 60  # segundos
+RATE_LIMIT_MAX = 100    # max requests por ventana
 
-def check_rate_limit(client_id: str) -> bool:
+# Logging de seguridad
+import logging
+security_logger = logging.getLogger("security")
+security_logger.setLevel(logging.INFO)
+handler = logging.StreamHandler()
+handler.setFormatter(logging.Formatter('%(asctime)s - SECURITY - %(message)s'))
+security_logger.addHandler(handler)
+
+def log_security(evento: str, detalles: str = ""):
+    """Registrar eventos de seguridad"""
+    security_logger.info(f"{evento}: {detalles}")
+
+# Brute-force protection
+BRUTE_FORCE_MAX = 5  # max intentos fallidos
+BRUTE_FORCE_WINDOW = 300  # 5 minutos de bloqueo
+
+def init_brute_force_table(db):
+    """Inicializa la tabla de protección brute-force"""
+    if is_postgres():
+        db.execute("""
+            CREATE TABLE IF NOT EXISTS brute_force_protection (
+                email VARCHAR(255) PRIMARY KEY,
+                intentos INTEGER DEFAULT 0,
+                bloqueado_hasta TIMESTAMP,
+                ultimo_intento TIMESTAMP
+            )
+        """)
+    else:
+        db.execute("""
+            CREATE TABLE IF NOT EXISTS brute_force_protection (
+                email TEXT PRIMARY KEY,
+                intentos INTEGER DEFAULT 0,
+                bloqueado_hasta TEXT,
+                ultimo_intento TEXT
+            )
+        """)
+    db.commit()
+
+def check_brute_force(email: str, db, es_login: bool = True) -> tuple[bool, str]:
+    """Verifica y maneja protección brute-force"""
     now = datetime.datetime.now()
-    RATE_LIMIT[client_id] = [t for t in RATE_LIMIT[client_id] if now - t < datetime.timedelta(seconds=RATE_LIMIT_WINDOW)]
-    if len(RATE_LIMIT[client_id]) >= RATE_LIMIT_MAX:
+    
+    cursor = db.execute("SELECT intentos, bloqueado_hasta, ultimo_intento FROM brute_force_protection WHERE email = ?", (email,))
+    row = cursor.fetchone()
+    
+    if row:
+        intentos, bloqueado_hasta, ultimo_intento = row
+        
+        # Verificar si está bloqueado
+        if bloqueado_hasta:
+            if is_postgres():
+                if isinstance(bloqueado_hasta, datetime.datetime) and bloqueado_hasta > now:
+                    return False, f"Cuenta bloqueada. Intenta más tarde."
+            else:
+                if bloqueado_hasta and datetime.datetime.fromisoformat(bloqueado_hasta) > now:
+                    return False, f"Cuenta bloqueada. Intenta más tarde."
+        
+        # Resetear intentos si pasó el tiempo de ventana
+        if ultimo_intento:
+            if is_postgres():
+                if isinstance(ultimo_intento, datetime.datetime):
+                    tiempo_pasado = (now - ultimo_intento).total_seconds()
+                else:
+                    tiempo_pasado = 300
+            else:
+                tiempo_pasado = (now - datetime.datetime.fromisoformat(ultimo_intento)).total_seconds() if ultimo_intento else 300
+            
+            if tiempo_pasado > BRUTE_FORCE_WINDOW:
+                intentos = 0
+    
+    return True, ""
+
+def record_brute_force_attempt(email: str, exitoso: bool, db):
+    """Registrar intento de login"""
+    now = datetime.datetime.now()
+    
+    cursor = db.execute("SELECT intentos FROM brute_force_protection WHERE email = ?", (email,))
+    row = cursor.fetchone()
+    
+    if exitoso:
+        # Login exitoso - resetear intentos
+        if row:
+            db.execute("DELETE FROM brute_force_protection WHERE email = ?", (email,))
+    else:
+        # Login fallido - incrementar contador
+        intentos = (row[0] + 1) if row else 1
+        
+        if intentos >= BRUTE_FORCE_MAX:
+            bloqueado_hasta = now + datetime.timedelta(minutes=15)
+            if is_postgres():
+                db.execute("""
+                    INSERT INTO brute_force_protection (email, intentos, bloqueado_hasta, ultimo_intento)
+                    VALUES (%s, %s, %s, %s)
+                    ON CONFLICT (email) DO UPDATE SET intentos = EXCLUDED.intentos, bloqueado_hasta = EXCLUDED.bloqueado_hasta, ultimo_intento = EXCLUDED.ultimo_intento
+                """, (email, intentos, bloqueado_hasta, now))
+            else:
+                db.execute("""
+                    INSERT OR REPLACE INTO brute_force_protection (email, intentos, bloqueado_hasta, ultimo_intento)
+                    VALUES (?, ?, ?, ?)
+                """, (email, intentos, bloqueado_hasta.isoformat(), now.isoformat()))
+            log_security("BRUTE_FORCE_BLOCKED", f"Email: {email}, Intentos: {intentos}")
+        else:
+            if is_postgres():
+                db.execute("""
+                    INSERT INTO brute_force_protection (email, intentos, ultimo_intento)
+                    VALUES (%s, %s, %s)
+                    ON CONFLICT (email) DO UPDATE SET intentos = EXCLUDED.intentos, ultimo_intento = EXCLUDED.ultimo_intento
+                """, (email, intentos, now))
+            else:
+                db.execute("""
+                    INSERT OR REPLACE INTO brute_force_protection (email, intentos, ultimo_intento)
+                    VALUES (?, ?, ?)
+                """, (email, intentos, now.isoformat()))
+            
+            log_security("LOGIN_FAILED", f"Email: {email}, Intento: {intentos}")
+    
+    db.commit()
+
+def init_rate_limit_table(db):
+    """Inicializa la tabla de rate limiting"""
+    if is_postgres():
+        db.execute("""
+            CREATE TABLE IF NOT EXISTS rate_limits (
+                client_id VARCHAR(255) PRIMARY KEY,
+                requests TIMESTAMP[],
+                window_seconds INTEGER DEFAULT 60
+            )
+        """)
+    else:
+        db.execute("""
+            CREATE TABLE IF NOT EXISTS rate_limits (
+                client_id TEXT PRIMARY KEY,
+                requests TEXT,
+                window_seconds INTEGER DEFAULT 60
+            )
+        """)
+    db.commit()
+
+def check_rate_limit(client_id: str, db) -> bool:
+    """Rate limiting con persistencia en base de datos"""
+    now = datetime.datetime.now()
+    
+    cursor = db.execute("SELECT requests, window_seconds FROM rate_limits WHERE client_id = ?", (client_id,))
+    row = cursor.fetchone()
+    
+    window = RATE_LIMIT_WINDOW
+    requests_times = []
+    
+    if row:
+        window = row[1] or RATE_LIMIT_WINDOW
+        req_str = row[0]
+        if req_str:
+            if is_postgres():
+                requests_times = req_str if isinstance(req_str, list) else []
+            else:
+                requests_times = [datetime.datetime.fromisoformat(t) for t in req_str.split(',')] if req_str else []
+    
+    # Filtrar requests dentro de la ventana
+    cutoff = now - datetime.timedelta(seconds=window)
+    requests_times = [t for t in requests_times if t > cutoff]
+    
+    if len(requests_times) >= RATE_LIMIT_MAX:
         return False
-    RATE_LIMIT[client_id].append(now)
+    
+    requests_times.append(now)
+    
+    # Guardar en BD
+    if is_postgres():
+        db.execute("""
+            INSERT INTO rate_limits (client_id, requests, window_seconds)
+            VALUES (%s, %s, %s)
+            ON CONFLICT (client_id) DO UPDATE SET requests = EXCLUDED.requests, window_seconds = EXCLUDED.window_seconds
+        """, (client_id, requests_times, window))
+    else:
+        req_str = ','.join([t.isoformat() for t in requests_times])
+        db.execute("""
+            INSERT OR REPLACE INTO rate_limits (client_id, requests, window_seconds)
+            VALUES (?, ?, ?)
+        """, (client_id, req_str, window))
+    db.commit()
+    
     return True
 
 # MercadoPago Webhook Secret
@@ -305,9 +481,33 @@ def enviar_codigo_verificacion(email: str, codigo: str, nombre: str = ""):
 
 app = FastAPI(title="Access ON API", version="1.0.0")
 
+@app.on_event("startup")
+async def startup_event():
+    """Inicializar tablas necesarias al iniciar"""
+    from fastapi import Depends
+    from functools import wraps
+    
+    # Obtener db para inicializar tablas
+    def init_tables():
+        db = next(get_db())
+        init_rate_limit_table(db)
+        init_brute_force_table(db)
+        db.close()
+    
+    try:
+        init_tables()
+        print(">>> Tablas de seguridad inicializadas")
+    except Exception as e:
+        print(f">>> Error inicializando tablas: {e}")
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=[
+        "https://getaccess.com.ar",
+        "https://getaccess-d3um.onrender.com",
+        "http://localhost:3000",
+        "https://192.168.1.40:3443"
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -425,10 +625,10 @@ def validar_password(password: str) -> tuple[bool, str]:
 @app.post("/api/auth/registro", response_model=dict)
 def registro(usuario: UsuarioCreate, request: Request, db = Depends(get_db)):
     client_id = request.client.host if request.client else "unknown"
-    if not check_rate_limit(client_id):
+    if not check_rate_limit(client_id, db):
         raise HTTPException(status_code=429, detail="Demasiadas solicitudes. Intenta más tarde.")
     
-    print(f">>> REGISTRO INICIADO: {usuario.email}")
+    log_security("REGISTRO_INITIATED", f"Email: {usuario.email}")
     
     # Check if user exists
     cursor = db.execute("SELECT id FROM usuarios WHERE email = ?", (usuario.email,))
@@ -476,8 +676,14 @@ def registro(usuario: UsuarioCreate, request: Request, db = Depends(get_db)):
 @app.post("/api/auth/login", response_model=TokenResponse)
 def login(credenciales: UsuarioLogin, request: Request, db = Depends(get_db)):
     client_id = request.client.host if request.client else "unknown"
-    if not check_rate_limit(client_id):
+    if not check_rate_limit(client_id, db):
         raise HTTPException(status_code=429, detail="Demasiados intentos. Espera un momento.")
+    
+    # Verificar brute-force protection
+    puede_login, mensaje = check_brute_force(credenciales.email, db)
+    if not puede_login:
+        log_security("BRUTE_FORCE_BLOCKED_ATTEMPT", f"Email: {credenciales.email}")
+        raise HTTPException(status_code=429, detail=mensaje)
     
     cursor = db.execute(
         "SELECT id, email, nombre, apellido, password, verificado, COALESCE(rol, 'usuario') as rol FROM usuarios WHERE email = ?",
@@ -486,6 +692,7 @@ def login(credenciales: UsuarioLogin, request: Request, db = Depends(get_db)):
     row = cursor.fetchone()
     
     if not row:
+        record_brute_force_attempt(credenciales.email, False, db)
         raise HTTPException(status_code=401, detail="Credenciales inválidas")
     
     # Manejar tanto dict (PostgreSQL) como tupla (SQLite)
@@ -504,7 +711,12 @@ def login(credenciales: UsuarioLogin, request: Request, db = Depends(get_db)):
         raise HTTPException(status_code=403, detail="Debes verificar tu email primero")
     
     if not verify_password(credenciales.password, hashed_password):
+        record_brute_force_attempt(credenciales.email, False, db)
         raise HTTPException(status_code=401, detail="Credenciales inválidas")
+    
+    # Login exitoso
+    record_brute_force_attempt(credenciales.email, True, db)
+    log_security("LOGIN_SUCCESS", f"Email: {email}, UserID: {user_id}")
     
     access_token = crear_token(user_id)
     return TokenResponse(
@@ -1442,7 +1654,7 @@ def generar_token_reset():
 @app.post("/api/auth/recuperar")
 def recuperar_password(datos: dict, request: Request, db = Depends(get_db)):
     client_id = request.client.host if request.client else "unknown"
-    if not check_rate_limit(client_id):
+    if not check_rate_limit(client_id, db):
         raise HTTPException(status_code=429, detail="Demasiadas solicitudes. Intenta más tarde.")
     
     email = datos.get("email")
@@ -1501,7 +1713,9 @@ def recuperar_password(datos: dict, request: Request, db = Depends(get_db)):
     return {"message": "Si el email existe, recibirás un enlace de recuperación"}
 
 @app.post("/api/admin/limpiar-tokens")
-def limpiar_tokens(secret: str, db = Depends(get_db)):
+def limpiar_tokens(secret: str = None, db = Depends(get_db)):
+    if not secret:
+        raise HTTPException(status_code=401, detail="Secret requerido en header X-Admin-Secret")
     if secret != ADMIN_SECRET:
         raise HTTPException(status_code=401, detail="No autorizado")
     db.execute("DELETE FROM password_reset")
