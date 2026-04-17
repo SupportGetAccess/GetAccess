@@ -988,6 +988,7 @@
                         {vista === 'mis-entradas' && <MisEntradas />}
                         {vista === 'aceptar-transferencia' && <AceptarTransferenciasList />}
                         {vista === 'perfil' && <Perfil />}
+                        {vista === 'contacto' && <Contacto />}
                         {vista === 'admin' && <AdminPanel />}
                         {vista === 'recuperar' && <RecuperarPassword setVista={setVista} />}
                         {vista === 'reset-password' && <ResetPassword setVista={setVista} toast={toast} />}
@@ -1036,6 +1037,7 @@
                             <>
                                 <button className={vista === 'registro' ? 'active' : ''} onClick={() => setVista('registro')}>📝 Registrarse</button>
                                 <button className={vista === 'login' ? 'active' : ''} onClick={() => setVista('login')}>🔐</button>
+                                <button className={vista === 'contacto' ? 'active' : ''} onClick={() => setVista('contacto')}>📬 Contacto</button>
                             </>
                         )}
                     </nav>
@@ -1746,6 +1748,202 @@
                         </div>
                     )}
                 </div>
+            );
+        }
+
+        function Contacto() {
+            const { showToast } = useContext(AuthContext);
+            const [form, setForm] = useState({ nombre: '', email: '', asunto: '', mensaje: '' });
+            const [enviando, setEnviando] = useState(false);
+
+            const handleChange = (e) => {
+                setForm({ ...form, [e.target.name]: e.target.value });
+            };
+
+            const handleSubmit = async (e) => {
+                e.preventDefault();
+                
+                if (!form.nombre || !form.email || !form.asunto || !form.mensaje) {
+                    showToast('Por favor completá todos los campos', 'error');
+                    return;
+                }
+                
+                setEnviando(true);
+                
+                try {
+                    const res = await fetch(API_URL + '/api/contacto/enviar', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(form)
+                    });
+                    
+                    if (res.ok) {
+                        showToast('¡Mensaje enviado! Te responderemos pronto. 📩', 'success');
+                        setForm({ nombre: '', email: '', asunto: '', mensaje: '' });
+                    } else {
+                        const data = await res.json();
+                        showToast(data.detail || 'Error al enviar mensaje', 'error');
+                    }
+                } catch (err) {
+                    showToast('Error de conexión. Intenta más tarde.', 'error');
+                }
+                
+                setEnviando(false);
+            };
+
+            return (
+                <>
+                    <div className="hero">
+                        <h1>📬 Contacto</h1>
+                        <p>¿Tenés alguna pregunta o necesitás ayuda? Escribinos y te respondemos pronto</p>
+                    </div>
+                    
+                    <div style={{ maxWidth: '600px', margin: '0 auto', padding: '1rem' }}>
+                        <form onSubmit={handleSubmit} style={{ 
+                            background: 'var(--card-bg)', 
+                            padding: '2rem', 
+                            borderRadius: '16px',
+                            boxShadow: '0 4px 20px rgba(0,0,0,0.1)'
+                        }}>
+                            <div style={{ marginBottom: '1.5rem' }}>
+                                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600', color: 'var(--text-color)' }}>
+                                    👤 Tu Nombre
+                                </label>
+                                <input 
+                                    type="text" 
+                                    name="nombre"
+                                    value={form.nombre}
+                                    onChange={handleChange}
+                                    placeholder="Ingresá tu nombre completo"
+                                    style={{ 
+                                        width: '100%', 
+                                        padding: '14px', 
+                                        borderRadius: '10px', 
+                                        border: '2px solid #e5e7eb',
+                                        fontSize: '15px',
+                                        background: 'var(--bg-color)',
+                                        color: 'var(--text-color)'
+                                    }}
+                                />
+                            </div>
+                            
+                            <div style={{ marginBottom: '1.5rem' }}>
+                                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600', color: 'var(--text-color)' }}>
+                                    📧 Tu Email
+                                </label>
+                                <input 
+                                    type="email" 
+                                    name="email"
+                                    value={form.email}
+                                    onChange={handleChange}
+                                    placeholder="tu@email.com"
+                                    style={{ 
+                                        width: '100%', 
+                                        padding: '14px', 
+                                        borderRadius: '10px', 
+                                        border: '2px solid #e5e7eb',
+                                        fontSize: '15px',
+                                        background: 'var(--bg-color)',
+                                        color: 'var(--text-color)'
+                                    }}
+                                />
+                            </div>
+                            
+                            <div style={{ marginBottom: '1.5rem' }}>
+                                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600', color: 'var(--text-color)' }}>
+                                    📝 Asunto
+                                </label>
+                                <select 
+                                    name="asunto"
+                                    value={form.asunto}
+                                    onChange={handleChange}
+                                    style={{ 
+                                        width: '100%', 
+                                        padding: '14px', 
+                                        borderRadius: '10px', 
+                                        border: '2px solid #e5e7eb',
+                                        fontSize: '15px',
+                                        background: 'var(--bg-color)',
+                                        color: 'var(--text-color)',
+                                        cursor: 'pointer'
+                                    }}
+                                >
+                                    <option value="">Seleccioná un motivo</option>
+                                    <option value="consulta">💬 Consulta general</option>
+                                    <option value="soporte">🛟 Necesito ayuda</option>
+                                    <option value="sugerencia">💡 Sugerencia</option>
+                                    <option value="problema">⚠️ Reportar un problema</option>
+                                    <option value="prensa">📰 Prensa / Colaboración</option>
+                                    <option value="otro">📌 Otro motivo</option>
+                                </select>
+                            </div>
+                            
+                            <div style={{ marginBottom: '2rem' }}>
+                                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600', color: 'var(--text-color)' }}>
+                                    💬 Mensaje
+                                </label>
+                                <textarea 
+                                    name="mensaje"
+                                    value={form.mensaje}
+                                    onChange={handleChange}
+                                    placeholder="Escribí tu mensaje aquí..."
+                                    rows="5"
+                                    style={{ 
+                                        width: '100%', 
+                                        padding: '14px', 
+                                        borderRadius: '10px', 
+                                        border: '2px solid #e5e7eb',
+                                        fontSize: '15px',
+                                        background: 'var(--bg-color)',
+                                        color: 'var(--text-color)',
+                                        resize: 'vertical',
+                                        fontFamily: 'inherit'
+                                    }}
+                                />
+                            </div>
+                            
+                            <button 
+                                type="submit" 
+                                disabled={enviando}
+                                className="btn"
+                                style={{ 
+                                    width: '100%', 
+                                    padding: '16px',
+                                    fontSize: '16px',
+                                    fontWeight: '700'
+                                }}
+                            >
+                                {enviando ? '⏳ Enviando...' : '🚀 Enviar Mensaje'}
+                            </button>
+                        </form>
+                        
+                        <div style={{ 
+                            marginTop: '2rem', 
+                            padding: '1.5rem', 
+                            background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)',
+                            borderRadius: '16px',
+                            color: 'white',
+                            textAlign: 'center'
+                        }}>
+                            <h3 style={{ margin: '0 0 1rem 0', fontSize: '1.2rem' }}>📧 其他 Email de Contacto</h3>
+                            <p style={{ margin: '0 0 0.5rem 0', opacity: 0.9 }}>¿Preferís escribirnos directamente?</p>
+                            <a 
+                                href="mailto:soporte@getaccess.com.ar" 
+                                style={{ 
+                                    color: 'white', 
+                                    fontSize: '1.1rem', 
+                                    fontWeight: '600',
+                                    textDecoration: 'underline'
+                                }}
+                            >
+                                soporte@getaccess.com.ar
+                            </a>
+                            <p style={{ marginTop: '1rem', opacity: 0.8, fontSize: '0.9rem' }}>
+                                📱 Respondemos de Lun a Sáb de 9:00 a 20:00
+                            </p>
+                        </div>
+                    </div>
+                </>
             );
         }
 

@@ -2489,6 +2489,53 @@ def reenviar_ticket_sin_auth(entrada_id: int, email: str, db = Depends(get_db)):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+# === CONTACTO ===
+class ContactoRequest(BaseModel):
+    nombre: str
+    email: EmailStr
+    asunto: str
+    mensaje: str
+
+@app.post("/api/contacto/enviar")
+def enviar_mensaje_contacto(datos: ContactoRequest, db = Depends(get_db)):
+    try:
+        html_content = f"""
+        <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; padding: 30px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.1);">
+            <div style="text-align: center; margin-bottom: 25px; padding-bottom: 20px; border-bottom: 2px solid #e5e7eb;">
+                <h1 style="color: #6366f1; font-size: 28px; margin: 0; font-weight: bold;">📬 Nuevo Mensaje de Contacto - Get Access</h1>
+            </div>
+            <div style="background-color: #f3f4f6; padding: 20px; border-radius: 10px; margin-bottom: 20px;">
+                <h3 style="color: #1f2937; margin-top: 0;">📋 Datos del Contacto</h3>
+                <p><strong>👤 Nombre:</strong> {datos.nombre}</p>
+                <p><strong>📧 Email:</strong> {datos.email}</p>
+                <p><strong>📝 Asunto:</strong> {datos.asunto}</p>
+            </div>
+            <div style="background-color: #ecfdf5; padding: 20px; border-radius: 10px;">
+                <h3 style="color: #1f2937; margin-top: 0;">💬 Mensaje</h3>
+                <p style="white-space: pre-wrap; line-height: 1.6;">{datos.mensaje}</p>
+            </div>
+            <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 25px 0;">
+            <p style="color: #9ca3af; font-size: 12px; text-align: center;">© 2026 Get Access - Sistema de Contacto</p>
+        </div>
+        """
+        
+        url = BREVO_API_URL
+        headers = {"api-key": BREVO_API_KEY, "Content-Type": "application/json"}
+        data = {
+            "sender": {"name": BREVO_SENDER_NAME, "email": BREVO_SENDER_EMAIL},
+            "to": [{"email": BREVO_SENDER_EMAIL}],
+            "subject": f"📬 Nuevo mensaje de {datos.nombre} - {datos.asunto}",
+            "htmlContent": html_content
+        }
+        response = requests.post(url, json=data, headers=headers, timeout=30)
+        
+        if response.status_code == 201:
+            return {"message": "Mensaje enviado correctamente"}
+        else:
+            raise HTTPException(status_code=500, detail=f"Error al enviar email: {response.text}")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 if __name__ == "__main__":
     # Initialize database
     if DATABASE_URL.startswith("postgresql"):
