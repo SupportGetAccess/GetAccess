@@ -1798,76 +1798,40 @@
                         <p>¿Tenés alguna pregunta o necesitás ayuda? Escribinos y te respondemos a la brevedad</p>
                     </div>
                     
-                    <div style={{ maxWidth: '600px', margin: '0 auto', padding: '1rem' }}>
-                        <form onSubmit={handleSubmit} style={{ 
-                            background: 'var(--card-bg)', 
-                            padding: '2rem', 
-                            borderRadius: '16px',
-                            boxShadow: '0 4px 20px rgba(0,0,0,0.1)'
-                        }}>
-                            <div style={{ marginBottom: '1.5rem' }}>
-                                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600', color: 'var(--text-color)' }}>
-                                    👤 Tu Nombre
-                                </label>
+                    <div className="form-page">
+                        <div className="form-box">
+                        <form onSubmit={handleSubmit}>
+                            <div className="form-group">
+                                <label>👤 Tu Nombre</label>
                                 <input 
                                     type="text" 
                                     name="nombre"
                                     value={form.nombre}
                                     onChange={handleChange}
                                     placeholder="Ingresá tu nombre completo"
-                                    style={{ 
-                                        width: '100%', 
-                                        padding: '14px', 
-                                        borderRadius: '10px', 
-                                        border: '2px solid #e5e7eb',
-                                        fontSize: '15px',
-                                        background: 'var(--bg-color)',
-                                        color: 'var(--text-color)'
-                                    }}
+                                    required 
                                 />
                             </div>
                             
-                            <div style={{ marginBottom: '1.5rem' }}>
-                                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600', color: 'var(--text-color)' }}>
-                                    📧 Tu Email
-                                </label>
+                            <div className="form-group">
+                                <label>📧 Tu Email</label>
                                 <input 
                                     type="email" 
                                     name="email"
                                     value={form.email}
                                     onChange={handleChange}
                                     placeholder="tu@email.com"
-                                    style={{ 
-                                        width: '100%', 
-                                        padding: '14px', 
-                                        borderRadius: '10px', 
-                                        border: '2px solid #e5e7eb',
-                                        fontSize: '15px',
-                                        background: 'var(--bg-color)',
-                                        color: 'var(--text-color)'
-                                    }}
+                                    required 
                                 />
                             </div>
                             
-                            <div style={{ marginBottom: '1.5rem' }}>
-                                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600', color: 'var(--text-color)' }}>
-                                    📝 Asunto
-                                </label>
+                            <div className="form-group">
+                                <label>📝 Asunto</label>
                                 <select 
                                     name="asunto"
                                     value={form.asunto}
                                     onChange={handleChange}
-                                    style={{ 
-                                        width: '100%', 
-                                        padding: '14px', 
-                                        borderRadius: '10px', 
-                                        border: '2px solid #e5e7eb',
-                                        fontSize: '15px',
-                                        background: 'var(--bg-color)',
-                                        color: 'var(--text-color)',
-                                        cursor: 'pointer',
-                                        fontWeight: '500'
-                                    }}
+                                    required
                                 >
                                     <option value="">Seleccioná un motivo</option>
                                     <option value="consulta">💬 Consulta general</option>
@@ -1879,44 +1843,23 @@
                                 </select>
                             </div>
                             
-                            <div style={{ marginBottom: '2rem' }}>
-                                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600', color: 'var(--text-color)' }}>
-                                    💬 Mensaje
-                                </label>
+                            <div className="form-group">
+                                <label>💬 Mensaje</label>
                                 <textarea 
                                     name="mensaje"
                                     value={form.mensaje}
                                     onChange={handleChange}
                                     placeholder="Escribí tu mensaje aquí..."
                                     rows="5"
-                                    style={{ 
-                                        width: '100%', 
-                                        padding: '14px', 
-                                        borderRadius: '10px', 
-                                        border: '2px solid #e5e7eb',
-                                        fontSize: '15px',
-                                        background: 'var(--bg-color)',
-                                        color: 'var(--text-color)',
-                                        resize: 'vertical',
-                                        fontFamily: 'inherit'
-                                    }}
+                                    required
                                 />
                             </div>
                             
-                            <button 
-                                type="submit" 
-                                disabled={enviando}
-                                className="btn"
-                                style={{ 
-                                    width: '100%', 
-                                    padding: '16px',
-                                    fontSize: '16px',
-                                    fontWeight: '700'
-                                }}
-                            >
+                            <button type="submit" className="btn btn-block" disabled={enviando}>
                                 {enviando ? '⏳ Enviando...' : '🚀 Enviar Mensaje'}
                             </button>
                         </form>
+                        </div>
                         
                         <div style={{ 
                             marginTop: '2rem', 
@@ -1943,7 +1886,8 @@
                                 📱 Horario de atención de Lun a Sáb de 9:00 a 18:00 Hs
                             </p>
                         </div>
-                    </div>
+                        </div>
+                        </div>
                 </>
             );
         }
