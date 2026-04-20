@@ -765,4 +765,13 @@ CREATE TABLE IF NOT EXISTS visitas (
 
 ---
 
-*Última sesión: Viernes 17 de Abril 2026 - Sesión terminada*
+## 📱 REDES SOCIALES
+
+### Instagram
+- **No puedo gestionar Instagram directamente** - no tengo acceso a la plataforma
+- Solo puedo ayudar con código local que automatice posting (usando API de Instagram)
+-Para automatización real, se necesita Python script con API key de Instagram Business
+
+---
+
+*Última sesión: Lunes 20 de Abril 2026*
