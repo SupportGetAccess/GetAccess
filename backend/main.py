@@ -1754,7 +1754,9 @@ def crear_preferencia_carrito(datos: dict, credentials: HTTPAuthorizationCredent
     total = 0
     for ent in entradas:
         items.append({
+            "id": str(ent[0]),
             "title": f"Entrada: {ent[3]}",
+            "description": f"Entrada para {ent[3]}",
             "quantity": ent[1],
             "currency_id": "ARS",
             "unit_price": float(ent[2] / ent[1]),
@@ -1814,7 +1816,9 @@ def crear_preferencia_pago(datos: dict, credentials: HTTPAuthorizationCredential
         preference_data = {
             "items": [
                 {
+                    "id": str(entrada_id),
                     "title": f"Entrada: {entrada[3]}",
+                    "description": f"Entrada para {entrada[3]}",
                     "quantity": entrada[1],
                     "currency_id": "ARS",
                     "unit_price": entrada[2] / entrada[1],
