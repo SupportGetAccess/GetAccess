@@ -149,3 +149,35 @@ Cuando el usuario diga **"Cerrar sesión"** o indique que terminó la sesión de
 
 2. **Confirmar que ambos servicios están corriendo**
 
+---
+
+## 🐛 ERRORES COMUNES DE JSX
+
+### Error: "Expected corresponding JSX closing tag"
+Este error ocurre cuando hay un desbalanceo en los tags de apertura y cierre en JSX.
+
+**Causa comunes:**
+1. Cerrar un div多余的 (sobra un tag de cierre)
+2. Olvidar cerrar un tag
+3. Estructura de tags mal anidada
+
+**Cómo evitarlo:**
+- Cada `<div>` de apertura debe tener su `</div>` de cierre
+- Cada `<>` (fragment) debe cerrar con `</>`
+- Verificar indentación al hacer cambios en componentes JSX
+- Usar el comando "Check syntax" antes de commit si está disponible
+
+**Ejemplo de error típico:**
+```jsx
+// ❌ MAL - tiene un </div> de más
+<div>
+    <form>...</form>
+    </div>    // <- ESTE SOBRA
+</div>
+
+// ✅ BIEN
+<div>
+    <form>...</form>
+</div>
+```
+
