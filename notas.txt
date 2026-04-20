@@ -719,6 +719,36 @@ SELECT * FROM password_reset;
 
 ---
 
+## 📊 SISTEMA DE LOG DE VISITAS
+
+### Tabla visitas:
+```sql
+CREATE TABLE IF NOT EXISTS visitas (
+    id SERIAL PRIMARY KEY,
+    ip TEXT NOT NULL,
+    fecha DATE DEFAULT CURRENT_DATE,
+    contador INTEGER DEFAULT 1,
+    UNIQUE(ip, fecha)
+);
+```
+
+### Endpoints:
+- `GET /api/visitas/?dias=30` - Estadísticas de visitas (totales, IPs únicas, detalle por día)
+- `GET /api/visitas/ip/?dias=30` - Top 100 IPs por cantidad de visitas
+
+### Para agregar tabla en Supabase:
+```sql
+CREATE TABLE IF NOT EXISTS visitas (
+    id SERIAL PRIMARY KEY,
+    ip TEXT NOT NULL,
+    fecha DATE DEFAULT CURRENT_DATE,
+    contador INTEGER DEFAULT 1,
+    UNIQUE(ip, fecha)
+);
+```
+
+---
+
 ## 📝 PENDIENTE
 
 - [ ] UptimeRobot configurado

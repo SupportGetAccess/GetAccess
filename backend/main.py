@@ -94,6 +94,42 @@ def log_security(evento: str, detalles: str = ""):
     """Registrar eventos de seguridad"""
     security_logger.info(f"{evento}: {detalles}")
 
+def get_client_ip(request: Request) -> str:
+    """Obtener IP real del cliente"""
+    forwarded = request.headers.get("X-Forwarded-For")
+    if forwarded:
+        return forwarded.split(",")[0].strip()
+    return request.client.host if request.client else "unknown"
+
+def registrar_visita(ip: str):
+    """Registrar visita en la base de datos"""
+    try:
+        if "postgresql" in DATABASE_URL:
+            conn = psycopg2.connect(DATABASE_URL)
+            cur = conn.cursor()
+            cur.execute("""
+                INSERT INTO visitas (ip, fecha, contador)
+                VALUES (%s, CURRENT_DATE, 1)
+                ON CONFLICT (ip, fecha) DO UPDATE SET contador = visitas.contador + 1
+            """, (ip,))
+            conn.commit()
+            cur.close()
+            conn.close()
+        else:
+            conn = sqlite3.connect(DATABASE_URL)
+            cur = conn.cursor()
+            cur.execute("SELECT contador FROM visitas WHERE ip = ? AND fecha = date('now')", (ip,))
+            row = cur.fetchone()
+            if row:
+                conn.execute("UPDATE visitas SET contador = contador + 1 WHERE ip = ? AND fecha = date('now')", (ip,))
+            else:
+                conn.execute("INSERT INTO visitas (ip, fecha, contador) VALUES (?, date('now'), 1)", (ip,))
+            conn.commit()
+            cur.close()
+            conn.close()
+    except Exception as e:
+        print(f"Error registrando visita: {e}")
+
 # Brute-force protection
 BRUTE_FORCE_MAX = 5  # max intentos fallidos
 BRUTE_FORCE_WINDOW = 300  # 5 minutos de bloqueo
@@ -585,6 +621,99 @@ async def serve_index():
 @app.get("/test-api")
 def test_api():
     return {"test": "ok", "message": "API is working"}
+
+@app.get("/api/visitas/", tags=["visitas"])
+async def get_estadisticas_visitas(
+    request: Request,
+    dias: int = 30
+):
+    """Obtener estadísticas de visitas"""
+    ip = get_client_ip(request)
+    registrar_visita(ip)
+    
+    try:
+        if "postgresql" in DATABASE_URL:
+            conn = psycopg2.connect(DATABASE_URL)
+            cur = conn.cursor()
+            cur.execute("""
+                SELECT fecha, SUM(contador) as total, COUNT(DISTINCT ip) as ips_unicas
+                FROM visitas
+                WHERE fecha >= CURRENT_DATE - INTERVAL '%s day'
+                GROUP BY fecha
+                ORDER BY fecha DESC
+            """, (dias,))
+            resultados = cur.fetchall()
+            cur.execute("SELECT SUM(contador) as total, COUNT(DISTINCT ip) as ips_unicas FROM visitas WHERE fecha >= CURRENT_DATE - INTERVAL '%s day'", (dias,))
+            total = cur.fetchone()
+            cur.close()
+            conn.close()
+        else:
+            conn = sqlite3.connect(DATABASE_URL)
+            cur = conn.cursor()
+            cur.execute(f"""
+                SELECT fecha, SUM(contador) as total, COUNT(DISTINCT ip) as ips_unicas
+                FROM visitas
+                WHERE fecha >= date('now', '-{dias} day')
+                GROUP BY fecha
+                ORDER BY fecha DESC
+            """)
+            resultados = cur.fetchall()
+            cur.execute(f"SELECT SUM(contador) as total, COUNT(DISTINCT ip) as ips_unicas FROM visitas WHERE fecha >= date('now', '-{dias} day')")
+            total = cur.fetchone()
+            cur.close()
+            conn.close()
+        
+        return {
+            "total_visitas": total[0] or 0,
+            "ips_unicas": total[1] or 0,
+            "dias": dias,
+            "detalle": [{"fecha": str(r[0]), "visitas": r[1], "ips": r[2]} for r in resultados]
+        }
+    except Exception as e:
+        return {"error": str(e)}
+
+@app.get("/api/visitas/ip/", tags=["visitas"])
+async def get_visitas_por_ip(
+    request: Request,
+    dias: int = 30
+):
+    """Obtener visitas por IP"""
+    ip = get_client_ip(request)
+    registrar_visita(ip)
+    
+    try:
+        if "postgresql" in DATABASE_URL:
+            conn = psycopg2.connect(DATABASE_URL)
+            cur = conn.cursor()
+            cur.execute("""
+                SELECT ip, SUM(contador) as total_visitas, COUNT(DISTINCT fecha) as dias
+                FROM visitas
+                WHERE fecha >= CURRENT_DATE - INTERVAL '%s day'
+                GROUP BY ip
+                ORDER BY total_visitas DESC
+                LIMIT 100
+            """, (dias,))
+            resultados = cur.fetchall()
+            cur.close()
+            conn.close()
+        else:
+            conn = sqlite3.connect(DATABASE_URL)
+            cur = conn.cursor()
+            cur.execute(f"""
+                SELECT ip, SUM(contador) as total_visitas, COUNT(DISTINCT fecha) as dias
+                FROM visitas
+                WHERE fecha >= date('now', '-{dias} day')
+                GROUP BY ip
+                ORDER BY total_visitas DESC
+                LIMIT 100
+            """)
+            resultados = cur.fetchall()
+            cur.close()
+            conn.close()
+        
+        return {"ip": [{"ip": r[0], "visitas": r[1], "dias": r[2]} for r in resultados]}
+    except Exception as e:
+        return {"error": str(e)}
 
 @app.get("/scanner.html")
 async def serve_scanner():
@@ -2638,6 +2767,16 @@ if __name__ == "__main__":
             )
         """)
         
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS visitas (
+                id SERIAL PRIMARY KEY,
+                ip TEXT NOT NULL,
+                fecha DATE DEFAULT CURRENT_DATE,
+                contador INTEGER DEFAULT 1,
+                UNIQUE(ip, fecha)
+            )
+        """)
+        
         conn.commit()
         
         # Seed eventos if empty
@@ -2741,6 +2880,18 @@ if __name__ == "__main__":
                     FOREIGN KEY (usuario_origen) REFERENCES usuarios(id),
                     FOREIGN KEY (usuario_destino) REFERENCES usuarios(id)
                 )
+            """)
+            conn.commit()
+        
+        cursor = conn.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='visitas'")
+        if not cursor.fetchone():
+            conn.execute("""
+                CREATE TABLE visitas (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    ip TEXT NOT NULL,
+                    fecha TEXT DEFAULT CURRENT_DATE,
+                    contador INTEGER DEFAULT 1,
+                    UNIQUE(ip, fecha)
             """)
             conn.commit()
         
