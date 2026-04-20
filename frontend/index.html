@@ -1795,7 +1795,7 @@
                 <>
                     <div className="hero">
                         <h1>📬 Contacto</h1>
-                        <p>¿Tenés alguna pregunta o necesitás ayuda? Escribinos y te respondemos pronto</p>
+                        <p>¿Tenés alguna pregunta o necesitás ayuda? Escribinos y te respondemos a la brevedad</p>
                     </div>
                     
                     <div style={{ maxWidth: '600px', margin: '0 auto', padding: '1rem' }}>
@@ -1865,7 +1865,8 @@
                                         fontSize: '15px',
                                         background: 'var(--bg-color)',
                                         color: 'var(--text-color)',
-                                        cursor: 'pointer'
+                                        cursor: 'pointer',
+                                        fontWeight: '500'
                                     }}
                                 >
                                     <option value="">Seleccioná un motivo</option>
@@ -1920,17 +1921,17 @@
                         <div style={{ 
                             marginTop: '2rem', 
                             padding: '1.5rem', 
-                            background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)',
+                            background: 'var(--card-bg)',
                             borderRadius: '16px',
-                            color: 'white',
+                            boxShadow: '0 4px 20px rgba(0,0,0,0.1)',
+                            border: '2px solid #e5e7eb',
                             textAlign: 'center'
                         }}>
-                            <h3 style={{ margin: '0 0 1rem 0', fontSize: '1.2rem' }}>📧 其他 Email de Contacto</h3>
-                            <p style={{ margin: '0 0 0.5rem 0', opacity: 0.9 }}>¿Preferís escribirnos directamente?</p>
+                            <p style={{ margin: '0 0 0.8rem 0', fontSize: '1rem', fontWeight: '600', color: 'var(--text-color)' }}>¿Preferís escribirnos directamente?</p>
                             <a 
                                 href="mailto:soporte@getaccess.com.ar" 
                                 style={{ 
-                                    color: 'white', 
+                                    color: '#6366f1', 
                                     fontSize: '1.1rem', 
                                     fontWeight: '600',
                                     textDecoration: 'underline'
@@ -1938,8 +1939,8 @@
                             >
                                 soporte@getaccess.com.ar
                             </a>
-                            <p style={{ marginTop: '1rem', opacity: 0.8, fontSize: '0.9rem' }}>
-                                📱 Respondemos de Lun a Sáb de 9:00 a 20:00
+                            <p style={{ marginTop: '1rem', opacity: 0.7, fontSize: '0.9rem', color: 'var(--text-color)' }}>
+                                📱 Horario de atención de Lun a Sáb de 9:00 a 18:00 Hs
                             </p>
                         </div>
                     </div>
