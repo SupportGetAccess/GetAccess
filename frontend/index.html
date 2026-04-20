@@ -2018,7 +2018,7 @@
                                 <div className="form-group"><label>🔑 Nueva Contraseña</label><input type="password" name="password_nuevo" value={form.password_nuevo} onChange={handleChange} placeholder="Mínimo 8 caracteres, 1 mayúscula, 1 número, 1 especial" /></div>
                                 <div className="form-group"><label>🔑 Confirmar Nueva Contraseña</label><input type="password" name="confirmar_password" value={form.confirmar_password} onChange={handleChange} placeholder="Repite la nueva contraseña" /></div>
                                 
-                                {(userRol === 'usuario' || userRol === null) && (
+                                {(!userRol || userRol === 'usuario' || userRol === null) && user && user.rol !== 'admin' && user.rol !== 'organizer' && (
                                 <>
                                     <hr style={{border:'none', borderTop:'1px solid rgba(255,255,255,0.1)', margin:'1.5rem 0'}} />
                                     <div style={{textAlign:'center', padding:'1rem', background:'rgba(255,193,7,0.1)', borderRadius:'8px', border:'1px solid rgba(255,193,7,0.3)'}}>
@@ -2055,7 +2055,7 @@
                                 </>
                             )}
                             
-                            {userRol === 'organizer' && (
+                            {(userRol === 'organizer' || (user && (user.rol === 'organizer' || user.rol === 'admin'))) && (
                                 <>
                                     <hr style={{border:'none', borderTop:'1px solid rgba(255,255,255,0.1)', margin:'1.5rem 0'}} />
                                     <div style={{textAlign:'center', padding:'1rem', background:'rgba(76,175,80,0.1)', borderRadius:'8px', border:'1px solid rgba(76,175,80,0.3)'}}>
