@@ -727,7 +727,7 @@ SELECT * FROM password_reset;
 
 ---
 
-## 📊 SISTEMA DE LOG DE VISITAS
+## 📊 LOG DE VISITAS (actualizado 20/04/2026)
 
 ### Tabla visitas:
 ```sql
