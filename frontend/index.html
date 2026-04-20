@@ -1912,12 +1912,30 @@
             const { user, token, showToast, setUser, setToken, setVista } = useContext(AuthContext);
             const [form, setForm] = useState({ nombre: '', apellido: '', email: '', password_actual: '', password_nuevo: '', confirmar_password: '' });
             const [guardando, setGuardando] = useState(false);
+            const [solicitando, setSolicitando] = useState(false);
+            const [userRol, setUserRol] = useState('usuario');
 
             useEffect(() => {
                 if (user) {
                     setForm({ ...form, nombre: user.nombre, apellido: user.apellido, email: user.email });
                 }
             }, [user]);
+
+            useEffect(() => {
+                async function fetchUserState() {
+                    if (!token) return;
+                    try {
+                        const res = await fetch(API_URL + '/api/auth/mi-estado', {
+                            headers: { 'Authorization': 'Bearer ' + token }
+                        });
+                        if (res.ok) {
+                            const data = await res.json();
+                            setUserRol(data.rol || 'usuario');
+                        }
+                    } catch (err) { console.error(err); }
+                }
+                fetchUserState();
+            }, [token]);
 
             const handleChange = (e) => {
                 setForm({ ...form, [e.target.name]: e.target.value });
@@ -2000,7 +2018,54 @@
                                 <div className="form-group"><label>🔑 Nueva Contraseña</label><input type="password" name="password_nuevo" value={form.password_nuevo} onChange={handleChange} placeholder="Mínimo 8 caracteres, 1 mayúscula, 1 número, 1 especial" /></div>
                                 <div className="form-group"><label>🔑 Confirmar Nueva Contraseña</label><input type="password" name="confirmar_password" value={form.confirmar_password} onChange={handleChange} placeholder="Repite la nueva contraseña" /></div>
                                 
-                                <button type="submit" className="btn btn-block" disabled={guardando}>
+                                {(userRol === 'usuario' || userRol === null) && (
+                                <>
+                                    <hr style={{border:'none', borderTop:'1px solid rgba(255,255,255,0.1)', margin:'1.5rem 0'}} />
+                                    <div style={{textAlign:'center', padding:'1rem', background:'rgba(255,193,7,0.1)', borderRadius:'8px', border:'1px solid rgba(255,193,7,0.3)'}}>
+                                        <h3 style={{marginBottom:'0.5rem', color:'#ffc107'}}>🎪 ¿Querés crear eventos?</h3>
+                                        <p style={{fontSize:'14px', color:'#888', marginBottom:'1rem'}}>Solicitá ser organizador y podrás crear tus propios eventos</p>
+                                        <button 
+                                            type="button" 
+                                            className="btn btn-block"
+                                            style={{background:'#ffc107', color:'#000', fontWeight:'bold'}}
+                                            onClick={async () => {
+                                                if (!token) { showToast('Iniciá sesión primero', 'error'); return; }
+                                                setSolicitando(true);
+                                                try {
+                                                    const res = await fetch(API_URL + '/api/auth/solicitar-organizer', {
+                                                        method: 'POST',
+                                                        headers: { 'Authorization': 'Bearer ' + token }
+                                                    });
+                                                    const data = await res.json();
+                                                    if (res.ok) {
+                                                        showToast(data.message || 'Solicitud enviada', 'success');
+                                                    } else {
+                                                        showToast(data.detail || 'Error', 'error');
+                                                    }
+                                                } catch (err) {
+                                                    showToast('Error de conexión', 'error');
+                                                }
+                                                setSolicitando(false);
+                                            }}
+                                            disabled={solicitando}
+                                        >
+                                            {solicitando ? 'Enviando...' : '📝 Solicitar Ser Organizador'}
+                                        </button>
+                                    </div>
+                                </>
+                            )}
+                            
+                            {userRol === 'organizer' && (
+                                <>
+                                    <hr style={{border:'none', borderTop:'1px solid rgba(255,255,255,0.1)', margin:'1.5rem 0'}} />
+                                    <div style={{textAlign:'center', padding:'1rem', background:'rgba(76,175,80,0.1)', borderRadius:'8px', border:'1px solid rgba(76,175,80,0.3)'}}>
+                                        <h3 style={{marginBottom:'0.5rem', color:'#4caf50'}}>🎪 Eres Organizador</h3>
+                                        <p style={{fontSize:'14px', color:'#888'}}>Ya podés crear eventos desde el menú "Crear Evento"</p>
+                                    </div>
+                                </>
+                            )}
+
+                            <button type="submit" className="btn btn-block" disabled={guardando}>
                                     {guardando ? 'Guardando...' : '💾 Guardar Cambios'}
                                 </button>
                             </form>
@@ -2493,6 +2558,8 @@
             const [editando, setEditando] = useState(null);
             const [guardando, setGuardando] = useState(false);
             const [tab, setTab] = useState('crear');
+            const [solicitudes, setSolicitudes] = useState([]);
+            const [cargandoSolicitudes, setCargandoSolicitudes] = useState(false);
             
             useEffect(() => {
                 cargarEventos();
@@ -2511,7 +2578,56 @@
             const handleChange = (e) => {
                 setForm({ ...form, [e.target.name]: e.target.value });
             };
-            
+
+            const cargarSolicitudes = async () => {
+                setCargandoSolicitudes(true);
+                try {
+                    const res = await fetch(API_URL + '/api/admin/solicitudes-organizer', {
+                        headers: { 'Authorization': 'Bearer ' + token }
+                    });
+                    if (res.ok) {
+                        const data = await res.json();
+                        setSolicitudes(data);
+                    }
+                } catch (err) { console.error(err); }
+                setCargandoSolicitudes(false);
+            };
+
+            const aprobarSolicitud = async (solicitudId) => {
+                try {
+                    const res = await fetch(API_URL + '/api/admin/aprobar-organizer', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+                        body: JSON.stringify({ solicitud_id: solicitudId })
+                    });
+                    const data = await res.json();
+                    if (res.ok) {
+                        showToast('Organizador aprobado', 'success');
+                        cargarSolicitudes();
+                    } else {
+                        showToast(data.detail || 'Error', 'error');
+                    }
+                } catch (err) { showToast('Error de conexión', 'error'); }
+            };
+
+            const rechazarSolicitud = async (solicitudId) => {
+                const motivo = prompt('Motivo del rechazo (opcional):');
+                try {
+                    const res = await fetch(API_URL + '/api/admin/rechazar-organizer', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+                        body: JSON.stringify({ solicitud_id: solicitudId, motivo: motivo || null })
+                    });
+                    const data = await res.json();
+                    if (res.ok) {
+                        showToast('Solicitud rechazada', 'success');
+                        cargarSolicitudes();
+                    } else {
+                        showToast(data.detail || 'Error', 'error');
+                    }
+                } catch (err) { showToast('Error de conexión', 'error'); }
+            };
+
             const handleImagenFile = (e) => {
                 const file = e.target.files[0];
                 if (file) {
@@ -2668,6 +2784,7 @@
                         <button onClick={() => setTab('editar')} style={{background: tab === 'editar' ? 'var(--gradient)' : 'rgba(255,255,255,0.1)', border:'none', color:'white', padding:'0.8rem 1.5rem', borderRadius:'12px', cursor:'pointer', fontWeight:'600', boxShadow: tab === 'editar' ? 'var(--glow)' : 'none'}}>✏️ Editar / Eliminar</button>
                         {user && user.rol === 'admin' && <button onClick={() => setTab('scanner')} style={{background: tab === 'scanner' ? 'var(--gradient)' : 'rgba(255,255,255,0.1)', border:'none', color:'white', padding:'0.8rem 1.5rem', borderRadius:'12px', cursor:'pointer', fontWeight:'600', boxShadow: tab === 'scanner' ? 'var(--glow)' : 'none'}}>📷 Scanner QR</button>}
                         <button onClick={() => setTab('analytics')} style={{background: tab === 'analytics' ? 'var(--gradient)' : 'rgba(255,255,255,0.1)', border:'none', color:'white', padding:'0.8rem 1.5rem', borderRadius:'12px', cursor:'pointer', fontWeight:'600', boxShadow: tab === 'analytics' ? 'var(--glow)' : 'none'}}>📊 Analytics</button>
+                        {user && user.rol === 'admin' && <button onClick={async () => { setTab('solicitudes'); cargarSolicitudes(); }} style={{background: tab === 'solicitudes' ? 'var(--gradient)' : 'rgba(255,255,255,0.1)', border:'none', color:'white', padding:'0.8rem 1.5rem', borderRadius:'12px', cursor:'pointer', fontWeight:'600', boxShadow: tab === 'solicitudes' ? 'var(--glow)' : 'none'}}>📋 Solicitudes ({solicitudes.length})</button>}
                     </div>
                     
                     {tab === 'crear' && (
@@ -2819,6 +2936,36 @@
                     
                     {tab === 'analytics' && (
                         <AnalyticsPanel eventos={eventos} />
+                    )}
+
+                    {tab === 'solicitudes' && (
+                        <>
+                            <div className="form-box" style={{maxWidth:'800px', margin:'0 auto'}}>
+                                <h2 style={{fontSize:'1.3rem', marginBottom:'1.5rem'}}>📋 Solicitudes de Organizador</h2>
+                                {solicitudes.length === 0 ? (
+                                    <p style={{textAlign:'center', color:'#888'}}>No hay solicitudes pendientes</p>
+                                ) : (
+                                    <div style={{display:'flex', flexDirection:'column', gap:'1rem'}}>
+                                        {solicitudes.map(sol => (
+                                            <div key={sol.id} style={{background:'rgba(255,255,255,0.05)', padding:'1.25rem', borderRadius:'12px', display:'flex', justifyContent:'space-between', alignItems:'center', flexWrap:'wrap', gap:'1rem'}}>
+                                                <div>
+                                                    <div style={{fontWeight:'bold', fontSize:'1.1rem'}}>{sol.nombre} {sol.apellido}</div>
+                                                    <div style={{color:'#888', fontSize:'0.9rem'}}>{sol.email}</div>
+                                                    <div style={{color:'#666', fontSize:'0.8rem', marginTop:'0.25rem'}}>Estado: <span style={{color: sol.estado === 'pendiente' ? '#ffc107' : sol.estado === 'aprobado' ? '#4caf50' : '#f44336'}}>{sol.estado}</span> • Fecha: {sol.created_at ? new Date(sol.created_at).toLocaleDateString('es-AR') : 'N/A'}</div>
+                                                </div>
+                                                {sol.estado === 'pendiente' && (
+                                                    <div style={{display:'flex', gap:'0.5rem'}}>
+                                                        <button onClick={() => aprobarSolicitud(sol.id)} style={{background:'#4caf50', color:'white', border:'none', padding:'0.6rem 1.2rem', borderRadius:'8px', cursor:'pointer', fontWeight:'600'}}>✅ Aprobar</button>
+                                                        <button onClick={() => rechazarSolicitud(sol.id)} style={{background:'#f44336', color:'white', border:'none', padding:'0.6rem 1.2rem', borderRadius:'8px', cursor:'pointer', fontWeight:'600'}}>❌ Rechazar</button>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                                <button onClick={cargarSolicitudes} className="btn" style={{marginTop:'1rem'}}>🔄 Actualizar</button>
+                            </div>
+                        </>
                     )}
                     
                     <div className="form-box" style={{marginTop:'2rem', maxWidth:'700px', marginLeft:'auto', marginRight:'auto'}}>

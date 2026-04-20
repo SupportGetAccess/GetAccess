@@ -767,9 +767,11 @@ def es_admin(db, user_id: int) -> bool:
     cursor = db.execute("SELECT rol FROM usuarios WHERE id = ?", (user_id,))
     row = cursor.fetchone()
     return row and row[0] == "admin"
-    expire = datetime.datetime.utcnow() + datetime.timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-    payload = {"sub": str(user_id), "exp": expire}
-    return jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
+
+def es_organizer(db, user_id: int) -> bool:
+    cursor = db.execute("SELECT rol FROM usuarios WHERE id = ?", (user_id,))
+    row = cursor.fetchone()
+    return row and row[0] == "organizer"
 
 def validar_password(password: str) -> tuple[bool, str]:
     if len(password) < 8:
@@ -1001,6 +1003,73 @@ def actualizar_perfil(datos: PerfilUpdate, credentials: HTTPAuthorizationCredent
     db.commit()
     
     return {"message": "Perfil actualizado correctamente", "email": nuevo_email, "nombre": nuevo_nombre, "apellido": nuevo_apellido}
+
+@app.post("/api/auth/solicitar-organizer")
+def solicitar_organizer(credentials: HTTPAuthorizationCredentials = Depends(security), db = Depends(get_db)):
+    token = credentials.credentials
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        user_id = int(payload.get("sub"))
+    except:
+        raise HTTPException(status_code=401, detail="Token inválido")
+    
+    cursor = db.execute("SELECT id, rol FROM usuarios WHERE id = ?", (user_id,))
+    row = cursor.fetchone()
+    
+    if not row:
+        raise HTTPException(status_code=404, detail="Usuario no encontrado")
+    
+    if row[1] == "admin":
+        raise HTTPException(status_code=400, detail="Ya eres administrador")
+    
+    if row[1] == "organizer":
+        raise HTTPException(status_code=400, detail="Ya eres organizador")
+    
+    cursor = db.execute("SELECT id FROM solicitud_organizer WHERE usuario_id = ? AND estado = 'pendiente'", (user_id,))
+    if cursor.fetchone():
+        raise HTTPException(status_code=400, detail="Ya tienes una solicitud pendiente")
+    
+    db.execute(
+        "INSERT INTO solicitud_organizer (usuario_id, estado) VALUES (?, 'pendiente')",
+        (user_id,)
+    )
+    db.commit()
+    
+    return {"message": "Solicitud enviada correctamente. Un administrador revisará tu solicitud."}
+
+@app.get("/api/auth/mi-estado")
+def mi_estado(credentials: HTTPAuthorizationCredentials = Depends(security), db = Depends(get_db)):
+    token = credentials.credentials
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        user_id = int(payload.get("sub"))
+    except:
+        raise HTTPException(status_code=401, detail="Token inválido")
+    
+    cursor = db.execute("SELECT id, email, nombre, apellido, verificado, COALESCE(rol, 'usuario') as rol FROM usuarios WHERE id = ?", (user_id,))
+    row = cursor.fetchone()
+    
+    if not row:
+        raise HTTPException(status_code=404, detail="Usuario no encontrado")
+    
+    if isinstance(row, dict):
+        return {
+            "id": row["id"],
+            "email": row["email"],
+            "nombre": row["nombre"],
+            "apellido": row["apellido"],
+            "verificado": row["verificado"],
+            "rol": row["rol"]
+        }
+    else:
+        return {
+            "id": row[0],
+            "email": row[1],
+            "nombre": row[2],
+            "apellido": row[3],
+            "verificado": row[4],
+            "rol": row[5]
+        }
 
 @app.get("/health")
 def health_check():
@@ -2313,6 +2382,144 @@ def get_analytics_general(tipo: str, credentials: HTTPAuthorizationCredentials =
         }
     }
 
+@app.get("/api/admin/solicitudes-organizer")
+def listar_solicitudes(credentials: HTTPAuthorizationCredentials = Depends(security), db: sqlite3.Connection = Depends(get_db)):
+    token = credentials.credentials
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        user_id = int(payload.get("sub"))
+    except:
+        raise HTTPException(status_code=401, detail="Token inválido")
+    
+    if not es_admin(db, user_id):
+        raise HTTPException(status_code=403, detail="Solo administradores possono ver solicitudes")
+    
+    cursor = db.execute("""
+        SELECT s.id, s.usuario_id, s.estado, s.motivo_rechazo, s.created_at, u.email, u.nombre, u.apellido
+        FROM solicitud_organizer s
+        JOIN usuarios u ON s.usuario_id = u.id
+        ORDER BY s.created_at DESC
+    """)
+    rows = cursor.fetchall()
+    
+    solicitudes = []
+    for r in rows:
+        if isinstance(r, dict):
+            solicitudes.append({
+                "id": r["id"],
+                "usuario_id": r["usuario_id"],
+                "estado": r["estado"],
+                "motivo_rechazo": r["motivo_rechazo"],
+                "created_at": r["created_at"],
+                "email": r["email"],
+                "nombre": r["nombre"],
+                "apellido": r["apellido"]
+            })
+        else:
+            solicitudes.append({
+                "id": r[0],
+                "usuario_id": r[1],
+                "estado": r[2],
+                "motivo_rechazo": r[3],
+                "created_at": r[4],
+                "email": r[5],
+                "nombre": r[6],
+                "apellido": r[7]
+            })
+    
+    return solicitudes
+
+class SolicitudUpdate(BaseModel):
+    solicitud_id: int
+    motivo: Optional[str] = None
+
+@app.post("/api/admin/aprobar-organizer")
+def aprobar_organizer(data: SolicitudUpdate, credentials: HTTPAuthorizationCredentials = Depends(security), db = Depends(get_db)):
+    token = credentials.credentials
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        user_id = int(payload.get("sub"))
+    except:
+        raise HTTPException(status_code=401, detail="Token inválido")
+    
+    if not es_admin(db, user_id):
+        raise HTTPException(status_code=403, detail="Solo administradores pueden aprobar solicitudes")
+    
+    cursor = db.execute("SELECT usuario_id, estado FROM solicitud_organizer WHERE id = ?", (data.solicitud_id,))
+    row = cursor.fetchone()
+    
+    if not row:
+        raise HTTPException(status_code=404, detail="Solicitud no encontrada")
+    
+    usuario_id_solicitante = row[0]
+    
+    db.execute("UPDATE usuarios SET rol = 'organizer' WHERE id = ?", (usuario_id_solicitante,))
+    db.execute("UPDATE solicitud_organizer SET estado = 'aprobado' WHERE id = ?", (data.solicitud_id,))
+    db.commit()
+    
+    cursor = db.execute("SELECT email, nombre FROM usuarios WHERE id = ?", (usuario_id_solicitante,))
+    user_row = cursor.fetchone()
+    if user_row:
+        email_destino = user_row[0] if isinstance(user_row, tuple) else user_row["email"]
+        nombre_usuario = user_row[1] if isinstance(user_row, tuple) else user_row["nombre"]
+        enviar_email(
+            to_email=email_destino,
+            subject="¡Tu solicitud de Organizador ha sido aprobada!",
+            html_content=f"""
+            <h2>¡Felicitaciones, {nombre_usuario}!</h2>
+            <p>Tu solicitud para convertirte en organizador ha sido <strong>aprobada</strong>.</p>
+            <p>Ahora puedes crear eventos y gestionar tus propias actividades en Get Access.</p>
+            <p>Accede a tu panel de organizador desde el menú.</p>
+            <hr>
+            <p>Get Access - Sistema de Entradas</p>
+            """
+        )
+    
+    return {"message": "Organizador aprobado correctamente"}
+
+@app.post("/api/admin/rechazar-organizer")
+def rechazar_organizer(data: SolicitudUpdate, credentials: HTTPAuthorizationCredentials = Depends(security), db = Depends(get_db)):
+    token = credentials.credentials
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        user_id = int(payload.get("sub"))
+    except:
+        raise HTTPException(status_code=401, detail="Token inválido")
+    
+    if not es_admin(db, user_id):
+        raise HTTPException(status_code=403, detail="Solo administradores pueden rechazar solicitudes")
+    
+    cursor = db.execute("SELECT usuario_id, estado FROM solicitud_organizer WHERE id = ?", (data.solicitud_id,))
+    row = cursor.fetchone()
+    
+    if not row:
+        raise HTTPException(status_code=404, detail="Solicitud no encontrada")
+    
+    usuario_id_solicitante = row[0]
+    
+    db.execute("UPDATE solicitud_organizer SET estado = 'rechazado', motivo_rechazo = ? WHERE id = ?", (data.motivo or "Solicitud rechazada", data.solicitud_id))
+    db.commit()
+    
+    cursor = db.execute("SELECT email, nombre FROM usuarios WHERE id = ?", (usuario_id_solicitante,))
+    user_row = cursor.fetchone()
+    if user_row:
+        email_destino = user_row[0] if isinstance(user_row, tuple) else user_row["email"]
+        nombre_usuario = user_row[1] if isinstance(user_row, tuple) else user_row["nombre"]
+        enviar_email(
+            to_email=email_destino,
+            subject="Estado de tu solicitud de Organizador",
+            html_content=f"""
+            <h2>Hola, {nombre_usuario},</h2>
+            <p>Lamentamos informarte que tu solicitud para convertirte en organizador ha sido <strong>rechazada</strong>.</p>
+            {f"<p>Motivo: {data.motivo}</p>" if data.motivo else ""}
+            <p>Si tienes alguna consulta, puedes contactarnos respondiendo este email.</p>
+            <hr>
+            <p>Get Access - Sistema de Entradas</p>
+            """
+        )
+    
+    return {"message": "Solicitud rechazada"}
+
 @app.get("/api/analytics/evento/{evento_id}")
 def get_analytics_evento(evento_id: int, credentials: HTTPAuthorizationCredentials = Depends(security), db = Depends(get_db)):
     try:
@@ -2757,7 +2964,18 @@ if __name__ == "__main__":
                 expires_at TIMESTAMP NOT NULL
             )
         """)
-        
+
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS solicitud_organizer (
+                id SERIAL PRIMARY KEY,
+                usuario_id INTEGER NOT NULL,
+                estado TEXT DEFAULT 'pendiente',
+                motivo_rechazo TEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (usuario_id) REFERENCES usuarios(id)
+            )
+        """)
+
         cur.execute("""
             CREATE TABLE IF NOT EXISTS visitas (
                 id SERIAL PRIMARY KEY,
@@ -2874,6 +3092,20 @@ if __name__ == "__main__":
             """)
             conn.commit()
         
+        cursor = conn.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='solicitud_organizer'")
+        if not cursor.fetchone():
+            conn.execute("""
+                CREATE TABLE solicitud_organizer (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    usuario_id INTEGER NOT NULL,
+                    estado TEXT DEFAULT 'pendiente',
+                    motivo_rechazo TEXT,
+                    created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY (usuario_id) REFERENCES usuarios(id)
+                )
+            """)
+            conn.commit()
+
         cursor = conn.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='visitas'")
         if not cursor.fetchone():
             conn.execute("""

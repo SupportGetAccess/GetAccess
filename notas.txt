@@ -501,8 +501,16 @@ C:\Users\guill\eventos_tickets_full\
 - POST /api/auth/login - Login
 - POST /api/auth/verificar - Verificar email
 - GET /api/auth/me - Datos del usuario actual
+- PUT /api/auth/perfil - Actualizar perfil
+- GET /api/auth/mi-estado - Ver estado (rol) del usuario
 - POST /api/auth/solicitar-reset - Solicitar recuperación password
 - POST /api/auth/reset-password - Recuperar password
+- POST /api/auth/solicitar-organizer - Solicitar ser organizador
+
+### Admin
+- GET /api/admin/solicitudes-organizer - Ver solicitudes pendientes
+- POST /api/admin/aprobar-organizer - Aprobar solicitud
+- POST /api/admin/rechazar-organizer - Rechazar solicitud
 
 ### Eventos
 - GET /api/eventos/ - Listar eventos
@@ -542,13 +550,14 @@ C:\Users\guill\eventos_tickets_full\
 ## 🗄️ BASE DE DATOS
 
 ### Tablas:
-- **usuarios**: id, email, nombre, apellido, password, verificado, codigo_verificacion, rol
+- **usuarios**: id, email, nombre, apellido, password, verificado,.codigo_verificacion, rol
 - **eventos**: id, nombre, descripcion, fecha, lugar, precio, capacidad, vendidos, imagen, categoria
 - **entradas**: id, evento_id, usuario_id, cantidad, total, estado, preference_id, payment_id, creada_en, usada, transferida
 - **evento_imagenes**: id, evento_id, url, orden
 - **validaciones**: id, entrada_id, scanner_id, cantidad_original, timestamp
 - **transferencias**: id, entrada_id, usuario_origen, usuario_destino, token, estado, created_at, accepted_at
 - **password_reset**: id, email, token, usado, expires_at
+- **solicitud_organizer**: id, usuario_id, estado, motivo_rechazo, created_at
 
 ---
 
