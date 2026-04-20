@@ -567,22 +567,7 @@ app = FastAPI(title="Access ON API", version="1.0.0")
 
 @app.on_event("startup")
 async def startup_event():
-    """Inicializar tablas necesarias al iniciar"""
-    from fastapi import Depends
-    from functools import wraps
-    
-    # Obtener db para inicializar tablas
-    def init_tables():
-        db = next(get_db())
-        init_rate_limit_table(db)
-        init_brute_force_table(db)
-        db.close()
-    
-    try:
-        init_tables()
-        print(">>> Tablas de seguridad inicializadas")
-    except Exception as e:
-        print(f">>> Error inicializando tablas: {e}")
+    pass
 
 app.add_middleware(
     CORSMiddleware,
