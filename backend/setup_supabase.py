@@ -88,13 +88,24 @@ CREATE TABLE IF NOT EXISTS transferencias (
 
 # Tabla password_reset
 cur.execute("""
-CREATE TABLE IF NOT EXISTS password_reset (
-    id SERIAL PRIMARY KEY,
-    email TEXT NOT NULL,
-    token TEXT UNIQUE NOT NULL,
-    usado INTEGER DEFAULT 0,
-    expires_at TIMESTAMP NOT NULL
-)
+    CREATE TABLE IF NOT EXISTS password_reset (
+        id SERIAL PRIMARY KEY,
+        email TEXT NOT NULL,
+        token TEXT UNIQUE NOT NULL,
+        usado INTEGER DEFAULT 0,
+        expires_at TIMESTAMP NOT NULL
+    )
+""")
+
+# Tabla visitas
+cur.execute("""
+    CREATE TABLE IF NOT EXISTS visitas (
+        id SERIAL PRIMARY KEY,
+        ip TEXT NOT NULL,
+        fecha DATE DEFAULT CURRENT_DATE,
+        contador INTEGER DEFAULT 1,
+        UNIQUE(ip, fecha)
+    )
 """)
 
 conn.commit()
