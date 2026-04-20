@@ -1913,7 +1913,7 @@
             const [form, setForm] = useState({ nombre: '', apellido: '', email: '', password_actual: '', password_nuevo: '', confirmar_password: '' });
             const [guardando, setGuardando] = useState(false);
             const [solicitando, setSolicitando] = useState(false);
-            const [userRol, setUserRol] = useState('usuario');
+            const [userRol, setUserRol] = useState(null);
 
             useEffect(() => {
                 if (user) {
@@ -1921,21 +1921,7 @@
                 }
             }, [user]);
 
-            useEffect(() => {
-                async function fetchUserState() {
-                    if (!token) return;
-                    try {
-                        const res = await fetch(API_URL + '/api/auth/mi-estado', {
-                            headers: { 'Authorization': 'Bearer ' + token }
-                        });
-                        if (res.ok) {
-                            const data = await res.json();
-                            setUserRol(data.rol || 'usuario');
-                        }
-                    } catch (err) { console.error(err); }
-                }
-                fetchUserState();
-            }, [token]);
+            
 
             const handleChange = (e) => {
                 setForm({ ...form, [e.target.name]: e.target.value });
@@ -2018,7 +2004,7 @@
                                 <div className="form-group"><label>🔑 Nueva Contraseña</label><input type="password" name="password_nuevo" value={form.password_nuevo} onChange={handleChange} placeholder="Mínimo 8 caracteres, 1 mayúscula, 1 número, 1 especial" /></div>
                                 <div className="form-group"><label>🔑 Confirmar Nueva Contraseña</label><input type="password" name="confirmar_password" value={form.confirmar_password} onChange={handleChange} placeholder="Repite la nueva contraseña" /></div>
                                 
-                                {(!userRol || userRol === 'usuario' || userRol === null) && user && user.rol !== 'admin' && user.rol !== 'organizer' && (
+                                {user && (!user.rol || user.rol === 'usuario') && (
                                 <>
                                     <hr style={{border:'none', borderTop:'1px solid rgba(255,255,255,0.1)', margin:'1.5rem 0'}} />
                                     <div style={{textAlign:'center', padding:'1rem', background:'rgba(255,193,7,0.1)', borderRadius:'8px', border:'1px solid rgba(255,193,7,0.3)'}}>
@@ -2055,7 +2041,7 @@
                                 </>
                             )}
                             
-                            {(userRol === 'organizer' || (user && (user.rol === 'organizer' || user.rol === 'admin'))) && (
+                            {user && user.rol === 'organizer' && (
                                 <>
                                     <hr style={{border:'none', borderTop:'1px solid rgba(255,255,255,0.1)', margin:'1.5rem 0'}} />
                                     <div style={{textAlign:'center', padding:'1rem', background:'rgba(76,175,80,0.1)', borderRadius:'8px', border:'1px solid rgba(76,175,80,0.3)'}}>
