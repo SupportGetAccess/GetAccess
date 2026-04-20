@@ -1,5 +1,13 @@
 # Notas del Proyecto Get Access
 
+## ⚠️ IMPORTANTE: SIEMPRE PRODUCCIÓN, NUNCA LOCAL
+**NO TRABAJAMOS EN MODO LOCAL - Todas las pruebas en producción:**
+- Frontend: https://getaccess.com.ar
+- Scanner: https://getaccess.com.ar/scanner.html
+- Backend API: https://getaccess-d3um.onrender.com
+
+---
+
 ## ⚠️ IMPORTANTE: TODAS LAS PRUEBAS EN PRODUCCIÓN
 
 **SIEMPRE usar:**

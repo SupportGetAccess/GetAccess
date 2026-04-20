@@ -1,5 +1,7 @@
 # Get Access - Proyecto de Entradas
 
+⚠️⚠️⚠️ IMPORTANTE: SIEMPRE PRODUCCIÓN, NUNCA LOCAL - NO TRABAJAMOS EN MODO LOCAL ⚠️⚠️⚠️
+
 ⚠️⚠️⚠️ IMPORTANTE: Cada vez que hagas UNA SOLA modificación en cualquier archivo (backend/main.py, frontend/*.html), DEBES reiniciar los servicios antes de decir "Listo" o "Listo, servicios iniciados". Si no lo haces, el usuario no podrá probar los cambios. ⚠️⚠️⚠️
 
 ## 🏭 PRUEBAS EN PRODUCCIÓN - NO HAY LOCAL
@@ -7,6 +9,7 @@
 - NO se prueba en localhost
 - NO se hace debug local
 - Solo se desarrolla local y se sube a producción para probar
+- ** Siempre dar URLs de PRODUCCIÓN al usuario, nunca localhost**
 
 ## URLs de Producción
 - **Frontend**: https://getaccess.com.ar
