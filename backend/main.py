@@ -1052,6 +1052,30 @@ def solicitar_organizer(credentials: HTTPAuthorizationCredentials = Depends(secu
     )
     db.commit()
     
+    # Obtener datos del usuario para enviar email al admin
+    cursor = db.execute("SELECT email, nombre, apellido FROM usuarios WHERE id = ?", (user_id,))
+    user_row = cursor.fetchone()
+    if user_row:
+        usuario_email = user_row[0] if isinstance(user_row, tuple) else user_row["email"]
+        usuario_nombre = user_row[1] if isinstance(user_row, tuple) else user_row["nombre"]
+        usuario_apellido = user_row[2] if isinstance(user_row, tuple) else user_row["apellido"]
+        
+        # Buscar admin
+        cursor = db.execute("SELECT email FROM usuarios WHERE rol = 'admin' LIMIT 1")
+        admin_row = cursor.fetchone()
+        if admin_row:
+            admin_email = admin_row[0] if isinstance(admin_row, tuple) else admin_row["email"]
+            email_content = get_email_template(f"""
+                <h2 style="color: #1f2937; text-align: center;">📋 Nueva solicitud de organizador</h2>
+                <p style="color: #4b5563; font-size: 16px;">El usuario <strong>{usuario_nombre} {usuario_apellido}</strong> ({usuario_email}) ha solicitado ser organizador de eventos.</p>
+                <p style="color: #6b7280; font-size: 14px;">Revisa la solicitud en el panel de administración.</p>
+            """)
+            enviar_email(
+                to_email=admin_email,
+                subject="📋 Nueva solicitud de organizador - Get Access",
+                html_content=email_content
+            )
+    
     return {"message": "Solicitud enviada correctamente. Un administrador revisará tu solicitud."}
 
 @app.get("/api/auth/mi-estado")
@@ -1265,8 +1289,13 @@ def crear_evento(evento: EventoCreate, credentials: HTTPAuthorizationCredentials
     except:
         raise HTTPException(status_code=401, detail="Token inválido")
     
-    if not es_admin(db, user_id):
-        raise HTTPException(status_code=403, detail="Solo administradores pueden crear eventos")
+    # Verificar rol - admin o organizer pueden crear
+    cursor = db.execute("SELECT COALESCE(rol, 'usuario') FROM usuarios WHERE id = ?", (user_id,))
+    user_row = cursor.fetchone()
+    user_rol = user_row[0] if isinstance(user_row, tuple) else user_row.get('rol', 'usuario')
+    
+    if user_rol not in ['admin', 'organizer']:
+        raise HTTPException(status_code=403, detail="Solo administradores y organizadores pueden crear eventos")
     
     evento_fecha_str = evento.fecha.replace('Z', '')
     if '+' in evento_fecha_str:
@@ -1276,8 +1305,8 @@ def crear_evento(evento: EventoCreate, credentials: HTTPAuthorizationCredentials
         raise HTTPException(status_code=400, detail="La fecha ingresada no debe ser anterior a la fecha actual")
     
     cursor = db.execute(
-        "INSERT INTO eventos (nombre, descripcion, fecha, lugar, precio, capacidad, vendidos, imagen, categoria) VALUES (?, ?, ?, ?, ?, ?, 0, ?, ?)",
-        (evento.nombre, evento.descripcion, evento.fecha + " 20:00:00", evento.lugar, evento.precio, evento.capacidad, evento.imagen, evento.categoria)
+        "INSERT INTO eventos (nombre, descripcion, fecha, lugar, precio, capacidad, vendidos, imagen, categoria, creado_por) VALUES (?, ?, ?, ?, ?, ?, 0, ?, ?, ?)",
+        (evento.nombre, evento.descripcion, evento.fecha + " 20:00:00", evento.lugar, evento.precio, evento.capacidad, evento.imagen, evento.categoria, user_id)
     )
     db.commit()
     print(f">>> EVENTO CREADO: {evento.nombre}, ID: {cursor.lastrowid}, Fecha: {evento.fecha}")
@@ -2338,7 +2367,15 @@ def get_analytics_general(tipo: str, credentials: HTTPAuthorizationCredentials =
     except:
         raise HTTPException(status_code=401, detail="Token inválido")
     
-    cursor = db.execute("SELECT COUNT(*) as cnt, COALESCE(SUM(total), 0) as total, COALESCE(SUM(cantidad), 0) as cnt_total FROM entradas WHERE estado = 'pagada'")
+    # Obtener el rol del usuario
+    cursor = db.execute("SELECT COALESCE(rol, 'usuario') FROM usuarios WHERE id = ?", (user_id,))
+    user_row = cursor.fetchone()
+    user_rol = user_row[0] if isinstance(user_row, tuple) else user_row.get('rol', 'usuario')
+    
+    # Si es organizer, filtrar solo sus eventos
+    if user_rol == 'organizer':
+        # Solo mostrar eventos creados por este organizador
+        cursor = db.execute("SELECT COUNT(*) as cnt, COALESCE(SUM(total), 0) as total, COALESCE(SUM(cantidad), 0) as cnt_total FROM entradas en JOIN eventos e ON en.evento_id = e.id WHERE en.estado = 'pagada' AND e.creado_por = ?", (user_id,))
     row = cursor.fetchone()
     if isinstance(row, dict):
         ventas_total = row.get('cnt_total') or 0
@@ -2947,9 +2984,16 @@ if __name__ == "__main__":
                 capacidad INTEGER DEFAULT 100,
                 vendidos INTEGER DEFAULT 0,
                 imagen TEXT,
-                categoria TEXT
+                categoria TEXT,
+                creado_por INTEGER
             )
         """)
+        
+        # Agregar columna si no existe
+        try:
+            cur.execute("ALTER TABLE eventos ADD COLUMN IF NOT EXISTS creado_por INTEGER")
+        except:
+            pass
         
         cur.execute("""
             CREATE TABLE IF NOT EXISTS evento_imagenes (
