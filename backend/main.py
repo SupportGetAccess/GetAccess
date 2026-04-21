@@ -2497,38 +2497,38 @@ def get_analytics_general(tipo: str, credentials: HTTPAuthorizationCredentials =
     # Query compatible con SQLite y PostgreSQL
     if user_rol == 'organizer' and db.is_postgres:
         cursor = db.execute("""
-            SELECT DATE(creado_en)::date as fecha, SUM(cantidad) as cantidad
+            SELECT DATE(creada_en)::date as fecha, SUM(cantidad) as cantidad
             FROM entradas en
             JOIN eventos e ON en.evento_id = e.id
-            WHERE en.estado = 'pagada' AND e.creado_por = ? AND creado_en >= CURRENT_DATE - INTERVAL '30 days'
+            WHERE en.estado = 'pagada' AND e.creado_por = ? AND creada_en >= CURRENT_DATE - INTERVAL '30 days'
             GROUP BY fecha
             ORDER BY fecha DESC
             LIMIT 14
         """, (user_id,))
     elif user_rol == 'organizer':
         cursor = db.execute("""
-            SELECT DATE(creado_en) as fecha, SUM(cantidad) as cantidad
+            SELECT DATE(creada_en) as fecha, SUM(cantidad) as cantidad
             FROM entradas en
             JOIN eventos e ON en.evento_id = e.id
-            WHERE en.estado = 'pagada' AND e.creado_por = ? AND creado_en >= DATE('now', '-30 days')
+            WHERE en.estado = 'pagada' AND e.creado_por = ? AND creada_en >= DATE('now', '-30 days')
             GROUP BY fecha
             ORDER BY fecha DESC
             LIMIT 14
         """, (user_id,))
     elif db.is_postgres:
         cursor = db.execute("""
-            SELECT DATE(creado_en)::date as fecha, SUM(cantidad) as cantidad
+            SELECT DATE(creada_en)::date as fecha, SUM(cantidad) as cantidad
             FROM entradas
-            WHERE estado = 'pagada' AND creado_en >= CURRENT_DATE - INTERVAL '30 days'
+            WHERE estado = 'pagada' AND creada_en >= CURRENT_DATE - INTERVAL '30 days'
             GROUP BY fecha
             ORDER BY fecha DESC
             LIMIT 14
         """)
     else:
         cursor = db.execute("""
-            SELECT DATE(creado_en) as fecha, SUM(cantidad) as cantidad
+            SELECT DATE(creada_en) as fecha, SUM(cantidad) as cantidad
             FROM entradas
-            WHERE estado = 'pagada' AND creado_en >= DATE('now', '-30 days')
+            WHERE estado = 'pagada' AND creada_en >= DATE('now', '-30 days')
             GROUP BY fecha
             ORDER BY fecha DESC
             LIMIT 14
