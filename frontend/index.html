@@ -2004,11 +2004,12 @@
                                 <div className="form-group"><label>🔑 Nueva Contraseña</label><input type="password" name="password_nuevo" value={form.password_nuevo} onChange={handleChange} placeholder="Mínimo 8 caracteres, 1 mayúscula, 1 número, 1 especial" /></div>
                                 <div className="form-group"><label>🔑 Confirmar Nueva Contraseña</label><input type="password" name="confirmar_password" value={form.confirmar_password} onChange={handleChange} placeholder="Repite la nueva contraseña" /></div>
                                 
-                                {user && (!user.rol || user.rol === 'usuario') && (
+                                {(user && (!user.rol || user.rol === 'usuario')) && (
                                 <>
                                     <hr style={{border:'none', borderTop:'1px solid rgba(255,255,255,0.1)', margin:'1.5rem 0'}} />
                                     <div style={{textAlign:'center', padding:'1rem', background:'rgba(255,193,7,0.1)', borderRadius:'8px', border:'1px solid rgba(255,193,7,0.3)'}}>
                                         <h3 style={{marginBottom:'0.5rem', color:'#ffc107'}}>🎪 ¿Querés crear eventos?</h3>
+                                        <p style={{fontSize:'14px', color:'#888', marginBottom:'1rem'}}>Debug: rol={user?.rol || 'undefined'}</p>
                                         <p style={{fontSize:'14px', color:'#888', marginBottom:'1rem'}}>Solicitá ser organizador y podrás crear tus propios eventos</p>
                                         <button 
                                             type="button" 
