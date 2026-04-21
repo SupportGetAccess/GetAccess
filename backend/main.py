@@ -1042,10 +1042,45 @@ def solicitar_organizer(credentials: HTTPAuthorizationCredentials = Depends(secu
     if row[1] == "organizer":
         raise HTTPException(status_code=400, detail="Ya eres organizador")
     
-    cursor = db.execute("SELECT id FROM solicitud_organizer WHERE usuario_id = ? AND estado = 'pendiente'", (user_id,))
-    if cursor.fetchone():
-        raise HTTPException(status_code=400, detail="Ya tienes una solicitud pendiente")
+    # Verificar estado de solicitud - permitir si está rechazada o no hay solicitud
+    cursor = db.execute("SELECT id, estado FROM solicitud_organizer WHERE usuario_id = ? ORDER BY created_at DESC LIMIT 1", (user_id,))
+    sol_row = cursor.fetchone()
     
+    if sol_row:
+        sol_id = sol_row[0] if isinstance(sol_row, tuple) else sol_row["id"]
+        sol_estado = sol_row[1] if isinstance(sol_row, tuple) else sol_row["estado"]
+        
+        if sol_estado == 'pendiente':
+            raise HTTPException(status_code=400, detail="Ya tienes una solicitud pendiente")
+        elif sol_estado == 'rechazado':
+            # Actualizar solicitud rechazada a pendiente
+            db.execute("UPDATE solicitud_organizer SET estado = 'pendiente', motivo_rechazo = NULL WHERE id = ?", (sol_id,))
+            db.commit()
+            # Enviar email al admin
+            cursor = db.execute("SELECT email, nombre, apellido FROM usuarios WHERE id = ?", (user_id,))
+            user_row = cursor.fetchone()
+            if user_row:
+                usuario_email = user_row[0] if isinstance(user_row, tuple) else user_row["email"]
+                usuario_nombre = user_row[1] if isinstance(user_row, tuple) else user_row["nombre"]
+                usuario_apellido = user_row[2] if isinstance(user_row, tuple) else user_row["apellido"]
+                
+                cursor = db.execute("SELECT email FROM usuarios WHERE rol = 'admin' LIMIT 1")
+                admin_row = cursor.fetchone()
+                if admin_row:
+                    admin_email = admin_row[0] if isinstance(admin_row, tuple) else admin_row["email"]
+                    email_content = get_email_template(f"""
+                        <h2 style="color: #1f2937; text-align: center;">📋 Nueva solicitud de organizador</h2>
+                        <p style="color: #4b5563; font-size: 16px;">El usuario <strong>{usuario_nombre} {usuario_apellido}</strong> ({usuario_email}) ha solicitado ser organizador de eventos.</p>
+                        <p style="color: #6b7280; font-size: 14px;">Esta es una nueva solicitud (la anterior fue rechazada).</p>
+                    """)
+                    enviar_email(
+                        to_email=admin_email,
+                        subject="📋 Nueva solicitud de organizador - Get Access",
+                        html_content=email_content
+                    )
+            return {"message": "Solicitud reenviada correctamente. Un administrador revisará tu solicitud."}
+    
+    # No tiene solicitud - crear nueva
     db.execute(
         "INSERT INTO solicitud_organizer (usuario_id, estado) VALUES (?, 'pendiente')",
         (user_id,)
