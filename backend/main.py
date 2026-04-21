@@ -1071,6 +1071,42 @@ def mi_estado(credentials: HTTPAuthorizationCredentials = Depends(security), db 
             "rol": row[5]
         }
 
+@app.get("/api/auth/mi-solicitud-organizer")
+def mi_solicitud_organizer(credentials: HTTPAuthorizationCredentials = Depends(security), db = Depends(get_db)):
+    token = credentials.credentials
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        user_id = int(payload.get("sub"))
+    except:
+        raise HTTPException(status_code=401, detail="Token inválido")
+    
+    cursor = db.execute("""
+        SELECT id, estado, motivo_rechazo, created_at 
+        FROM solicitud_organizer 
+        WHERE usuario_id = ? 
+        ORDER BY created_at DESC 
+        LIMIT 1
+    """, (user_id,))
+    row = cursor.fetchone()
+    
+    if not row:
+        return {"hay_solicitud": False, "estado": None}
+    
+    if isinstance(row, dict):
+        return {
+            "hay_solicitud": True,
+            "estado": row["estado"],
+            "motivo_rechazo": row["motivo_rechazo"],
+            "created_at": str(row["created_at"])
+        }
+    else:
+        return {
+            "hay_solicitud": True,
+            "estado": row[1],
+            "motivo_rechazo": row[2],
+            "created_at": str(row[3])
+        }
+
 @app.get("/health")
 def health_check():
     return {"status": "healthy"}
