@@ -1,16 +1,13 @@
-import sqlite3
-conn = sqlite3.connect(r'C:\Users\guill\eventos_tickets_full\backend\access_on.db')
+import psycopg2
+conn = psycopg2.connect('postgresql://postgres.xgwbcepopluehupublkz:%40Supabase1982@aws-1-sa-east-1.pooler.supabase.com:5432/postgres')
+cur = conn.cursor()
 
-# Ver solicitudes pendientes del usuario 8
-cur = conn.execute("SELECT * FROM solicitud_organizer WHERE usuario_id = 8")
-print("Solicitudes pendientes:", cur.fetchall())
+# Ver rol de usuario
+cur.execute("SELECT id, email, rol FROM usuarios WHERE email = 'aantoniaa1982@gmail.com'")
+print("Usuario:", cur.fetchone())
 
-# Eliminar solicitudes pendientes
-conn.execute("DELETE FROM solicitud_organizer WHERE usuario_id = 8 AND estado = 'pendiente'")
-conn.commit()
-print("Solicitudes eliminadas")
+# Ver solicitud
+cur.execute("SELECT id, estado, created_at FROM solicitud_organizer WHERE usuario_id = 4")
+print("Solicitud:", cur.fetchone())
 
-# Verificar
-cur = conn.execute("SELECT * FROM solicitud_organizer WHERE usuario_id = 8")
-print("Solicitudes restantes:", cur.fetchall())
 conn.close()
