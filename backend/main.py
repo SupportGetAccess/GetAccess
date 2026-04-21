@@ -2716,7 +2716,7 @@ def get_analytics_evento(evento_id: int, credentials: HTTPAuthorizationCredentia
     except:
         raise HTTPException(status_code=401, detail="Token inválido")
     
-    cursor = db.execute("SELECT COUNT(*), SUM(total), SUM(cantidad), precio, capacidad FROM entradas en JOIN eventos e ON en.evento_id = e.id WHERE en.evento_id = ? AND en.estado = 'pagada'", (evento_id,))
+    cursor = db.execute("SELECT COUNT(*), COALESCE(SUM(total), 0), COALESCE(SUM(cantidad), 0), e.precio, e.capacidad FROM entradas en JOIN eventos e ON en.evento_id = e.id WHERE en.evento_id = ? AND en.estado = 'pagada' GROUP BY e.precio, e.capacidad", (evento_id,))
     row = cursor.fetchone()
     ventas_total = row[2] or 0
     ingresos_total = row[1] or 0
