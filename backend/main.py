@@ -2327,7 +2327,7 @@ def get_analytics_general(tipo: str, credentials: HTTPAuthorizationCredentials =
             top_eventos.append({"id": r[0], "nombre": r[1], "vendidos": r[2], "ingresos": r[3]})
     
     # Query compatible con SQLite y PostgreSQL
-    if is_postgres():
+    if db.is_postgres:
         cursor = db.execute("""
             SELECT DATE(creado_en)::date as fecha, SUM(cantidad) as cantidad
             FROM entradas
