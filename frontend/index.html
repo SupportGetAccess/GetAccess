@@ -2641,7 +2641,12 @@
             const cargarEventos = async () => {
                 setLoading(true);
                 try {
-                    const res = await fetch(API_URL + '/api/eventos/');
+                    // Si es organizador (no admin), mostrar solo sus eventos
+                    let url = API_URL + '/api/eventos/';
+                    if (user && user.rol === 'organizer') {
+                        url += '?mis_eventos=true';
+                    }
+                    const res = await fetch(url, user && user.rol === 'organizer' ? { headers: { 'Authorization': 'Bearer ' + token } } : {});
                     const data = await res.json();
                     setEventos(data);
                 } catch (err) { showToast('Error cargando eventos', 'error'); }
