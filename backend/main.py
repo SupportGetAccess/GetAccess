@@ -2390,17 +2390,17 @@ def get_analytics_general(tipo: str, credentials: HTTPAuthorizationCredentials =
     # Si es organizer, filtrar solo sus eventos
     if user_rol == 'organizer':
         # Solo mostrar eventos creados por este organizador
-        cursor = db.execute("SELECT COUNT(*) as cnt, COALESCE(SUM(total), 0) as total, COALESCE(SUM(cantidad), 0) as cnt_total FROM entradas en JOIN eventos e ON en.evento_id = e.id WHERE en.estado = 'pagada' AND e.creado_por = ?", (user_id,))
+        cursor = db.execute("SELECT COALESCE(SUM(cantidad), 0) as cnt_total, COALESCE(SUM(total), 0) as total FROM entradas en JOIN eventos e ON en.evento_id = e.id WHERE en.estado = 'pagada' AND e.creado_por = ?", (user_id,))
     else:
         # Admin o usuario: todos los eventos
-        cursor = db.execute("SELECT COUNT(*) as cnt, COALESCE(SUM(total), 0) as total, COALESCE(SUM(cantidad), 0) as cnt_total FROM entradas WHERE estado = 'pagada'")
+        cursor = db.execute("SELECT COALESCE(SUM(cantidad), 0) as cnt_total, COALESCE(SUM(total), 0) as total FROM entradas WHERE estado = 'pagada'")
     
     row = cursor.fetchone()
     if isinstance(row, dict):
         ventas_total = row.get('cnt_total') or 0
         ingresos_total = row.get('total') or 0
     else:
-        ventas_total = row[2] or 0
+        ventas_total = row[0] or 0
         ingresos_total = row[1] or 0
     
     # Por categoría - filtrar si es organizer
