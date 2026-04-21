@@ -1,32 +1,33 @@
 import psycopg2
-import traceback
 conn = psycopg2.connect('postgresql://postgres.xgwbcepopluehupublkz:%40Supabase1982@aws-1-sa-east-1.pooler.supabase.com:5432/postgres')
 cur = conn.cursor()
 
-# Verificar columna
-print("=== Columnas de eventos ===")
-cur.execute("SELECT column_name FROM information_schema.columns WHERE table_name = 'eventos'")
-cols = cur.fetchall()
-for c in cols:
-    print(c[0])
+# Simular lo que hace el backend
+# Usuario admin (user_id=1)
+user_id = 1
 
-# Verificar si hay eventos con creado_por
-print("\n=== Eventos con creador ===")
-cur.execute("SELECT id, nombre, creado_por FROM eventos WHERE creado_por IS NOT NULL LIMIT 5")
-print(cur.fetchall())
+print("=== Test 1: Obtener rol del usuario ===")
+cur.execute("SELECT COALESCE(rol, 'usuario') FROM usuarios WHERE id = %s", (user_id,))
+print(cur.fetchone())
 
-# Verificar si hay entradas
-print("\n=== Entradas pagadas ===")
-cur.execute("SELECT COUNT(*) FROM entradas WHERE estado = 'pagada'")
-print("Total:", cur.fetchone())
+print("\n=== Test 2: ventas total (admin) ===")
+cur.execute("SELECT COALESCE(SUM(cantidad), 0) as cnt_total, COALESCE(SUM(total), 0) as total FROM entradas WHERE estado = 'pagada'")
+print(cur.fetchone())
 
-# Test query analytics
-print("\n=== Test query analytics ===")
-user_id = 4  # aantoniaa1982@gmail.com
-try:
-    cur.execute("SELECT COALESCE(SUM(cantidad), 0) as cnt_total, COALESCE(SUM(total), 0) as total FROM entradas JOIN eventos ON entradas.evento_id = eventos.id WHERE entradas.estado = 'pagada' AND eventos.creado_por = %s", (user_id,))
-    print("Result:", cur.fetchone())
-except Exception as e:
-    print("Error:", e)
+print("\n=== Test 3: ventas total (organizer) ===")
+cur.execute("SELECT COALESCE(SUM(cantidad), 0) as cnt_total, COALESCE(SUM(total), 0) as total FROM entradas JOIN eventos ON entradas.evento_id = eventos.id WHERE entradas.estado = 'pagada' AND eventos.creado_por = %s", (user_id,))
+print(cur.fetchone())
+
+# Verificar la estructura de la tabla entradas
+print("\n=== Entradas ===")
+cur.execute("SELECT id, evento_id, usuario_id, cantidad, total, estado FROM entradas LIMIT 3")
+for r in cur.fetchall():
+    print(r)
+
+# Verificar eventos
+print("\n=== Eventos ===")
+cur.execute("SELECT id, nombre, creado_por FROM eventos LIMIT 3")
+for r in cur.fetchall():
+    print(r)
 
 conn.close()

@@ -1635,16 +1635,27 @@
             
             const cargarAnalytics = async () => {
                 setLoading(true);
+                if (!token) {
+                    setLoading(false);
+                    return;
+                }
                 try {
                     const url = eventoSeleccionado === 'todos' 
                         ? `${API_URL}/api/analytics/todos`
                         : `${API_URL}/api/analytics/evento/${eventoSeleccionado}`;
                     const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
+                    console.log('Analytics response:', res.status, res.statusText);
                     if (res.ok) {
                         const data = await res.json();
+                        console.log('Analytics data:', data);
                         setAnalytics(data);
+                    } else {
+                        const err = await res.text();
+                        console.log('Analytics error:', err);
                     }
-                } catch {}
+                } catch (err) {
+                    console.error('Analytics catch:', err);
+                }
                 setLoading(false);
             };
             
