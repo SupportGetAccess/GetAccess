@@ -1064,20 +1064,18 @@ def solicitar_organizer(credentials: HTTPAuthorizationCredentials = Depends(secu
                 usuario_nombre = user_row[1] if isinstance(user_row, tuple) else user_row["nombre"]
                 usuario_apellido = user_row[2] if isinstance(user_row, tuple) else user_row["apellido"]
                 
-                cursor = db.execute("SELECT email FROM usuarios WHERE rol = 'admin' LIMIT 1")
-                admin_row = cursor.fetchone()
-                if admin_row:
-                    admin_email = admin_row[0] if isinstance(admin_row, tuple) else admin_row["email"]
-                    email_content = get_email_template(f"""
-                        <h2 style="color: #1f2937; text-align: center;">📋 Nueva solicitud de organizador</h2>
-                        <p style="color: #4b5563; font-size: 16px;">El usuario <strong>{usuario_nombre} {usuario_apellido}</strong> ({usuario_email}) ha solicitado ser organizador de eventos.</p>
-                        <p style="color: #6b7280; font-size: 14px;">Esta es una nueva solicitud (la anterior fue rechazada).</p>
-                    """)
-                    enviar_email(
-                        to_email=admin_email,
-                        subject="📋 Nueva solicitud de organizador - Get Access",
-                        html_content=email_content
-                    )
+                # Enviar email al admin
+                admin_email = "guilles10@yahoo.com.ar"
+                email_content = get_email_template(f"""
+                    <h2 style="color: #1f2937; text-align: center;">📋 Nueva solicitud de organizador</h2>
+                    <p style="color: #4b5563; font-size: 16px;">El usuario <strong>{usuario_nombre} {usuario_apellido}</strong> ({usuario_email}) ha solicitado ser organizador de eventos.</p>
+                    <p style="color: #6b7280; font-size: 14px;">Esta es una nueva solicitud (la anterior fue rechazada).</p>
+                """)
+                enviar_email(
+                    to_email=admin_email,
+                    subject="📋 Nueva solicitud de organizador - Get Access",
+                    html_content=email_content
+                )
             return {"message": "Solicitud reenviada correctamente. Un administrador revisará tu solicitud."}
     
     # No tiene solicitud - crear nueva
@@ -1095,21 +1093,18 @@ def solicitar_organizer(credentials: HTTPAuthorizationCredentials = Depends(secu
         usuario_nombre = user_row[1] if isinstance(user_row, tuple) else user_row["nombre"]
         usuario_apellido = user_row[2] if isinstance(user_row, tuple) else user_row["apellido"]
         
-        # Buscar admin
-        cursor = db.execute("SELECT email FROM usuarios WHERE rol = 'admin' LIMIT 1")
-        admin_row = cursor.fetchone()
-        if admin_row:
-            admin_email = admin_row[0] if isinstance(admin_row, tuple) else admin_row["email"]
-            email_content = get_email_template(f"""
-                <h2 style="color: #1f2937; text-align: center;">📋 Nueva solicitud de organizador</h2>
-                <p style="color: #4b5563; font-size: 16px;">El usuario <strong>{usuario_nombre} {usuario_apellido}</strong> ({usuario_email}) ha solicitado ser organizador de eventos.</p>
-                <p style="color: #6b7280; font-size: 14px;">Revisa la solicitud en el panel de administración.</p>
-            """)
-            enviar_email(
-                to_email=admin_email,
-                subject="📋 Nueva solicitud de organizador - Get Access",
-                html_content=email_content
-            )
+        # Enviar email al admin
+        admin_email = "guilles10@yahoo.com.ar"
+        email_content = get_email_template(f"""
+            <h2 style="color: #1f2937; text-align: center;">📋 Nueva solicitud de organizador</h2>
+            <p style="color: #4b5563; font-size: 16px;">El usuario <strong>{usuario_nombre} {usuario_apellido}</strong> ({usuario_email}) ha solicitado ser organizador de eventos.</p>
+            <p style="color: #6b7280; font-size: 14px;">Revisa la solicitud en el panel de administración.</p>
+        """)
+        enviar_email(
+            to_email=admin_email,
+            subject="📋 Nueva solicitud de organizador - Get Access",
+            html_content=email_content
+        )
     
     return {"message": "Solicitud enviada correctamente. Un administrador revisará tu solicitud."}
 
