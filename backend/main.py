@@ -2501,7 +2501,7 @@ def get_analytics_general(tipo: str, credentials: HTTPAuthorizationCredentials =
             FROM entradas en
             JOIN eventos e ON en.evento_id = e.id
             WHERE en.estado = 'pagada' AND e.creado_por = ? AND en.creada_en >= CURRENT_DATE - INTERVAL '30 days'
-            GROUP BY fecha
+            GROUP BY DATE(en.creada_en)::date
             ORDER BY fecha DESC
             LIMIT 14
         """, (user_id,))
@@ -2511,7 +2511,7 @@ def get_analytics_general(tipo: str, credentials: HTTPAuthorizationCredentials =
             FROM entradas en
             JOIN eventos e ON en.evento_id = e.id
             WHERE en.estado = 'pagada' AND e.creado_por = ? AND en.creada_en >= DATE('now', '-30 days')
-            GROUP BY fecha
+            GROUP BY DATE(en.creada_en)
             ORDER BY fecha DESC
             LIMIT 14
         """, (user_id,))
