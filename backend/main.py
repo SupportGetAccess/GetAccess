@@ -2390,7 +2390,7 @@ def get_analytics_general(tipo: str, credentials: HTTPAuthorizationCredentials =
     # Si es organizer, filtrar solo sus eventos
     if user_rol == 'organizer':
         # Solo mostrar eventos creados por este organizador
-        cursor = db.execute("SELECT COALESCE(SUM(cantidad), 0) as cnt_total, COALESCE(SUM(total), 0) as total FROM entradas en JOIN eventos e ON en.evento_id = e.id WHERE en.estado = 'pagada' AND e.creado_por = ?", (user_id,))
+        cursor = db.execute("SELECT COALESCE(SUM(cantidad), 0) as cnt_total, COALESCE(SUM(total), 0) as total FROM entradas JOIN eventos ON entradas.evento_id = eventos.id WHERE entradas.estado = 'pagada' AND eventos.creado_por = ?", (user_id,))
     else:
         # Admin o usuario: todos los eventos
         cursor = db.execute("SELECT COALESCE(SUM(cantidad), 0) as cnt_total, COALESCE(SUM(total), 0) as total FROM entradas WHERE estado = 'pagada'")
@@ -2406,18 +2406,18 @@ def get_analytics_general(tipo: str, credentials: HTTPAuthorizationCredentials =
     # Por categoría - filtrar si es organizer
     if user_rol == 'organizer':
         cursor = db.execute("""
-            SELECT COALESCE(e.categoria, 'sin_categoria') as cat, COUNT(*) as cantidad
-            FROM entradas en
-            JOIN eventos e ON en.evento_id = e.id
-            WHERE en.estado = 'pagada' AND e.creado_por = ?
+            SELECT COALESCE(eventos.categoria, 'sin_categoria') as cat, COUNT(*) as cantidad
+            FROM entradas
+            JOIN eventos ON entradas.evento_id = eventos.id
+            WHERE entradas.estado = 'pagada' AND eventos.creado_por = ?
             GROUP BY cat
         """, (user_id,))
     else:
         cursor = db.execute("""
-            SELECT COALESCE(e.categoria, 'sin_categoria') as cat, COUNT(*) as cantidad
-            FROM entradas en
-            JOIN eventos e ON en.evento_id = e.id
-            WHERE en.estado = 'pagada'
+            SELECT COALESCE(eventos.categoria, 'sin_categoria') as cat, COUNT(*) as cantidad
+            FROM entradas
+            JOIN eventos ON entradas.evento_id = eventos.id
+            WHERE entradas.estado = 'pagada'
             GROUP BY cat
         """)
     por_categoria = []
