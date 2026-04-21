@@ -563,6 +563,23 @@ def enviar_codigo_verificacion(email: str, codigo: str, nombre: str = ""):
         print(f"Error sending email: {e}")
         return False
 
+def enviar_email(to_email: str, subject: str, html_content: str):
+    """Send generic email using Brevo API"""
+    try:
+        data = {
+            "sender": {"name": BREVO_SENDER_NAME, "email": BREVO_SENDER_EMAIL},
+            "to": [{"email": to_email}],
+            "subject": subject,
+            "htmlContent": html_content
+        }
+        
+        response = requests.post(BREVO_API_URL, json=data, headers={"api-key": BREVO_API_KEY, "Content-Type": "application/json"}, timeout=30)
+        print(f"Brevo API Response Status: {response.status_code}")
+        return response.status_code == 201
+    except Exception as e:
+        print(f"Error sending email: {e}")
+        return False
+
 app = FastAPI(title="Access ON API", version="1.0.0")
 
 @app.on_event("startup")
