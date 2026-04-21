@@ -768,9 +768,46 @@ CREATE TABLE IF NOT EXISTS visitas (
 
 ## 📝 PENDIENTE
 
-- [ ] UptimeRobot configurado
-- [ ] Limpiar tokens prueba (cuenta aantoniaa1982@gmail.com)
-- [ ] Probar formulario de contacto en producción
+- [x] UptimeRobot configurado ✅
+- [x] Sistema de solicitudes de organizador ✅ (implementado hoy: tabla, API, frontend)
+- [ ]继续: Testing completo del flujo:
+  - [ ] Usuario normal: solicitar ser organizer → Perfil
+  - [ ] Admin: aprobar solicitud → Admin Panel → Solicitudes
+  - [ ] Verificar cambio de rol en DB
+  - [ ] Usuario aprobado puede crear eventos
+
+---
+
+## 🛠️ SISTEMA DE ORGANIZADOR (Implementado 20/04/2026)
+
+### Tabla agregada en Supabase:
+```sql
+CREATE TABLE IF NOT EXISTS solicitud_organizer (
+    id SERIAL PRIMARY KEY,
+    usuario_id INTEGER NOT NULL,
+    estado TEXT DEFAULT 'pendiente',
+    motivo_rechazo TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+```
+
+### APIs nuevas:
+- POST /api/auth/solicitar-organizer
+- GET /api/admin/solicitudes-organizer
+- POST /api/admin/aprobar-organizer
+- POST /api/admin/rechazar-organizer
+- GET /api/auth/mi-estado
+
+### Frontend:
+- Perfil: botón "Solicitar ser organizador de eventos"
+- Admin Panel: pestaña "Solicitudes (X)"
+
+### Flujo a probar:
+1. Usuario normal → Login → Perfil → "Solicitar ser organizador de eventos"
+2. Logout → Login como admin
+3. Admin Panel → "Solicitudes (X)" → aprobar
+4. Usuario recibe email de aprobación
+5. Usuario ahora tiene rol=organizer y puede crear eventos
 
 ---
 
@@ -783,4 +820,11 @@ CREATE TABLE IF NOT EXISTS visitas (
 
 ---
 
-*Última sesión: Lunes 20 de Abril 2026*
+*Última sesión: Lunes 20 de Abril 2026 - Sistema de Organizador implementado*
+
+**CONTINUAR PRUEBA COMPLETA:**
+1. Login como aantoniaa1982@gmail.com
+2. Perfil → Solicitar ser organizador de eventos
+3. Login como guilles10@yahoo.com.ar (admin)
+4. Admin → Solicitudes → Aprobar
+5. Verificar cambio en DB
