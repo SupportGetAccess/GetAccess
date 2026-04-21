@@ -2391,6 +2391,10 @@ def get_analytics_general(tipo: str, credentials: HTTPAuthorizationCredentials =
     if user_rol == 'organizer':
         # Solo mostrar eventos creados por este organizador
         cursor = db.execute("SELECT COUNT(*) as cnt, COALESCE(SUM(total), 0) as total, COALESCE(SUM(cantidad), 0) as cnt_total FROM entradas en JOIN eventos e ON en.evento_id = e.id WHERE en.estado = 'pagada' AND e.creado_por = ?", (user_id,))
+    else:
+        # Admin o usuario: todos los eventos
+        cursor = db.execute("SELECT COUNT(*) as cnt, COALESCE(SUM(total), 0) as total, COALESCE(SUM(cantidad), 0) as cnt_total FROM entradas WHERE estado = 'pagada'")
+    
     row = cursor.fetchone()
     if isinstance(row, dict):
         ventas_total = row.get('cnt_total') or 0
@@ -2399,17 +2403,23 @@ def get_analytics_general(tipo: str, credentials: HTTPAuthorizationCredentials =
         ventas_total = row[2] or 0
         ingresos_total = row[1] or 0
     
-    cursor = db.execute("SELECT COUNT(*) FROM validaciones")
-    row = cursor.fetchone()
-    tickets_usados = row[0] if isinstance(row, tuple) else (row.get('count') or row.get('cnt') or 0) if isinstance(row, dict) else 0
-    
-    cursor = db.execute("""
-        SELECT COALESCE(e.categoria, 'sin_categoria') as cat, COUNT(*) as cantidad
-        FROM entradas en
-        JOIN eventos e ON en.evento_id = e.id
-        WHERE en.estado = 'pagada'
-        GROUP BY cat
-    """)
+    # Por categoría - filtrar si es organizer
+    if user_rol == 'organizer':
+        cursor = db.execute("""
+            SELECT COALESCE(e.categoria, 'sin_categoria') as cat, COUNT(*) as cantidad
+            FROM entradas en
+            JOIN eventos e ON en.evento_id = e.id
+            WHERE en.estado = 'pagada' AND e.creado_por = ?
+            GROUP BY cat
+        """, (user_id,))
+    else:
+        cursor = db.execute("""
+            SELECT COALESCE(e.categoria, 'sin_categoria') as cat, COUNT(*) as cantidad
+            FROM entradas en
+            JOIN eventos e ON en.evento_id = e.id
+            WHERE en.estado = 'pagada'
+            GROUP BY cat
+        """)
     por_categoria = []
     for r in cursor.fetchall():
         if isinstance(r, dict):
@@ -2417,13 +2427,23 @@ def get_analytics_general(tipo: str, credentials: HTTPAuthorizationCredentials =
         else:
             por_categoria.append({"categoria": r[0], "cantidad": r[1]})
     
-    cursor = db.execute("""
-        SELECT e.id, e.nombre, e.vendidos, (e.vendidos * e.precio) as ingresos
-        FROM eventos e
-        WHERE e.vendidos > 0
-        ORDER BY e.vendidos DESC
-        LIMIT 10
-    """)
+    # Top eventos - filtrar si es organizer
+    if user_rol == 'organizer':
+        cursor = db.execute("""
+            SELECT e.id, e.nombre, e.vendidos, (e.vendidos * e.precio) as ingresos
+            FROM eventos e
+            WHERE e.vendidos > 0 AND e.creado_por = ?
+            ORDER BY e.vendidos DESC
+            LIMIT 10
+        """, (user_id,))
+    else:
+        cursor = db.execute("""
+            SELECT e.id, e.nombre, e.vendidos, (e.vendidos * e.precio) as ingresos
+            FROM eventos e
+            WHERE e.vendidos > 0
+            ORDER BY e.vendidos DESC
+            LIMIT 10
+        """)
     top_eventos = []
     for r in cursor.fetchall():
         if isinstance(r, dict):
@@ -2431,8 +2451,41 @@ def get_analytics_general(tipo: str, credentials: HTTPAuthorizationCredentials =
         else:
             top_eventos.append({"id": r[0], "nombre": r[1], "vendidos": r[2], "ingresos": r[3]})
     
+    # Validaciones - filtrar si es organizer
+    if user_rol == 'organizer':
+        cursor = db.execute("""
+            SELECT COUNT(*) FROM validaciones v
+            JOIN entradas e ON v.entrada_id = e.id
+            JOIN eventos ev ON e.evento_id = ev.id
+            WHERE ev.creado_por = ?
+        """, (user_id,))
+    else:
+        cursor = db.execute("SELECT COUNT(*) FROM validaciones")
+    row = cursor.fetchone()
+    tickets_usados = row[0] if isinstance(row, tuple) else (row.get('count') or row.get('cnt') or 0) if isinstance(row, dict) else 0
+    
     # Query compatible con SQLite y PostgreSQL
-    if db.is_postgres:
+    if user_rol == 'organizer' and db.is_postgres:
+        cursor = db.execute("""
+            SELECT DATE(creado_en)::date as fecha, SUM(cantidad) as cantidad
+            FROM entradas en
+            JOIN eventos e ON en.evento_id = e.id
+            WHERE en.estado = 'pagada' AND e.creado_por = ? AND creado_en >= CURRENT_DATE - INTERVAL '30 days'
+            GROUP BY fecha
+            ORDER BY fecha DESC
+            LIMIT 14
+        """, (user_id,))
+    elif user_rol == 'organizer':
+        cursor = db.execute("""
+            SELECT DATE(creado_en) as fecha, SUM(cantidad) as cantidad
+            FROM entradas en
+            JOIN eventos e ON en.evento_id = e.id
+            WHERE en.estado = 'pagada' AND e.creado_por = ? AND creado_en >= DATE('now', '-30 days')
+            GROUP BY fecha
+            ORDER BY fecha DESC
+            LIMIT 14
+        """, (user_id,))
+    elif db.is_postgres:
         cursor = db.execute("""
             SELECT DATE(creado_en)::date as fecha, SUM(cantidad) as cantidad
             FROM entradas
