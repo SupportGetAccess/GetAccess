@@ -2716,32 +2716,39 @@ def get_analytics_evento(evento_id: int, credentials: HTTPAuthorizationCredentia
     except:
         raise HTTPException(status_code=401, detail="Token inválido")
     
-    cursor = db.execute("SELECT COUNT(*), COALESCE(SUM(total), 0), COALESCE(SUM(cantidad), 0), e.precio, e.capacidad FROM entradas en JOIN eventos e ON en.evento_id = e.id WHERE en.evento_id = ? AND en.estado = 'pagada' GROUP BY e.precio, e.capacidad", (evento_id,))
+    cursor = db.execute("SELECT COUNT(*), COALESCE(SUM(total), 0), COALESCE(SUM(cantidad), 0), e.precio, e.capacidad FROM entradas en JOIN eventos e ON en.evento_id = e.id WHERE en.evento_id = %s AND en.estado = 'pagada' GROUP BY e.precio, e.capacidad", (evento_id,))
     row = cursor.fetchone()
-    ventas_total = row[2] or 0
-    ingresos_total = row[1] or 0
+    
+    if row is None:
+        ventas_total = 0
+        ingresos_total = 0
+        capacidad = 1
+        vendidos = 0
+    else:
+        ventas_total = row[2] or 0
+        ingresos_total = row[1] or 0
+        capacidad = row[4] or 1
+        vendidos = row[3] or 0
     
     cursor = db.execute("""
         SELECT COUNT(*) FROM validaciones v
         JOIN entradas e ON v.entrada_id = e.id
-        WHERE e.evento_id = ?
+        WHERE e.evento_id = %s
     """, (evento_id,))
-    tickets_usados = cursor.fetchone()[0]
+    tickets_usados = cursor.fetchone()[0] or 0
     
     cursor = db.execute("""
         SELECT DATE(v.timestamp) as fecha, COUNT(*) as cantidad
         FROM validaciones v
         JOIN entradas e ON v.entrada_id = e.id
-        WHERE e.evento_id = ? AND v.timestamp >= DATE('now', '-30 days')
+        WHERE e.evento_id = %s AND v.timestamp >= CURRENT_DATE - INTERVAL '30 days'
         GROUP BY fecha
         ORDER BY fecha DESC
     """, (evento_id,))
     ventas_por_dia = [{"fecha": r[0], "cantidad": r[1]} for r in cursor.fetchall()]
     
     precio_promedio = ingresos_total / ventas_total if ventas_total > 0 else 0
-    capacidad = row[4] or 1
-    vendidos = row[3] or 0
-    probabilidad = min(100, int((vendidos / capacidad) * 100))
+    probabilidad = min(100, int((vendidos / capacidad) * 100)) if capacidad > 0 else 0
     
     return {
         "ventas_total": ventas_total,
