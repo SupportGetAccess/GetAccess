@@ -1206,19 +1206,19 @@ class EventoResponse(BaseModel):
 @app.get("/api/eventos/")
 def listar_eventos(categoria: str = None, busqueda: str = None, mis_eventos: bool = False, db = Depends(get_db), credentials = None):
     try:
-        # Si mis_eventos=true, obtener solo los eventos del organizador actual
         user_id = None
-        if mis_eventos and credentials:
+        if mis_eventos:
+            if not credentials:
+                raise HTTPException(status_code=401, detail="Token requerido para ver mis eventos")
             try:
                 payload = jwt.decode(credentials.credentials, SECRET_KEY, algorithms=[ALGORITHM])
                 user_id = int(payload.get("sub"))
             except:
-                pass  # Si no tiene token, devolver todos
+                raise HTTPException(status_code=401, detail="Token inválido")
         
         query = "SELECT id, nombre, descripcion, fecha, lugar, precio, capacidad, vendidos, COALESCE(imagen, '') as imagen, COALESCE(categoria, '') as categoria FROM eventos WHERE 1=1"
         params = []
         
-        # Si es para mis eventos, filtrar por creado_por
         if user_id:
             query += " AND creado_por = ?"
             params.append(user_id)
