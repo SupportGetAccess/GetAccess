@@ -1204,7 +1204,7 @@ class EventoResponse(BaseModel):
     disponibles: int
 
 @app.get("/api/eventos/")
-def listar_eventos(categoria: str = None, busqueda: str = None, mis_eventos: bool = False, db = Depends(get_db), credentials = None):
+def listar_eventos(categoria: str = None, busqueda: str = None, mis_eventos: bool = False, db = Depends(get_db), credentials: HTTPAuthorizationCredentials = Depends(HTTPBearer(auto_error=False))):
     try:
         user_id = None
         if mis_eventos:
