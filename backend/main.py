@@ -2305,12 +2305,24 @@ def consultar_entrada(codigo: str, db = Depends(get_db)):
     }
 
 @app.get("/api/eventos/{evento_id}/estadisticas")
-def estadisticas_evento(evento_id: int, db = Depends(get_db)):
-    cursor = db.execute("SELECT id, nombre FROM eventos WHERE id = ?", (evento_id,))
+def estadisticas_evento(evento_id: int, db = Depends(get_db), credentials: HTTPAuthorizationCredentials = Depends(HTTPBearer(auto_error=False))):
+    cursor = db.execute("SELECT id, nombre, creado_por FROM eventos WHERE id = ?", (evento_id,))
     evento = cursor.fetchone()
     
     if not evento:
         raise HTTPException(status_code=404, detail="Evento no encontrado")
+    
+    if credentials:
+        try:
+            payload = jwt.decode(credentials.credentials, SECRET_KEY, algorithms=[ALGORITHM])
+            user_rol = payload.get("rol")
+            user_id = int(payload.get("sub"))
+            if user_rol == 'organizer':
+                evento_creado_por = evento[2] if len(evento) > 2 else None
+                if evento_creado_por != user_id:
+                    raise HTTPException(status_code=403, detail="No tienes acceso a este evento")
+        except:
+            pass
     
     cursor_entradas = db.execute("""
         SELECT COUNT(*), SUM(cantidad) FROM entradas 
@@ -2383,6 +2395,15 @@ def get_codigos_validos(evento_id: int, credentials: HTTPAuthorizationCredential
     try:
         payload = jwt.decode(credentials.credentials, SECRET_KEY, algorithms=[ALGORITHM])
         user_id = int(payload.get("sub"))
+        user_rol = payload.get("rol")
+        
+        if user_rol == 'organizer':
+            cursor = db.execute("SELECT creado_por FROM eventos WHERE id = %s", (evento_id,))
+            row = cursor.fetchone()
+            if row is None or row[0] != user_id:
+                raise HTTPException(status_code=403, detail="No tienes acceso a este evento")
+    except HTTPException:
+        raise
     except:
         raise HTTPException(status_code=401, detail="Token inválido")
     
