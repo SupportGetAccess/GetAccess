@@ -1374,15 +1374,22 @@ def actualizar_evento(evento_id: int, evento: EventoUpdate, credentials: HTTPAut
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         user_id = int(payload.get("sub"))
+        user_rol = payload.get("rol")
     except:
         raise HTTPException(status_code=401, detail="Token inválido")
     
-    if not es_admin(db, user_id):
-        raise HTTPException(status_code=403, detail="Solo administradores pueden editar eventos")
-    
-    cursor = db.execute("SELECT id FROM eventos WHERE id = ?", (evento_id,))
-    if not cursor.fetchone():
+    cursor = db.execute("SELECT id, creado_por FROM eventos WHERE id = ?", (evento_id,))
+    evento_row = cursor.fetchone()
+    if not evento_row:
         raise HTTPException(status_code=404, detail="Evento no encontrado")
+    
+    if user_rol != 'admin' and user_rol != 'organizer':
+        raise HTTPException(status_code=403, detail="No tienes permisos para editar eventos")
+    
+    if user_rol == 'organizer':
+        evento_creado_por = evento_row[1] if len(evento_row) > 1 else None
+        if evento_creado_por != user_id:
+            raise HTTPException(status_code=403, detail="Solo puedes editar tus propios eventos")
     
     if evento.fecha is not None:
         evento_fecha_str = evento.fecha.replace('Z', '')
@@ -1441,16 +1448,23 @@ def eliminar_evento(evento_id: int, credentials: HTTPAuthorizationCredentials = 
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         user_id = int(payload.get("sub"))
+        user_rol = payload.get("rol")
     except:
         raise HTTPException(status_code=401, detail="Token inválido")
     
-    if not es_admin(db, user_id):
-        raise HTTPException(status_code=403, detail="Solo administradores pueden eliminar eventos")
-    
-    cursor = db.execute("SELECT id, nombre FROM eventos WHERE id = ?", (evento_id,))
+    cursor = db.execute("SELECT id, nombre, creado_por FROM eventos WHERE id = ?", (evento_id,))
     evento = cursor.fetchone()
     if not evento:
         raise HTTPException(status_code=404, detail="Evento no encontrado")
+    
+    if user_rol == 'admin':
+        pass
+    elif user_rol == 'organizer':
+        evento_creado_por = evento[2] if len(evento) > 2 else None
+        if evento_creado_por != user_id:
+            raise HTTPException(status_code=403, detail="Solo puedes eliminar tus propios eventos")
+    else:
+        raise HTTPException(status_code=403, detail="No tienes permisos para eliminar eventos")
     
     db.execute("DELETE FROM evento_imagenes WHERE evento_id = ?", (evento_id,))
     db.execute("DELETE FROM eventos WHERE id = ?", (evento_id,))
