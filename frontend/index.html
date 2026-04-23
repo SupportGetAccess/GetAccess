@@ -1624,10 +1624,12 @@
         }
 
         function AnalyticsPanel({ eventos }) {
-            const { token, showToast } = useContext(AuthContext);
+            const { user, token, showToast } = useContext(AuthContext);
             const [analytics, setAnalytics] = useState(null);
             const [loading, setLoading] = useState(true);
             const [eventoSeleccionado, setEventoSeleccionado] = useState('todos');
+            const isOrganizer = user && user.rol === 'organizer';
+            const eventosFiltrados = isOrganizer ? eventos : eventos;
             
             useEffect(() => {
                 cargarAnalytics();
@@ -1670,11 +1672,18 @@
             return (
                 <div style={{maxWidth:'1200px', margin:'0 auto'}}>
                     <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:'1.5rem', flexWrap:'wrap', gap:'1rem'}}>
-                        <h2 style={{fontSize:'1.5rem', margin:0}}>📊 Analytics Avanzado</h2>
-                        <select value={eventoSeleccionado} onChange={e => setEventoSeleccionado(e.target.value)} style={{padding:'0.75rem 1rem', borderRadius:'8px', border:'2px solid rgba(255,255,255,0.1)', background:'var(--bg-card)', color:'white'}}>
-                            <option value="todos">Todos los eventos</option>
-                            {eventos.map(ev => <option key={ev.id} value={ev.id}>{ev.nombre}</option>)}
-                        </select>
+                        <h2 style={{fontSize:'1.5rem', margin:0}}>📊 Analytics{isOrganizer ? ' - Solo tus eventos' : ''}</h2>
+                        {!isOrganizer && (
+                            <select value={eventoSeleccionado} onChange={e => setEventoSeleccionado(e.target.value)} style={{padding:'0.75rem 1rem', borderRadius:'8px', border:'2px solid rgba(255,255,255,0.1)', background:'var(--bg-card)', color:'white'}}>
+                                <option value="todos">Todos los eventos</option>
+                                {eventos.map(ev => <option key={ev.id} value={ev.id}>{ev.nombre}</option>)}
+                            </select>
+                        )}
+                        {isOrganizer && (
+                            <select value={eventoSeleccionado} onChange={e => setEventoSeleccionado(e.target.value)} style={{padding:'0.75rem 1rem', borderRadius:'8px', border:'2px solid rgba(255,255,255,0.1)', background:'var(--bg-card)', color:'white'}}>
+                                {eventos.map(ev => <option key={ev.id} value={ev.id}>{ev.nombre}</option>)}
+                            </select>
+                        )}
                     </div>
                     
                     <div style={{display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(200px, 1fr))', gap:'1rem', marginBottom:'2rem'}}>
@@ -2870,7 +2879,7 @@
                     
                     <div style={{display:'flex', gap:'0.5rem', marginBottom:'1.5rem', flexWrap:'wrap'}}>
                         {(user && (user.rol === 'admin' || user.rol === 'organizer')) && <button onClick={() => { setTab('crear'); setEditando(null); setForm({ nombre: '', descripcion: '', fecha: '', lugar: '', precio: '', capacidad: '', imagen: '', categoria: '' }); }} style={{background: tab === 'crear' ? 'var(--gradient)' : 'rgba(255,255,255,0.1)', border:'none', color:'white', padding:'0.8rem 1.5rem', borderRadius:'12px', cursor:'pointer', fontWeight:'600', boxShadow: tab === 'crear' ? 'var(--glow)' : 'none'}}>➕ Crear Evento</button>}
-                        {(user && user.rol === 'admin') && <button onClick={() => setTab('editar')} style={{background: tab === 'editar' ? 'var(--gradient)' : 'rgba(255,255,255,0.1)', border:'none', color:'white', padding:'0.8rem 1.5rem', borderRadius:'12px', cursor:'pointer', fontWeight:'600', boxShadow: tab === 'editar' ? 'var(--glow)' : 'none'}}>✏️ Editar / Eliminar</button>}
+                        {user && user.rol === 'admin' && <button onClick={() => setTab('editar')} style={{background: tab === 'editar' ? 'var(--gradient)' : 'rgba(255,255,255,0.1)', border:'none', color:'white', padding:'0.8rem 1.5rem', borderRadius:'12px', cursor:'pointer', fontWeight:'600', boxShadow: tab === 'editar' ? 'var(--glow)' : 'none'}}>✏️ Editar / Eliminar</button>}
                         {user && user.rol === 'admin' && <button onClick={() => setTab('scanner')} style={{background: tab === 'scanner' ? 'var(--gradient)' : 'rgba(255,255,255,0.1)', border:'none', color:'white', padding:'0.8rem 1.5rem', borderRadius:'12px', cursor:'pointer', fontWeight:'600', boxShadow: tab === 'scanner' ? 'var(--glow)' : 'none'}}>📷 Scanner QR</button>}
                         <button onClick={() => setTab('analytics')} style={{background: tab === 'analytics' ? 'var(--gradient)' : 'rgba(255,255,255,0.1)', border:'none', color:'white', padding:'0.8rem 1.5rem', borderRadius:'12px', cursor:'pointer', fontWeight:'600', boxShadow: tab === 'analytics' ? 'var(--glow)' : 'none'}}>📊 Analytics</button>
                         {user && user.rol === 'admin' && <button onClick={async () => { setTab('solicitudes'); cargarSolicitudes(); }} style={{background: tab === 'solicitudes' ? 'var(--gradient)' : 'rgba(255,255,255,0.1)', border:'none', color:'white', padding:'0.8rem 1.5rem', borderRadius:'12px', cursor:'pointer', fontWeight:'600', boxShadow: tab === 'solicitudes' ? 'var(--glow)' : 'none'}}>📋 Solicitudes ({solicitudes.length})</button>}

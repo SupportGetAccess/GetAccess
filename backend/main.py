@@ -2713,8 +2713,15 @@ def get_analytics_evento(evento_id: int, credentials: HTTPAuthorizationCredentia
     try:
         payload = jwt.decode(credentials.credentials, SECRET_KEY, algorithms=[ALGORITHM])
         user_id = int(payload.get("sub"))
+        user_rol = payload.get("rol")
     except:
         raise HTTPException(status_code=401, detail="Token inválido")
+    
+    if user_rol == 'organizer':
+        cursor = db.execute("SELECT creado_por FROM eventos WHERE id = %s", (evento_id,))
+        row = cursor.fetchone()
+        if row is None or row[0] != user_id:
+            raise HTTPException(status_code=403, detail="No tienes acceso a este evento")
     
     cursor = db.execute("SELECT COUNT(*), COALESCE(SUM(total), 0), COALESCE(SUM(cantidad), 0), e.precio, e.capacidad FROM entradas en JOIN eventos e ON en.evento_id = e.id WHERE en.evento_id = %s AND en.estado = 'pagada' GROUP BY e.precio, e.capacidad", (evento_id,))
     row = cursor.fetchone()
