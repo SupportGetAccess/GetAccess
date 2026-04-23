@@ -940,3 +940,29 @@ Deberían retornar JSON con datos (no 500)
 - Cuando es `admin`, mostrar todos los eventos
 
 # ============================================================================
+
+## 💰 SISTEMA DE COMISIONES PARA ORGANIZADORES (Propuesta)
+
+**Problema**: Los organizadores quieren cobrar comisión por cada ticket vendido.
+
+### Opción 1: Comisión Simple (Recomendado para empezar)
+- Campo `comision` (0-100%) en tabla eventos
+- En checkout: mostrar "Precio base + Comisión (X%) = Total"
+- El organizador recibe solo el precio base
+- Sistema retiene la comisión
+
+### Opción 2: Comisión al Organizador
+- Organizador cobra su comisión directamente
+- Requiere integración con MercadoPago split payments (más complejo)
+- El comprador paga: precio base + comisión
+
+### Opción 3: Mixto
+- Organizador elige: "Cobrar comisión" (sí/no)
+- Si sí: define %
+- Si no: muestra precio sin recargo
+
+**Sugerencia**: Empezar con Opción 1 (comisión simple al organizador). Más fácil de implementar, el flujo de pagos no cambia - solo ajustar UI para mostrar desglose.
+
+---
+
+# ============================================================================
