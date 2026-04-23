@@ -732,17 +732,17 @@
             }, [eventoId]);
             
             async function verificarToken() {
-                try {
+try {
                     const res = await fetch(`${API_URL}/api/auth/me`, { headers: { Authorization: `Bearer ${token}` } });
                     if (res.ok) {
                         const data = await res.json();
-                        if (data.rol === 'admin') {
+                        if (data.rol === 'admin' || data.rol === 'organizer') {
                             setUser(data);
                             setLoggedIn(true);
-                            showToast('Bienvenido admin', 'success');
+                            showToast(data.rol === 'organizer' ? 'Bienvenido organizador' : 'Bienvenido admin', 'success');
                         } else {
                             logout();
-                            alert('Acceso no autorizado. Solo administradores.');
+                            alert('Acceso no autorizado.');
                         }
                     } else {
                         logout();
@@ -752,7 +752,7 @@
                 setLoading(false);
             }
             
-function login(e) {
+            function login(e) {
                 e.preventDefault();
                 setLoginLoading(true);
                 const email = e.target.email.value;
@@ -762,13 +762,13 @@ function login(e) {
                     body: JSON.stringify({ email, password })
                 }).then(res => res.json()).then(data => {
                     setLoginLoading(false);
-                    if (data.user && data.user.rol === 'admin') {
+                    if (data.user && (data.user.rol === 'admin' || data.user.rol === 'organizer')) {
                         sessionStorage.setItem('token', data.access_token);
                         setToken(data.access_token);
                         setUser(data.user);
                         setLoggedIn(true);
                     } else {
-                        alert('Acceso no autorizado. Solo administradores.');
+                        alert('Acceso no autorizado.');
                     }
                 }).catch(err => {
                     setLoginLoading(false);
