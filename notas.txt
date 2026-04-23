@@ -965,4 +965,34 @@ Deberían retornar JSON con datos (no 500)
 
 ---
 
+## 🔐 PERMISOS DE ORGANIZADOR (Implementado 23/04/2026)
+
+### Funcionalidades por rol:
+
+| Funcionalidad | Admin | Organizador |
+|---------------|-------|--------------|
+| Ver todos los eventos | ✅ | ❌ Solo los propios |
+| Crear eventos | ✅ | ✅ |
+| Editar eventos | ✅ | ✅ Solo los propios |
+| Eliminar eventos | ✅ | ✅ Solo los propios |
+| Ver Analytics | ✅ | ✅ Solo sus eventos |
+| Usar Scanner QR | ✅ | ✅ Solo sus eventos |
+| Ver Solicitudes | ✅ | ❌ |
+| Ver Scanner en Admin | ✅ | ✅ |
+
+### Endpoints modificados:
+- `/api/eventos/` - Filtra por `creado_por` para organizadores
+- `/api/eventos/{id}` - PUT/DELETE requieren ser dueño o admin
+- `/api/eventos/{id}/estadisticas` - Verifica propiedad
+- `/api/eventos/{id}/codigos-validos` - Verifica propiedad
+- `/api/analytics/evento/{id}` - Verifica propiedad
+- `/api/analytics/todos` - Filtra por organizador
+
+### Archivos modificados:
+- `backend/main.py` - Verificación de permisos en múltiples endpoints
+- `frontend/index.html` - UI del Admin Panel adaptada
+- `frontend/scanner.html` - Filtro de eventos y botón volver al admin
+
+---
+
 # ============================================================================
