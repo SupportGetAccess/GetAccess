@@ -786,9 +786,14 @@ function login(e) {
             
             async function cargarEventos() {
                 try {
-                    const res = await fetch(`${API_URL}/api/eventos/`);
+                    const isOrganizer = user && user.rol === 'organizer';
+                    let url = `${API_URL}/api/eventos/`;
+                    if (isOrganizer) {
+                        url += '?mis_eventos=true';
+                    }
+                    const res = await fetch(url, isOrganizer ? { headers: { Authorization: `Bearer ${token}` } } : {});
                     const data = await res.json();
-                    setEventos(data);
+                    setEventos(Array.isArray(data) ? data : []);
                 } catch (e) { console.error(e); }
             }
             

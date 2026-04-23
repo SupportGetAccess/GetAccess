@@ -2884,7 +2884,7 @@
                     <div style={{display:'flex', gap:'0.5rem', marginBottom:'1.5rem', flexWrap:'wrap'}}>
                         {(user && (user.rol === 'admin' || user.rol === 'organizer')) && <button onClick={() => { setTab('crear'); setEditando(null); setForm({ nombre: '', descripcion: '', fecha: '', lugar: '', precio: '', capacidad: '', imagen: '', categoria: '' }); }} style={{background: tab === 'crear' ? 'var(--gradient)' : 'rgba(255,255,255,0.1)', border:'none', color:'white', padding:'0.8rem 1.5rem', borderRadius:'12px', cursor:'pointer', fontWeight:'600', boxShadow: tab === 'crear' ? 'var(--glow)' : 'none'}}>➕ Crear Evento</button>}
                         {user && (user.rol === 'admin' || user.rol === 'organizer') && <button onClick={() => setTab('editar')} style={{background: tab === 'editar' ? 'var(--gradient)' : 'rgba(255,255,255,0.1)', border:'none', color:'white', padding:'0.8rem 1.5rem', borderRadius:'12px', cursor:'pointer', fontWeight:'600', boxShadow: tab === 'editar' ? 'var(--glow)' : 'none'}}>✏️ Editar / Eliminar</button>}
-                        {user && user.rol === 'admin' && <button onClick={() => setTab('scanner')} style={{background: tab === 'scanner' ? 'var(--gradient)' : 'rgba(255,255,255,0.1)', border:'none', color:'white', padding:'0.8rem 1.5rem', borderRadius:'12px', cursor:'pointer', fontWeight:'600', boxShadow: tab === 'scanner' ? 'var(--glow)' : 'none'}}>📷 Scanner QR</button>}
+                        {user && (user.rol === 'admin' || user.rol === 'organizer') && <button onClick={() => setTab('scanner')} style={{background: tab === 'scanner' ? 'var(--gradient)' : 'rgba(255,255,255,0.1)', border:'none', color:'white', padding:'0.8rem 1.5rem', borderRadius:'12px', cursor:'pointer', fontWeight:'600', boxShadow: tab === 'scanner' ? 'var(--glow)' : 'none'}}>📷 Scanner QR</button>}
                         <button onClick={() => setTab('analytics')} style={{background: tab === 'analytics' ? 'var(--gradient)' : 'rgba(255,255,255,0.1)', border:'none', color:'white', padding:'0.8rem 1.5rem', borderRadius:'12px', cursor:'pointer', fontWeight:'600', boxShadow: tab === 'analytics' ? 'var(--glow)' : 'none'}}>📊 Analytics</button>
                         {user && user.rol === 'admin' && <button onClick={async () => { setTab('solicitudes'); cargarSolicitudes(); }} style={{background: tab === 'solicitudes' ? 'var(--gradient)' : 'rgba(255,255,255,0.1)', border:'none', color:'white', padding:'0.8rem 1.5rem', borderRadius:'12px', cursor:'pointer', fontWeight:'600', boxShadow: tab === 'solicitudes' ? 'var(--glow)' : 'none'}}>📋 Solicitudes ({solicitudes.length})</button>}
                     </div>
@@ -3013,9 +3013,9 @@
                         </>
                     )}
                     
-                    {tab === 'scanner' && user && user.rol === 'admin' && (
+                    {tab === 'scanner' && user && (user.rol === 'admin' || user.rol === 'organizer') && (
                         <div style={{textAlign:'center', padding:'2rem'}}>
-                            <h2 style={{fontSize:'1.5rem', marginBottom:'1rem'}}>📷 Scanner de Entradas QR</h2>
+                            <h2 style={{fontSize:'1.5rem', marginBottom:'1rem'}}>📷 Scanner de Entradas QR{user.rol === 'organizer' ? ' - Solo tus eventos' : ''}</h2>
                             <p style={{color:'var(--text-muted)', marginBottom:'2rem'}}>Usa la app de validación para escanear códigos QR en los ingresos.</p>
                             <div style={{display:'flex', flexDirection:'column', gap:'1rem', alignItems:'center'}}>
                                 <a href="/scanner.html" style={{background:'var(--gradient)', color:'white', padding:'1rem 2rem', borderRadius:'12px', textDecoration:'none', fontWeight:'bold', fontSize:'1.1rem', boxShadow:'var(--glow)'}}>
