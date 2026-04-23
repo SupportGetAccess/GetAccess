@@ -2666,14 +2666,11 @@
                     if (isOrg) {
                         url += '?mis_eventos=true';
                     }
-                    console.log('cargarEventos - isOrg:', isOrg, 'token:', token ? 'present' : 'missing');
                     const res = await fetch(url, isOrg ? { headers: { 'Authorization': 'Bearer ' + token } } : {});
                     if (res.ok) {
                         const data = await res.json();
                         setEventos(Array.isArray(data) ? data : []);
                     } else {
-                        const err = await res.json();
-                        console.error('Error cargarEventos:', err);
                         setEventos([]);
                     }
                 } catch (err) { showToast('Error cargando eventos', 'error'); setEventos([]); }
