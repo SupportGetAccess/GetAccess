@@ -822,9 +822,121 @@ CREATE TABLE IF NOT EXISTS solicitud_organizer (
 
 *Última sesión: Lunes 20 de Abril 2026 - Sistema de Organizador implementado*
 
-**CONTINUAR PRUEBA COMPLETA:**
-1. Login como aantoniaa1982@gmail.com
-2. Perfil → Solicitar ser organizador de eventos
-3. Login como guilles10@yahoo.com.ar (admin)
-4. Admin → Solicitudes → Aprobar
-5. Verificar cambio en DB
+*Última sesión: Martes 21 de Abril 2026 - Fix analytics*
+
+---
+
+# ============================================================================
+# SESIÓN MARTES 21 DE ABRIL 2026 - CONTINUAR DESDE ACÁ
+
+## ✅ CORRECCIONES APLICADAS (21/04/2026):
+
+### /api/analytics/evento/{id} - Fix errores 500:
+1. **Error "NoneType not subscriptable"**: Agregué check `if row is None` para manejar casos sin ventas
+2. **Error "DATE('now', '-30 days')"**: Cambié a sintaxis PostgreSQL: `CURRENT_DATE - INTERVAL '30 days'`
+3. Cambié `?` por `%s` (formato psycopg2)
+
+### Commits:
+- 22521a8: Fix analytics endpoint: handle None row, PostgreSQL date syntax
+
+---
+
+## 🔧 Fix necesario en Analytics - Verificar en producción:
+
+### Pendiente por probar:
+- Login como admin → Admin → Analytics → Click en evento 14 y 9
+- Login como organizer → Admin → Analytics → Verificar que solo muestra "Maratón Nocturna"
+
+---
+
+# ============================================================================
+# ============================================================================
+
+## 📋 ESTADO ACTUAL DEL PROYECTO
+
+### Sistema de Organizador: ✅ IMPLEMENTADO
+- Perfil con pestañas: Datos Personales | Organizador
+- Modal de confirmación con Aceptar/Cancelar
+- Nueva API /api/auth/mi-solicitud-organizer
+- Muestra estado de solicitud + motivo de rechazo
+- Si solicitud rechazada, el usuario puede reenviar (actualiza la misma)
+- Email al admin (guilles10@yahoo.com.ar) cuando hay nueva solicitud
+
+### Permisos por Rol: ✅ IMPLEMENTADO
+- Admin: ve todo, puede aprobar/rechazar solicitudes
+- Organizador: solo ve sus propios eventos en Analytics y Admin Panel
+- Usuario normal: puede solicitar ser organizador
+
+### Base de Datos (Supabase):
+- ID 1: guilles10@yahoo.com.ar (admin)
+- ID 2: aantoniaa1982@gmail.com (organizer, 1 evento propio: "Maratón Nocturna" ID=14)
+- Columna creado_por en tabla eventos
+
+### Pendiente por probar/continuar:
+1. ✅ Solicitud de organizador enviada (ya está enviada)
+2. ⏳ Admin aprobar/rechazar solicitud desde Admin Panel → Solicitudes
+3. ⏳ Verificar que organizador aprobado pueda crear eventos
+4. ⏳ Verificar que Analytics del organizador solo muestre sus eventos
+5. ⏳ Probar flujo completo: crear evento como organizador → verificar stats
+
+## 🔧 Fixes recientes aplicados (necesitan testing):
+- Error 500 en /api/analytics/todos → Corregido SQL GROUP BY
+- Error 500 en /api/analytics/evento/{id} → Corregido SQL GROUP BY
+- Las estadísticas simples del AdminPanel ahora solo son visibles para admin (no organizer)
+
+## 📝 NOTAS TÉCNICAS
+
+### Tabla solicitud_organizer:
+- Si estado = 'pendiente' → usuario no puede reenviar
+- Si estado = 'rechazado' → usuario puede reenviar (actualiza la misma fila)
+- Si rol = 'organizer' → ya no puede solicitar
+
+### Endpoints de Analytics:
+- /api/analytics/todos → Para admin: todos los eventos. Para organizer: solo los creados por él
+- /api/analytics/evento/{id} → Analytics de un evento específico
+
+### Columnas importantes:
+- eventos.creado_por → ID del usuario que creó el evento
+- entradas.usuario_id → ID del usuario que compró la entrada
+- solicitud_organizer.usuario_id → ID del usuario que solicita ser organizador
+
+## 🚀 PRÓXIMOS PASOS AL CONTINUAR:
+
+1. **Probar Analytics (FIX APLICADO -，需要 verificar):**
+   - Login como admin → Admin → Analytics → Click en evento 14 y 9
+   - Login como organizer → Admin → Analytics → Verificar que solo muestra "Maratón Nocturna"
+
+2. **Probar flujo completo de organizador:**
+   - Admin → Solicitudes → Aprobar solicitud de aantoniaa1982@gmail.com
+   - Logout → Login como aantoniaa1982@gmail.com
+   - Ir a Admin → Crear Evento → Crear nuevo evento
+   - Verificar que el evento se crea con creado_por = 2
+   - Ir a Analytics → Verificar que aparecen los eventos creados por él
+
+3. **Verificar restricciones:**
+   - Organizador NO puede ver Admin → Scanner QR
+   - Organizador NO puede ver Admin → Editar/Eliminar (solo Crear Evento)
+   - Organizador NO ve estadísticas simples en Admin Panel
+
+# ============================================================================
+
+## ⏳ PENDIENTE: VERIFICAR FIX ANALYTICS EN PRODUCCIÓN
+
+Probar los endpoints:
+- https://getaccess-d3um.onrender.com/api/analytics/evento/14
+- https://getaccess-d3um.onrender.com/api/analytics/evento/9
+
+Deberían retornar JSON con datos (no 500)
+
+---
+
+## 🚧 PRÓXIMO: OCULTAR EVENTOS A ORGANIZADORES NO PROPIETARIOS
+
+**Problema**: Los organizadores ven TODOS los eventos en Admin Panel, pero deberían ver solo los QUE ELLOS CREARON.
+
+**Solución requerida**:
+- En endpoint `/api/eventos` (lista de eventos para Admin Panel)
+- Agregar filtro: `WHERE creado_por = user_id` cuando el usuario es `organizer`
+- Cuando es `admin`, mostrar todos los eventos
+
+# ============================================================================
