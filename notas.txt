@@ -634,8 +634,8 @@ Valores por defecto (fallback) incluidos en el código para desarrollo.
 
 | # | Funcionalidad | Estado | Prioridad |
 |---|---------------|--------|-----------|
-| 1 | **Búsqueda de entradas por email/DNI** (sin login) | ⬜ | 🔥🔥🔥 |
-| 2 | **Carrito de compras** (múltiples eventos) | ⬜ | 🔥🔥🔥 |
+| 1 | **Búsqueda de entradas por email/DNI** (sin login) | ✅ | 🔥🔥🔥 |
+| 2 | **Carrito de compras** (múltiples eventos) | ✅ | 🔥🔥🔥 |
 | 3 | **Wallet/credits** (crédito prepagado) | ⬜ | 🔥🔥 |
 | 4 | **Lotes de precio dinámico** (early bird, VIP) | ⬜ | 🔥🔥 |
 | 5 | **Gift cards / Regalos** | ⬜ | 🔥🔥 |
