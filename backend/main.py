@@ -1193,6 +1193,7 @@ class EventoCreate(BaseModel):
     capacidad: int
     imagen: Optional[str] = None
     categoria: Optional[str] = None
+    comision: Optional[float] = 0
 
 class EventoResponse(BaseModel):
     id: int
@@ -1202,6 +1203,7 @@ class EventoResponse(BaseModel):
     lugar: str
     precio: float
     disponibles: int
+    comision: Optional[float] = 0
 
 @app.get("/api/eventos/")
 def listar_eventos(categoria: str = None, busqueda: str = None, mis_eventos: bool = False, db = Depends(get_db), credentials: HTTPAuthorizationCredentials = Depends(HTTPBearer(auto_error=False))):
@@ -1216,7 +1218,7 @@ def listar_eventos(categoria: str = None, busqueda: str = None, mis_eventos: boo
             except:
                 raise HTTPException(status_code=401, detail="Token inválido")
         
-        query = "SELECT id, nombre, descripcion, fecha, lugar, precio, capacidad, vendidos, COALESCE(imagen, '') as imagen, COALESCE(categoria, '') as categoria FROM eventos WHERE 1=1"
+        query = "SELECT id, nombre, descripcion, fecha, lugar, precio, capacidad, vendidos, COALESCE(imagen, '') as imagen, COALESCE(categoria, '') as categoria, COALESCE(comision, 0) as comision FROM eventos WHERE 1=1"
         params = []
         
         if user_id:
@@ -1265,7 +1267,7 @@ def listar_categorias(db = Depends(get_db)):
 
 @app.get("/api/eventos/{evento_id}")
 def obtener_evento(evento_id: int, db = Depends(get_db)):
-    cursor = db.execute("SELECT id, nombre, descripcion, fecha, lugar, precio, capacidad, vendidos, COALESCE(imagen, '') as imagen, COALESCE(categoria, '') as categoria FROM eventos WHERE id = ?", (evento_id,))
+    cursor = db.execute("SELECT id, nombre, descripcion, fecha, lugar, precio, capacidad, vendidos, COALESCE(imagen, '') as imagen, COALESCE(categoria, '') as categoria, COALESCE(comision, 0) as comision FROM eventos WHERE id = ?", (evento_id,))
     row = cursor.fetchone()
     
     if not row:
@@ -1350,8 +1352,8 @@ def crear_evento(evento: EventoCreate, credentials: HTTPAuthorizationCredentials
         raise HTTPException(status_code=400, detail="La fecha ingresada no debe ser anterior a la fecha actual")
     
     cursor = db.execute(
-        "INSERT INTO eventos (nombre, descripcion, fecha, lugar, precio, capacidad, vendidos, imagen, categoria, creado_por) VALUES (?, ?, ?, ?, ?, ?, 0, ?, ?, ?)",
-        (evento.nombre, evento.descripcion, evento.fecha + " 20:00:00", evento.lugar, evento.precio, evento.capacidad, evento.imagen, evento.categoria, user_id)
+        "INSERT INTO eventos (nombre, descripcion, fecha, lugar, precio, capacidad, vendidos, imagen, categoria, creado_por, comision) VALUES (?, ?, ?, ?, ?, ?, 0, ?, ?, ?, ?, ?)",
+        (evento.nombre, evento.fecha + " 20:00:00", evento.lugar, evento.precio, evento.capacidad, evento.imagen, evento.categoria, user_id, evento.comision)
     )
     db.commit()
     print(f">>> EVENTO CREADO: {evento.nombre}, ID: {cursor.lastrowid}, Fecha: {evento.fecha}")
@@ -1367,6 +1369,7 @@ class EventoUpdate(BaseModel):
     capacidad: Optional[int] = None
     imagen: Optional[str] = None
     categoria: Optional[str] = None
+    comision: Optional[float] = None
 
 @app.put("/api/eventos/{evento_id}")
 def actualizar_evento(evento_id: int, evento: EventoUpdate, credentials: HTTPAuthorizationCredentials = Depends(security), db = Depends(get_db)):
@@ -1433,13 +1436,13 @@ def actualizar_evento(evento_id: int, evento: EventoUpdate, credentials: HTTPAut
     db.execute(f"UPDATE eventos SET {', '.join(updates)} WHERE id = ?", params)
     db.commit()
     
-    cursor = db.execute("SELECT id, nombre, descripcion, fecha, lugar, precio, capacidad, vendidos, COALESCE(imagen, '') as imagen, COALESCE(categoria, '') as categoria FROM eventos WHERE id = ?", (evento_id,))
+    cursor = db.execute("SELECT id, nombre, descripcion, fecha, lugar, precio, capacidad, vendidos, COALESCE(imagen, '') as imagen, COALESCE(categoria, '') as categoria, COALESCE(comision, 0) as comision FROM eventos WHERE id = ?", (evento_id,))
     row = cursor.fetchone()
     
     return {
         "id": row[0], "nombre": row[1], "descripcion": row[2], "fecha": row[3], "lugar": row[4],
         "precio": row[5], "capacidad": row[6], "vendidos": row[7], "imagen": row[8], "categoria": row[9],
-        "disponibles": row[6] - row[7]
+        "disponibles": row[6] - row[7], "comision": row[10]
     }
 
 @app.delete("/api/eventos/{evento_id}")
@@ -1560,7 +1563,7 @@ def crear_entrada(entrada: EntradaCreate, credentials: HTTPAuthorizationCredenti
         print(f">>> ERROR TOKEN: {e}")
         raise HTTPException(status_code=401, detail="Token inválido")
     
-    cursor = db.execute("SELECT id, precio, capacidad, vendidos FROM eventos WHERE id = ?", (entrada.evento_id,))
+    cursor = db.execute("SELECT id, precio, capacidad, vendidos, COALESCE(comision, 0) FROM eventos WHERE id = ?", (entrada.evento_id,))
     evento = cursor.fetchone()
     if not evento:
         raise HTTPException(status_code=404, detail="Evento no encontrado")
@@ -1570,8 +1573,11 @@ def crear_entrada(entrada: EntradaCreate, credentials: HTTPAuthorizationCredenti
     if disponibles < entrada.cantidad:
         raise HTTPException(status_code=400, detail="No hay suficientes entradas disponibles")
     
-    total = evento[1] * entrada.cantidad
-    print(f">>> TOTAL: {total}")
+    precio_base = evento[1]
+    comision = evento[4] if len(evento) > 4 else 0
+    precio_con_comision = precio_base * (1 + comision / 100)
+    total = precio_con_comision * entrada.cantidad
+    print(f">>> TOTAL: {total} (precio={precio_base}, comision={comision}%)")
     
     cursor = db.execute(
         "INSERT INTO entradas (evento_id, usuario_id, cantidad, total, estado, preference_id, usada, transferida) VALUES (?, ?, ?, ?, ?, NULL, 0, 0)",
@@ -1995,7 +2001,7 @@ def crear_preferencia_pago(datos: dict, credentials: HTTPAuthorizationCredential
     entrada_id = datos.get("entrada_id")
     
     cursor = db.execute("""
-        SELECT e.id, e.cantidad, e.total, ev.nombre
+        SELECT e.id, e.cantidad, e.total, ev.nombre, ev.precio, COALESCE(ev.comision, 0)
         FROM entradas e
         JOIN eventos ev ON e.evento_id = ev.id
         WHERE e.id = ? AND e.estado = 'pendiente'
@@ -2004,6 +2010,10 @@ def crear_preferencia_pago(datos: dict, credentials: HTTPAuthorizationCredential
     
     if not entrada:
         raise HTTPException(status_code=404, detail="Entrada no encontrada o ya pagada")
+    
+    precio_base = entrada[4] or 0
+    comision = entrada[5] or 0
+    unit_price = precio_base * (1 + comision / 100)
     
     try:
         back_url_base = os.environ.get("PRODUCTION_URL", "https://getaccess.com.ar")
@@ -2016,7 +2026,7 @@ def crear_preferencia_pago(datos: dict, credentials: HTTPAuthorizationCredential
                     "description": f"Entrada para {entrada[3]}",
                     "quantity": entrada[1],
                     "currency_id": "ARS",
-                    "unit_price": entrada[2] / entrada[1],
+                    "unit_price": unit_price,
                     "category_id": "services"
                 }
             ],
@@ -3132,13 +3142,19 @@ if __name__ == "__main__":
                 vendidos INTEGER DEFAULT 0,
                 imagen TEXT,
                 categoria TEXT,
-                creado_por INTEGER
+                creado_por INTEGER,
+                comision REAL DEFAULT 0
             )
         """)
         
         # Agregar columna si no existe
         try:
             cur.execute("ALTER TABLE eventos ADD COLUMN IF NOT EXISTS creado_por INTEGER")
+        except:
+            pass
+        
+        try:
+            cur.execute("ALTER TABLE eventos ADD COLUMN IF NOT EXISTS comision REAL DEFAULT 0")
         except:
             pass
         
