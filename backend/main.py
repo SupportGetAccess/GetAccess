@@ -1391,7 +1391,12 @@ def actualizar_evento(evento_id: int, evento: EventoUpdate, credentials: HTTPAut
     
     if user_rol == 'organizer':
         evento_creado_por = evento_row[1] if len(evento_row) > 1 else None
-        if evento_creado_por != user_id:
+        try:
+            evento_creado_por = int(evento_creado_por) if evento_creado_por else None
+            user_id_int = int(user_id)
+            if evento_creado_por != user_id_int:
+                raise HTTPException(status_code=403, detail="Solo puedes editar tus propios eventos")
+        except:
             raise HTTPException(status_code=403, detail="Solo puedes editar tus propios eventos")
     
     if evento.fecha is not None:
