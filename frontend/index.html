@@ -2887,6 +2887,13 @@
             };
             
             const eliminarEvento = async (ev) => {
+                const esPasado = new Date(ev.fecha + 'T12:00:00') < new Date();
+                
+                if (user.rol === 'organizer' && !esPasado) {
+                    alert('Para eliminar un evento, comunícate con el administrador o escribe a soporte@getaccess.com.ar');
+                    return;
+                }
+                
                 if (!confirm(`¿Estás seguro de eliminar "${ev.nombre}"? Esta acción no se puede deshacer.`)) return;
                 
                 try {
