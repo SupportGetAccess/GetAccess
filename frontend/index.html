@@ -3043,8 +3043,15 @@
                                                 <p style={{fontSize:'0.8rem', color:'var(--text-muted)', margin:'0.3rem 0'}}>📅 {new Date(ev.fecha + 'T12:00:00').toLocaleDateString('es-AR')} | 📍 {ev.lugar}</p>
                                                 <p style={{fontSize:'0.8rem', color:'var(--text-muted)', margin:'0.3rem 0'}}>💰 ${ev.precio.toLocaleString('es-AR')} | 🎫 {ev.disponibles}/{ev.capacidad}</p>
                                                 <div style={{display:'flex', gap:'0.5rem', marginTop:'0.75rem'}}>
-                                                    <button onClick={() => editarEvento(ev)} style={{flex:1, background:'var(--primary)', border:'none', color:'white', padding:'0.6rem', borderRadius:'10px', cursor:'pointer', fontWeight:'600', fontSize:'0.85rem'}}>✏️ Editar</button>
-                                                    <button onClick={() => eliminarEvento(ev)} style={{flex:1, background:'rgba(239,68,68,0.2)', border:'none', color:'var(--error)', padding:'0.6rem', borderRadius:'10px', cursor:'pointer', fontWeight:'600', fontSize:'0.85rem'}}>🗑️ Eliminar</button>
+                                                    {(() => {
+                                                        const esPasado = new Date(ev.fecha + 'T12:00:00') < new Date();
+                                                        return (
+                                                            <>
+                                                                <button onClick={() => editarEvento(ev)} disabled={esPasado} style={{flex:1, background: esPasado ? 'rgba(100,100,100,0.3)' : 'var(--primary)', border:'none', color: esPasado ? 'rgba(150,150,150,0.8)' : 'white', padding:'0.6rem', borderRadius:'10px', cursor: esPasado ? 'not-allowed' : 'pointer', fontWeight:'600', fontSize:'0.85rem'}}>✏️ Editar</button>
+                                                                <button onClick={() => eliminarEvento(ev)} disabled={esPasado} style={{flex:1, background: esPasado ? 'rgba(100,100,100,0.3)' : 'rgba(239,68,68,0.2)', border:'none', color: esPasado ? 'rgba(150,150,150,0.8)' : 'var(--error)', padding:'0.6rem', borderRadius:'10px', cursor: esPasado ? 'not-allowed' : 'pointer', fontWeight:'600', fontSize:'0.85rem'}}>🗑️ Eliminar</button>
+                                                            </>
+                                                        );
+                                                    })()}
                                                     <button onClick={() => irADetalle(ev.id)} style={{flex:1, background:'rgba(16,185,129,0.2)', border:'none', color:'var(--success)', padding:'0.6rem', borderRadius:'10px', cursor:'pointer', fontWeight:'600', fontSize:'0.85rem'}}>👁️ Ver</button>
                                                 </div>
                                             </div>
