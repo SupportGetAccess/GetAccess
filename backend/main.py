@@ -1251,6 +1251,7 @@ def listar_eventos(categoria: str = None, busqueda: str = None, mis_eventos: boo
                 "disponibles": (r["capacidad"] if isinstance(r, dict) else r[6]) - (r["vendidos"] if isinstance(r, dict) else r[7]),
                 "imagen": r["imagen"] if isinstance(r, dict) else r[8],
                 "categoria": r["categoria"] if isinstance(r, dict) else r[9],
+                "comision": r["comision"] if isinstance(r, dict) else (r[10] if len(r) > 10 else 0),
                 "capacidad": r["capacidad"] if isinstance(r, dict) else r[6],
                 "vendidos": r["vendidos"] if isinstance(r, dict) else r[7]
             }
@@ -1281,7 +1282,7 @@ def obtener_evento(evento_id: int, db = Depends(get_db)):
     return {
         "id": row[0], "nombre": row[1], "descripcion": row[2], "fecha": row[3], "lugar": row[4],
         "precio": row[5], "capacidad": row[6], "vendidos": row[7], "imagen": row[8], "categoria": row[9],
-        "disponibles": row[6] - row[7], "imagenes": imagenes
+        "disponibles": row[6] - row[7], "imagenes": imagenes, "comision": row[10] if len(row) > 10 else 0
     }
 
 class ImagenCreate(BaseModel):
