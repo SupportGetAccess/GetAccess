@@ -1392,7 +1392,7 @@
                         <div className="modal-info">
                             <p><strong>🎪 Evento:</strong> <span>{evento.nombre}</span></p>
                             <p><strong>💰 Precio:</strong> <span>${precioBase.toLocaleString('es-AR')}</span></p>
-                            {comision > 0 && <p><strong>💼 Cargo por servicios:</strong> <span>{comision}%</span></p>}
+                            {comision > 0 && <p><strong>💼 Cargo por servicios:</strong> <span>${((precioConComision - precioBase) * cantidad).toLocaleString('es-AR')}</span></p>}
                             <p><strong>📅 Fecha:</strong> <span>{new Date(evento.fecha).toLocaleDateString('es-AR')}</span></p>
                             <p><strong>📍 Lugar:</strong> <span>{evento.lugar}</span></p>
                         </div>

@@ -1282,7 +1282,7 @@ def obtener_evento(evento_id: int, db = Depends(get_db)):
     return {
         "id": row[0], "nombre": row[1], "descripcion": row[2], "fecha": row[3], "lugar": row[4],
         "precio": row[5], "capacidad": row[6], "vendidos": row[7], "imagen": row[8], "categoria": row[9],
-        "disponibles": row[6] - row[7], "imagenes": imagenes, "comision": row[10] if len(row) > 10 else 0
+        "disponibles": row[6] - row[7], "imagenes": imagenes, "comision": row[11] if len(row) > 11 else 0
     }
 
 class ImagenCreate(BaseModel):
@@ -1453,7 +1453,7 @@ def actualizar_evento(evento_id: int, evento: EventoUpdate, credentials: HTTPAut
     return {
         "id": row[0], "nombre": row[1], "descripcion": row[2], "fecha": row[3], "lugar": row[4],
         "precio": row[5], "capacidad": row[6], "vendidos": row[7], "imagen": row[8], "categoria": row[9],
-        "disponibles": row[6] - row[7], "comision": row[10]
+        "disponibles": row[6] - row[7], "comision": row[11] if len(row) > 11 else 0
     }
 
 @app.delete("/api/eventos/{evento_id}")
