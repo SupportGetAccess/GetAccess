@@ -930,17 +930,6 @@ Deberían retornar JSON con datos (no 500)
 
 ---
 
-## 🚧 PRÓXIMO: OCULTAR EVENTOS A ORGANIZADORES NO PROPIETARIOS
-
-**Problema**: Los organizadores ven TODOS los eventos en Admin Panel, pero deberían ver solo los QUE ELLOS CREARON.
-
-**Solución requerida**:
-- En endpoint `/api/eventos` (lista de eventos para Admin Panel)
-- Agregar filtro: `WHERE creado_por = user_id` cuando el usuario es `organizer`
-- Cuando es `admin`, mostrar todos los eventos
-
-# ============================================================================
-
 ## 💰 SISTEMA DE COMISIONES PARA ORGANIZADORES (Propuesta)
 
 **Problema**: Los organizadores quieren cobrar comisión por cada ticket vendido.
