@@ -1130,7 +1130,7 @@
             const comprar = async (cantidad) => {
                 const savedToken = sessionStorage.getItem('token');
                 const storedCarrito = JSON.parse(localStorage.getItem('carrito') || '[]');
-                const nuevoItem = { id: modal.id, nombre: modal.nombre, fecha: modal.fecha, lugar: modal.lugar, precio: modal.precio, cantidad: cantidad };
+                const nuevoItem = { id: modal.id, nombre: modal.nombre, fecha: modal.fecha, lugar: modal.lugar, precio: modal.precio, cantidad: cantidad, comision: modal.comision || 0 };
                 const nuevoCarrito = [...storedCarrito, nuevoItem];
                 localStorage.setItem('carrito', JSON.stringify(nuevoCarrito));
                 showToast('Entrada agregada al carrito', 'success');
@@ -2199,7 +2199,12 @@
                 localStorage.setItem('carrito', JSON.stringify(nuevo));
             };
             
-            const total = carrito.reduce((sum, e) => sum + (e.precio * (e.cantidad || 1)), 0);
+            const total = carrito.reduce((sum, e) => {
+                const precioBase = e.precio;
+                const comision = e.comision || 0;
+                const precioConComision = precioBase * (1 + comision / 100);
+                return sum + (precioConComision * (e.cantidad || 1));
+            }, 0);
             
             const pagarTodo = async () => {
                 if (!token) { showToast('Inicia sesión para pagar', 'error'); setVista('login'); return; }
@@ -2248,18 +2253,23 @@
                     <div className="hero"><h1>🛒 Carrito de Compras</h1><p>{carrito.length} entrada(s) en tu carrito</p></div>
                     <div style={{maxWidth: '800px', margin: '0 auto', padding: '1rem'}}>
                         <div className="entradas-list">
-                            {carrito.map(item => (
+                            {carrito.map(item => {
+                                const precioBase = item.precio;
+                                const comision = item.comision || 0;
+                                const precioConComision = precioBase * (1 + comision / 100);
+                                return (
                                 <div key={item.id} className="entrada-card">
                                     <div className="entrada-info">
                                         <h4>🎪 {item.nombre}</h4>
                                         <p>📅 {new Date(item.fecha).toLocaleDateString('es-AR')}</p>
                                         <p>📍 {item.lugar}</p>
                                         <p>🎟️ Cantidad: {item.cantidad || 1}</p>
-                                        <p>💵 Subtotal: ${((item.precio * (item.cantidad || 1))).toLocaleString('es-AR')}</p>
+                                        {comision > 0 && <p>💼 Comisión: {comision}% (${((precioConComision - precioBase) * (item.cantidad || 1)).toLocaleString('es-AR')})</p>}
+                                        <p>💵 Subtotal: ${(precioConComision * (item.cantidad || 1)).toLocaleString('es-AR')}</p>
                                     </div>
                                     <button className="btn btn-secondary" onClick={() => eliminarDelCarrito(item.id)}>❌</button>
                                 </div>
-                            ))}
+                            )})}
                         </div>
                         <div className="modal-total" style={{marginTop: '1rem', padding: '1rem', background: 'linear-gradient(135deg, #6366f1, #ec4899)', borderRadius: '12px', color: 'white'}}>
                             💵 Total: ${total.toLocaleString('es-AR')}

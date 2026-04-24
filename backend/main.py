@@ -1435,6 +1435,9 @@ def actualizar_evento(evento_id: int, evento: EventoUpdate, credentials: HTTPAut
     if evento.categoria is not None:
         updates.append("categoria = ?")
         params.append(evento.categoria)
+    if evento.comision is not None:
+        updates.append("comision = ?")
+        params.append(evento.comision)
     
     if not updates:
         raise HTTPException(status_code=400, detail="No hay campos para actualizar")
