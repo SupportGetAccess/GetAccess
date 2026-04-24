@@ -775,9 +775,11 @@ class TokenResponse(BaseModel):
     token_type: str
     user: UsuarioResponse
 
-def crear_token(user_id: int) -> str:
+def crear_token(user_id: int, db=None) -> str:
     expire = datetime.datetime.utcnow() + datetime.timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-    payload = {"sub": str(user_id), "exp": expire}
+    cursor = db.execute("SELECT rol FROM usuarios WHERE id = ?", (user_id,)) if db else None
+    rol = cursor.fetchone()[0] if cursor else "usuario"
+    payload = {"sub": str(user_id), "rol": rol, "exp": expire}
     return jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
 
 def es_admin(db, user_id: int) -> bool:
@@ -899,7 +901,7 @@ def login(credenciales: UsuarioLogin, request: Request, db = Depends(get_db)):
     record_brute_force_attempt(credenciales.email, True, db)
     log_security("LOGIN_SUCCESS", f"Email: {email}, UserID: {user_id}")
     
-    access_token = crear_token(user_id)
+    access_token = crear_token(user_id, db)
     return TokenResponse(
         access_token=access_token,
         token_type="bearer",
@@ -936,7 +938,7 @@ def verificar_email(datos: dict, db = Depends(get_db)):
     )
     db.commit()
     
-    access_token = crear_token(user_id)
+    access_token = crear_token(user_id, db)
     return TokenResponse(
         access_token=access_token,
         token_type="bearer",
