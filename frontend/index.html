@@ -1392,7 +1392,7 @@
                         <div className="modal-info">
                             <p><strong>🎪 Evento:</strong> <span>{evento.nombre}</span></p>
                             <p><strong>💰 Precio:</strong> <span>${precioBase.toLocaleString('es-AR')}</span></p>
-                            {comision > 0 && <p><strong>💼 Comisión:</strong> <span>{comision}%</span></p>}
+                            {comision > 0 && <p><strong>💼 Cargo por servicios:</strong> <span>{comision}%</span></p>}
                             <p><strong>📅 Fecha:</strong> <span>{new Date(evento.fecha).toLocaleDateString('es-AR')}</span></p>
                             <p><strong>📍 Lugar:</strong> <span>{evento.lugar}</span></p>
                         </div>
@@ -1401,7 +1401,7 @@
                             <>
                                 <div style={{fontSize:'0.9rem', color:'#888', margin:'0.5rem 0'}}>
                                     <div>💵 Subtotal: ${(precioBase * cantidad).toLocaleString('es-AR')}</div>
-                                    <div>📦 Comisión ({comision}%): ${((precioConComision - precioBase) * cantidad).toLocaleString('es-AR')}</div>
+                                    <div>📦 Cargo por servicios ({comision}%): ${((precioConComision - precioBase) * cantidad).toLocaleString('es-AR')}</div>
                                 </div>
                                 <div className="modal-total">💵 Total: ${total.toLocaleString('es-AR')}</div>
                             </>
@@ -2264,7 +2264,7 @@
                                         <p>📅 {new Date(item.fecha).toLocaleDateString('es-AR')}</p>
                                         <p>📍 {item.lugar}</p>
                                         <p>🎟️ Cantidad: {item.cantidad || 1}</p>
-                                        {comision > 0 && <p>💼 Comisión: {comision}% (${((precioConComision - precioBase) * (item.cantidad || 1)).toLocaleString('es-AR')})</p>}
+                                        {comision > 0 && <p>💼 Cargo por servicios: {comision}% (${((precioConComision - precioBase) * (item.cantidad || 1)).toLocaleString('es-AR')})</p>}
                                         <p>💵 Subtotal: ${(precioConComision * (item.cantidad || 1)).toLocaleString('es-AR')}</p>
                                     </div>
                                     <button className="btn btn-secondary" onClick={() => eliminarDelCarrito(item.id)}>❌</button>
@@ -2930,7 +2930,7 @@
                                     <div className="form-group"><label>💰 Precio (ARS) *</label><input type="number" name="precio" value={form.precio} onChange={handleChange} min="0" required /></div>
                                     <div className="form-group"><label>🎫 Capacidad *</label><input type="number" name="capacidad" value={form.capacidad} onChange={handleChange} min="1" required /></div>
                                 </div>
-                                <div className="form-group"><label>💼 Comisión (%)</label><input type="number" name="comision" value={form.comision || 0} onChange={handleChange} min="0" max="100" placeholder="0" /><small style={{color:'var(--text-dim)', fontSize:'0.75rem'}}>Porcentaje adicional que paga el comprador (0-100%)</small></div>
+                                <div className="form-group"><label>💼 Cargo por servicios (%)</label><input type="number" name="comision" value={form.comision || 0} onChange={handleChange} min="0" max="100" placeholder="0" /><small style={{color:'var(--text-dim)', fontSize:'0.75rem'}}>Porcentaje adicional que paga el comprador (0-100%)</small></div>
                                 <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:'1rem'}}>
                                     <div className="form-group"><label>🏷️ Categoría</label>
                                         <select name="categoria" value={form.categoria} onChange={handleChange} style={{width:'100%', padding:'1rem', border:'2px solid rgba(255,255,255,0.1)', background:'var(--bg-card)', color:'white', borderRadius:'14px'}}>
@@ -2984,7 +2984,7 @@
                                             <div className="form-group"><label>💰 Precio (ARS) *</label><input type="number" name="precio" value={form.precio} onChange={handleChange} min="0" required /></div>
                                             <div className="form-group"><label>🎫 Capacidad *</label><input type="number" name="capacidad" value={form.capacidad} onChange={handleChange} min="1" required /></div>
                                         </div>
-                                        <div className="form-group"><label>💼 Comisión (%)</label><input type="number" name="comision" value={form.comision || 0} onChange={handleChange} min="0" max="100" placeholder="0" /><small style={{color:'var(--text-dim)', fontSize:'0.75rem'}}>Porcentaje adicional que paga el comprador (0-100%)</small></div>
+                                        <div className="form-group"><label>💼 Cargo por servicios (%)</label><input type="number" name="comision" value={form.comision || 0} onChange={handleChange} min="0" max="100" placeholder="0" /><small style={{color:'var(--text-dim)', fontSize:'0.75rem'}}>Porcentaje adicional que paga el comprador (0-100%)</small></div>
                                         <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:'1rem'}}>
                                             <div className="form-group"><label>🏷️ Categoría</label>
                                                 <select name="categoria" value={form.categoria} onChange={handleChange} style={{width:'100%', padding:'1rem', border:'2px solid rgba(255,255,255,0.1)', background:'var(--bg-card)', color:'white', borderRadius:'14px'}}>
