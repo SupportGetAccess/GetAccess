@@ -1401,14 +1401,14 @@
                             <>
                                 <div style={{fontSize:'0.9rem', color:'#888', margin:'0.5rem 0'}}>
                                     <div>💵 Subtotal: ${(precioBase * cantidad).toLocaleString('es-AR')}</div>
-                                    <div>📦 Cargo por servicios ({comision}%): ${((precioConComision - precioBase) * cantidad).toLocaleString('es-AR')}</div>
+                                    <div>📦 Cargo por servicios: ${((precioConComision - precioBase) * cantidad).toLocaleString('es-AR')}</div>
                                 </div>
                                 <div className="modal-total">💵 Total: ${total.toLocaleString('es-AR')}</div>
                             </>
                         ) : (
                             <div className="modal-total">💵 Total: ${(evento.precio * cantidad).toLocaleString('es-AR')}</div>
                         )}
-                        <div className="modal-buttons"><button className="btn btn-secondary" onClick={onClose}>❌ Cancelar</button><button className="btn" onClick={() => onConfirm(cantidad)}>💳 Pagar con MercadoPago</button></div>
+                        <div className="modal-buttons"><button className="btn btn-secondary" onClick={onClose}>❌ Cancelar</button><button className="btn" onClick={() => onConfirm(cantidad)}>💳 Pagar</button></div>
                     </div>
                 </div>
             );
@@ -2264,7 +2264,7 @@
                                         <p>📅 {new Date(item.fecha).toLocaleDateString('es-AR')}</p>
                                         <p>📍 {item.lugar}</p>
                                         <p>🎟️ Cantidad: {item.cantidad || 1}</p>
-                                        {comision > 0 && <p>💼 Cargo por servicios: {comision}% (${((precioConComision - precioBase) * (item.cantidad || 1)).toLocaleString('es-AR')})</p>}
+                                        {comision > 0 && <p>💼 Cargo por servicios: ${((precioConComision - precioBase) * (item.cantidad || 1)).toLocaleString('es-AR')}</p>}
                                         <p>💵 Subtotal: ${(precioConComision * (item.cantidad || 1)).toLocaleString('es-AR')}</p>
                                     </div>
                                     <button className="btn btn-secondary" onClick={() => eliminarDelCarrito(item.id)}>❌</button>
@@ -2275,7 +2275,7 @@
                             💵 Total: ${total.toLocaleString('es-AR')}
                         </div>
                         <button className="btn" style={{width: '100%', marginTop: '1rem'}} onClick={pagarTodo} disabled={procesando}>
-                            {procesando ? 'Procesando...' : '💳 Pagar Todo con MercadoPago'}
+                            {procesando ? 'Procesando...' : '💳 Pagar'}
                         </button>
                         <button className="btn btn-secondary" style={{width: '100%', marginTop: '0.5rem'}} onClick={() => setVista('eventos')}>
                             + Agregar más entradas
