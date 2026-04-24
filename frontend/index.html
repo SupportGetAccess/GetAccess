@@ -1103,7 +1103,17 @@
                     const res = await fetch(url);
                     if (!res.ok) throw new Error('Error del servidor');
                     const data = await res.json();
-                    setEventos(Array.isArray(data) ? data : []);
+                    const eventosData = Array.isArray(data) ? data : [];
+                    const ahora = new Date();
+                    const sorted = eventosData.slice().sort((a, b) => {
+                        const fa = new Date(a.fecha);
+                        const fb = new Date(b.fecha);
+                        const pasa = fa < ahora;
+                        const pasb = fb < ahora;
+                        if (pasa !== pasb) return pasa ? 1 : -1;
+                        return fa - fb;
+                    });
+                    setEventos(sorted);
                 } catch (err) {
                     console.error('Error cargando eventos:', err);
                     showToast('Error al cargar eventos. Reintentando...', 'error');
@@ -1186,26 +1196,29 @@
                         <div className="empty-state"><span>🎫</span><p>No hay eventos {categoriaFiltro ? 'en esta categoría' : 'disponibles'}</p></div>
                     ) : (
                         <div className="eventos-grid">
-                            {eventos.map(evento => (
-                                <div key={evento.id} className="evento-card">
-                                    <div className="evento-img" onClick={() => irADetalle(evento.id)} style={{cursor:'pointer'}}>
+                            {eventos.map(evento => {
+                                const esPasado = new Date(evento.fecha) < new Date();
+                                return (
+                                <div key={evento.id} className="evento-card" style={{opacity: esPasado ? 0.6 : 1}}>
+                                    <div className="evento-img" onClick={() => !esPasado && irADetalle(evento.id)} style={{cursor: esPasado ? 'default' : 'pointer'}}>
                                         {evento.imagen ? (
                                             <img src={getImagenUrl(evento.imagen)} alt={evento.nombre} style={{width:'100%',height:'100%',objectFit:'cover'}} onError={e => { e.target.style.display='none'; e.target.nextSibling.style.display='flex'; }} />
                                         ) : null}
                                         <span style={{display: evento.imagen ? 'none' : 'flex', fontSize:'4rem'}}>{getEmoji(evento.nombre, evento.categoria)}</span>
+                                        {esPasado && <div style={{position:'absolute',top:'10px',right:'10px',background:'rgba(0,0,0,0.8)',padding:'0.5rem 1rem',borderRadius:'8px',fontSize:'0.9rem',fontWeight:'bold'}}>🏁 Finalizado</div>}
                                     </div>
                                     <div className="evento-info">
                                         {evento.categoria && <span style={{fontSize:'0.75rem', background:'rgba(99,102,241,0.2)', padding:'0.25rem 0.75rem', borderRadius:'20px', color:'var(--primary-light)', display:'inline-block', marginBottom:'0.5rem'}}>{evento.categoria.toUpperCase()}</span>}
-                                        <h3 onClick={() => irADetalle(evento.id)} style={{cursor:'pointer'}}>{evento.nombre}</h3>
+                                        <h3 onClick={() => !esPasado && irADetalle(evento.id)} style={{cursor: esPasado ? 'default' : 'pointer'}}>{evento.nombre}</h3>
                                         <div className="evento-meta"><span>📅 {new Date(evento.fecha).toLocaleDateString('es-AR', { weekday: 'short', day: 'numeric', month: 'short' })}</span><span>📍 {evento.lugar}</span></div>
                                         <p className="evento-desc">{evento.descripcion}</p>
                                         <div className="evento-footer">
                                             <div><div className="precio">${evento.precio.toLocaleString('es-AR')}</div><div className={'disponibles ' + (evento.disponibles < 50 ? 'low' : '')}>{evento.disponibles} disponibles</div></div>
-                                            <button className="btn" disabled={evento.disponibles === 0} onClick={() => { if(!user) { showToast('Inicia sesión para comprar', 'error'); setVista('login'); } else { setModal(evento); } }}>{evento.disponibles === 0 ? 'Agotado' : '🎫 Comprar'}</button>
+                                            <button className="btn" disabled={evento.disponibles === 0 || esPasado} onClick={() => { if(esPasado) return; if(!user) { showToast('Inicia sesión para comprar', 'error'); setVista('login'); } else { setModal(evento); } }}>{evento.disponibles === 0 ? 'Agotado' : esPasado ? '🏁 Finalizado' : '🎫 Comprar'}</button>
                                         </div>
                                     </div>
                                 </div>
-                            ))}
+                            )})}
                         </div>
                     )}
                     {modal && <ModalCompra evento={modal} onClose={() => setModal(null)} onConfirm={comprar} />}
