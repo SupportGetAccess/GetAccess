@@ -2518,7 +2518,7 @@
                             <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem'}}>
                                 <div>
                                     <h3 style={{margin: 0, fontSize: '1.1rem'}}>📥 Tienes {transferenciasPendientes.length} Transferencia(s) de entrada(s) por aceptar</h3>
-                                    <p style={{margin: '0.5rem 0 0 0', opacity: 0.9, fontSize: '0.9rem'}}>{transferenciasPendientes[0].evento} - {new Date(transferenciasPendientes[0].fecha_evento).toLocaleDateString('es-AR')}</p>
+                                    <p style={{margin: '0.5rem 0 0 0', opacity: 0.9, fontSize: '0.9rem'}}>{transferenciasPendientes[0].evento} - {new Date(transferenciasPendientes[0].fecha_evento + 'T12:00:00').toLocaleDateString('es-AR')}</p>
                                 </div>
                                 <button className="btn" style={{background: 'white', color: '#f59e0b', fontWeight: 'bold'}} onClick={() => setVista('aceptar-transferencia')}>Aceptar</button>
                             </div>
@@ -2663,7 +2663,7 @@
                                 <div key={t.id} className="entrada-card">
                                     <div className="entrada-info">
                                         <h4>🎪 {t.evento}</h4>
-                                        <p>📅 {new Date(t.fecha_evento).toLocaleDateString('es-AR')}</p>
+                                        <p>📅 {new Date(t.fecha_evento + 'T12:00:00').toLocaleDateString('es-AR')}</p>
                                         <p>📍 {t.lugar}</p>
                                         <div style={{marginTop: '0.5rem', padding: '0.75rem', background: 'rgba(99,102,241,0.2)', borderRadius: '8px'}}>
                                             <p style={{margin: 0, fontFamily: 'monospace', fontWeight: 'bold', color: '#6366f1'}}>🎫 {t.codigo}</p>
