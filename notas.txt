@@ -1004,3 +1004,29 @@ Deber√≠an retornar JSON con datos (no 500)
  
  4 .   [   ]   B a d g e   ' <ÿ¡ﬂ  F i n a l i z a d o '   e n   a d m i n   p a n e l  
  
+
+
+---
+
+# ============================================================================
+# SESION VIERNES 24 DE ABRIL 2026
+
+## CAMBIOS IMPLEMENTADOS
+
+### Admin Panel - Eventos Finalizados
+
+1. **Corregido timezone de fecha**
+   - Problema: new Date(ev.fecha) mostraba un dia antes en Argentina (UTC-3)
+   - Solucion: Usar new Date(ev.fecha + 'T12:00:00')
+   - Aplicado en todas las vistas de fecha de evento (11 lugares)
+
+2. **Botones Editar/Eliminar deshabilitados en eventos finalizados**
+   - Para Admin y Organizador
+   - Estilo: botones grisados con cursor: not-allowed
+
+3. **Organizador: mensaje al intentar eliminar evento activo**
+   - Mensaje: 'Para eliminar un evento, comunicate con el administrador o escribe a soporte@getaccess.com.ar'
+   - Solo para rol organizer en eventos NO finalizados
+
+### Pendiente:
+- Badge '<‚ö†Ô∏è Finalizado' en admin panel
