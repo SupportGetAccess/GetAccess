@@ -1289,6 +1289,28 @@ def listar_categorias(db = Depends(get_db)):
     # rows puede ser dict (PostgreSQL) o tuple (SQLite)
     return [r['categoria'] if isinstance(r, dict) else r[0] for r in rows]
 
+@app.get("/api/eventos/buscar")
+def buscar_eventos(q: str = None, limite: int = 10, db = Depends(get_db)):
+    if not q or len(q) < 2:
+        return []
+    
+    q_lower = q.lower()
+    query = """
+        SELECT id, nombre, fecha, lugar, precio, COALESCE(imagen, '') as imagen, COALESCE(categoria, '') as categoria 
+        FROM eventos 
+        WHERE LOWER(nombre) LIKE ? OR LOWER(lugar) LIKE ?
+        ORDER BY fecha
+        LIMIT ?
+    """
+    params = [f"%{q_lower}%", f"%{q_lower}%", limite]
+    
+    try:
+        cursor = db.execute(query, params)
+        rows = cursor.fetchall()
+        return [dict(row) for row in rows]
+    except Exception as e:
+        return []
+
 @app.get("/api/eventos/{evento_id}")
 def obtener_evento(evento_id: int, db = Depends(get_db)):
     # Cache para detalle de evento
