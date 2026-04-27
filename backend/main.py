@@ -22,7 +22,12 @@ import qrcode
 import io
 import base64
 import os
+import time
 from pathlib import Path
+
+# Cache simple en memoria para endpoints públicos
+cache = {}
+CACHE_TTL = 120  # 2 minutos
 
 # Importar configuración centralizada
 try:
@@ -1209,6 +1214,13 @@ class EventoResponse(BaseModel):
 
 @app.get("/api/eventos/")
 def listar_eventos(categoria: str = None, busqueda: str = None, mis_eventos: bool = False, db = Depends(get_db), credentials: HTTPAuthorizationCredentials = Depends(HTTPBearer(auto_error=False))):
+    # Cache para endpoints publicos (sin auth)
+    cache_key = f"eventos:{categoria}:{busqueda}"
+    if not mis_eventos and not credentials and cache_key in cache:
+        cached_data, cached_time = cache[cache_key]
+        if time.time() - cached_time < CACHE_TTL:
+            return cached_data
+    
     try:
         user_id = None
         if mis_eventos:
@@ -1257,6 +1269,11 @@ def listar_eventos(categoria: str = None, busqueda: str = None, mis_eventos: boo
             }
             for r in rows
         ]
+        
+        # Guardar en cache solo si es endpoint público (sin auth)
+        if not mis_eventos and not credentials:
+            cache[cache_key] = (result, time.time())
+        
     except Exception as e:
         print(f">>> ERROR listar_eventos: {e}")
         raise HTTPException(status_code=500, detail=f"Error: {str(e)}")
@@ -1270,6 +1287,13 @@ def listar_categorias(db = Depends(get_db)):
 
 @app.get("/api/eventos/{evento_id}")
 def obtener_evento(evento_id: int, db = Depends(get_db)):
+    # Cache para detalle de evento
+    cache_key = f"evento:{evento_id}"
+    if cache_key in cache:
+        cached_data, cached_time = cache[cache_key]
+        if time.time() - cached_time < CACHE_TTL:
+            return cached_data
+    
     cursor = db.execute("SELECT id, nombre, descripcion, fecha, lugar, precio, capacidad, vendidos, COALESCE(imagen, '') as imagen, COALESCE(categoria, '') as categoria, COALESCE(comision, 0) as comision FROM eventos WHERE id = ?", (evento_id,))
     row = cursor.fetchone()
     
@@ -1284,6 +1308,9 @@ def obtener_evento(evento_id: int, db = Depends(get_db)):
         "precio": row[5], "capacidad": row[6], "vendidos": row[7], "imagen": row[8], "categoria": row[9],
         "disponibles": row[6] - row[7], "imagenes": imagenes, "comision": row[10]
     }
+    # Guardar en cache
+    cache[cache_key] = (result, time.time())
+    return result
 
 class ImagenCreate(BaseModel):
     url: str
