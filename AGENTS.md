@@ -2,14 +2,20 @@
 
 ⚠️⚠️⚠️ IMPORTANTE: SIEMPRE PRODUCCIÓN, NUNCA LOCAL - NO TRABAJAMOS EN MODO LOCAL ⚠️⚠️⚠️
 
-⚠️⚠️⚠️ IMPORTANTE: Cada vez que hagas UNA SOLA modificación en cualquier archivo (backend/main.py, frontend/*.html), DEBES reiniciar los servicios antes de decir "Listo" o "Listo, servicios iniciados". Si no lo haces, el usuario no podrá probar los cambios. ⚠️⚠️⚠️
-
 ## 🏭 PRUEBAS EN PRODUCCIÓN - NO HAY LOCAL
 **TODAS las pruebas se realizan en producción:** https://getaccess.com.ar
 - NO se prueba en localhost
 - NO se hace debug local
 - Solo se desarrolla local y se sube a producción para probar
 - ** Siempre dar URLs de PRODUCCIÓN al usuario, nunca localhost**
+
+## 🚀 REGLA: SIEMPRE COMMIT Y PUSH
+**Cada vez que完成es UNA SOLA modificación en cualquier archivo, DEBES:**
+1. Hacer `git add -A`
+2. Hacer `git commit -m "mensaje descriptivo"`
+3. Hacer `git push`
+
+**NUNCA terminar una sesión de trabajo sin hacer commit y push.**
 
 ## URLs de Producción
 - **Frontend**: https://getaccess.com.ar
@@ -35,13 +41,6 @@
 4. **Documentar riesgos**: Si identificás posibles problemas, comunicarlos claramente al usuario antes de proceder.
 
 ---
-
-## ⚠️ REGLA IMPORTANTE
-**Cada vez que el usuario pida una modificación o implementación nueva, se deben reiniciar TODOS los servicios (backend y frontend).**
-
-**SIEMPRE que se reinicie el backend O el frontend, se deben reiniciar TODOS los servicios (HTTP y HTTPS).**
-
-**TAMBIEN: Cada vez que se modifique el frontend (archivos HTML/CSS/JS), se deben reiniciar TODOS los servicios.**
 
 ## URLs
 ### Solo Producción
@@ -122,7 +121,7 @@ Cuando el usuario diga **"Cerrar sesión"** o indique que terminó la sesión de
    - Problemas pendientes
    - Próximos pasos sugeridos
 
-2. **Confirmar que ambos servicios están corriendo**
+2. **Verificar que el último commit esté pushado a GitHub**
 
 ---
 
