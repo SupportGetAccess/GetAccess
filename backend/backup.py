@@ -51,7 +51,7 @@ def hacer_backup():
         print("Conectando a Supabase...")
         conn = psycopg2.connect(DATABASE_URL)
         cursor = conn.cursor()
-        print("✓ Conectado\n")
+        print("OK! Conectado\n")
         
         # Exportar cada tabla
         for tabla in TABLAS:
@@ -68,10 +68,10 @@ def hacer_backup():
                     writer.writerow(columnas)
                     writer.writerows(filas)
                 
-                print(f"✓ ({len(filas)} filas)")
+                print(f"OK ({len(filas)} filas)")
                 
             except Exception as e:
-                print(f"✗ Error: {e}")
+                print(f"ERROR: {e}")
         
         cursor.close()
         conn.close()
