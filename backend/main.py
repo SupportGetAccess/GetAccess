@@ -1294,38 +1294,36 @@ def buscar_eventos(q: str = None, limite: int = 10, db = Depends(get_db)):
     if not q or len(q) < 2:
         return {"eventos": [], "recintos": []}
     
-    q_lower = q.lower()
+    q_search = f"%{q.lower()}%"
     
-    # Buscar eventos
-    query_eventos = """
+    # Buscar eventos usando raw SQL
+    query_eventos = f"""
         SELECT id, nombre, fecha, lugar, precio, COALESCE(imagen, '') as imagen, COALESCE(categoria, '') as categoria 
         FROM eventos 
-        WHERE LOWER(nombre) LIKE ? OR LOWER(descripcion) LIKE ?
+        WHERE LOWER(nombre) LIKE '{q_search}' OR LOWER(descripcion) LIKE '{q_search}' OR LOWER(lugar) LIKE '{q_search}'
         ORDER BY fecha
-        LIMIT ?
+        LIMIT {limite}
     """
-    params_eventos = [f"%{q_lower}%", f"%{q_lower}%", limite]
     
-    # Buscar recintos (lugares únicos)
-    query_recintos = """
-        SELECT DISTINCT lugar AS nombre, COUNT(*) as cantidad 
+    query_recintos = f"""
+        SELECT lugar AS nombre, COUNT(*) as cantidad 
         FROM eventos 
-        WHERE LOWER(lugar) LIKE ?
+        WHERE LOWER(lugar) LIKE '{q_search}'
         GROUP BY lugar
         ORDER BY cantidad DESC
-        LIMIT ?
+        LIMIT 5
     """
-    params_recintos = [f"%{q_lower}%", 5]
     
     try:
-        cursor_eventos = db.execute(query_eventos, params_eventos)
+        cursor_eventos = db.execute(query_eventos)
         eventos = [dict(row) for row in cursor_eventos.fetchall()]
         
-        cursor_recintos = db.execute(query_recintos, params_recintos)
+        cursor_recintos = db.execute(query_recintos)
         recintos = [dict(row) for row in cursor_recintos.fetchall()]
         
         return {"eventos": eventos, "recintos": recintos}
     except Exception as e:
+        print(f"Error en busqueda: {e}")
         return {"eventos": [], "recintos": []}
 
 @app.get("/api/eventos/{evento_id}")
