@@ -482,7 +482,14 @@ def fetch_all(db, query, params=None):
     """Fetch all rows compatible with both SQLite and PostgreSQL"""
     if db.is_postgres:
         cur = db._conn.cursor()
-        cur.execute(query.replace('?', '%s') if '?' in query else query, params or [])
+        # Solo reemplazar ? con %s si hay parámetros
+        if params and '?' in query:
+            query = query.replace('?', '%s')
+            cur.execute(query, params)
+        elif '?' in query:
+            cur.execute(query, params or [])
+        else:
+            cur.execute(query)  # Sin params si la query ya interpolada
         columns = [desc[0] for desc in cur.description] if cur.description else []
         rows = cur.fetchall()
         return [dict(zip(columns, row)) for row in rows] if columns else []
