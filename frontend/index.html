@@ -1010,6 +1010,9 @@
                         {vista === 'recuperar' && <RecuperarPassword setVista={setVista} />}
                         {vista === 'reset-password' && <ResetPassword setVista={setVista} toast={toast} />}
                         {vista === 'detalle-evento' && <DetalleEvento eventoId={eventoId} />}
+                        <div style={{textAlign:'center', padding:'2rem', color:'var(--text-dim)', fontSize:'0.8rem', borderTop:'1px solid rgba(99,102,241,0.1)', marginTop:'2rem'}}>
+                            <a href="/privacidad.html" style={{color:'var(--text-dim)', textDecoration:'none'}}>Política de Privacidad</a>
+                        </div>
                     </div>
                     {toast && <div className={'toast ' + toast.type}>{toast.message}</div>}
                 </AuthContext.Provider>
