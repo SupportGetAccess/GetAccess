@@ -1072,6 +1072,7 @@
             const [busqueda, setBusqueda] = useState('');
             const [categoriaFiltro, setCategoriaFiltro] = useState('');
             const [sugerencias, setSugerencias] = useState([]);
+            const [recintos, setRecintos] = useState([]);
             const [mostrarSugerencias, setMostrarSugerencias] = useState(false);
             const { user, token, showToast, setVista, irADetalle } = useContext(AuthContext);
             const [modal, setModal] = useState(null);
@@ -1089,6 +1090,7 @@
             useEffect(() => {
                 if (busqueda.length < 2) {
                     setSugerencias([]);
+                    setRecintos([]);
                     setMostrarSugerencias(false);
                     return;
                 }
@@ -1098,9 +1100,10 @@
                         const res = await fetch(API_URL + '/api/eventos/buscar?q=' + encodeURIComponent(busqueda) + '&limite=8');
                         if (res.ok) {
                             const data = await res.json();
-                            setSugerencias(Array.isArray(data) ? data : []);
+                            setSugerencias(Array.isArray(data.eventos) ? data.eventos : []);
+                            setRecintos(data.recintos || []);
                         }
-                    } catch (err) { setSugerencias([]); }
+                    } catch (err) { setSugerencias([]); setRecintos([]); }
                 }, 300);
                 return () => clearTimeout(timeout);
             }, [busqueda]);
@@ -1205,17 +1208,36 @@
                                 onBlur={() => setTimeout(() => setMostrarSugerencias(false), 150)}
                                 style={{width:'100%', padding:'1rem', borderRadius:'12px', border:'2px solid rgba(255,255,255,0.1)', background:'rgba(0,0,0,0.3)', color:'white', fontSize:'1rem'}}
                             />
-                            {mostrarSugerencias && sugerencias.length > 0 && (
-                                <div style={{position:'absolute', top:'100%', left:0, right:0, background:'var(--bg-card)', borderRadius:'12px', border:'2px solid rgba(255,255,255,0.1)', marginTop:'0.5rem', maxHeight:'300px', overflowY:'auto', zIndex:1000, boxShadow:'0 4px 20px rgba(0,0,0,0.5)'}}>
-                                    {sugerencias.map(sug => (
-                                        <div key={sug.id} onMouseDown={(e) => { e.preventDefault(); irADetalle(sug.id); setBusqueda(''); setSugerencias([]); setMostrarSugerencias(false); }} style={{padding:'0.75rem 1rem', cursor:'pointer', borderBottom:'1px solid rgba(255,255,255,0.05)', display:'flex', alignItems:'center', gap:'0.75rem', background:'transparent', transition:'background 0.2s'}} onMouseEnter={(e) => e.currentTarget.style.background='rgba(99,102,241,0.2)'} onMouseLeave={(e) => e.currentTarget.style.background='transparent'}>
-                                            {sug.imagen ? <img src={sug.imagen} alt="" style={{width:40, height:40, objectFit:'cover', borderRadius:'8px'}} /> : <span style={{fontSize:'1.5rem'}}>🎫</span>}
-                                            <div style={{flex:1}}>
-                                                <div style={{fontWeight:'bold', color:'white'}}>{sug.nombre}</div>
-                                                <div style={{fontSize:'0.8rem', color:'var(--text-muted)'}}>📅 {new Date(sug.fecha + 'T12:00:00').toLocaleDateString('es-AR')} • 📍 {sug.lugar}</div>
-                                            </div>
-                                        </div>
-                                    ))}
+{mostrarSugerencias && (sugerencias.length > 0 || recintos.length > 0) && (
+                                <div style={{position:'absolute', top:'100%', left:0, right:0, background:'var(--bg-card)', borderRadius:'12px', border:'2px solid rgba(255,255,255,0.1)', marginTop:'0.5rem', maxHeight:'350px', overflowY:'auto', zIndex:1000, boxShadow:'0 4px 20px rgba(0,0,0,0.5)'}}>
+                                    {sugerencias.length > 0 && (
+                                        <>
+                                            <div style={{padding:'0.5rem 1rem', fontSize:'0.75rem', color:'var(--text-dim)', fontWeight:'bold', borderBottom:'1px solid rgba(255,255,255,0.1)'}}>EVENTOS</div>
+                                            {sugerencias.map(sug => (
+                                                <div key={sug.id} onMouseDown={(e) => { e.preventDefault(); irADetalle(sug.id); setBusqueda(''); setSugerencias([]); setRecintos([]); setMostrarSugerencias(false); }} style={{padding:'0.75rem 1rem', cursor:'pointer', borderBottom:'1px solid rgba(255,255,255,0.05)', display:'flex', alignItems:'center', gap:'0.75rem', background:'transparent', transition:'background 0.2s'}} onMouseEnter={(e) => e.currentTarget.style.background='rgba(99,102,241,0.2)'} onMouseLeave={(e) => e.currentTarget.style.background='transparent'}}>
+                                                    {sug.imagen ? <img src={sug.imagen} alt="" style={{width:40, height:40, objectFit:'cover', borderRadius:'8px'}} /> : <span style={{fontSize:'1.5rem'}}>🎫</span>}
+                                                    <div style={{flex:1}}>
+                                                        <div style={{fontWeight:'bold', color:'white'}}>{sug.nombre}</div>
+                                                        <div style={{fontSize:'0.8rem', color:'var(--text-muted)'}}>📅 {new Date(sug.fecha + 'T12:00:00').toLocaleDateString('es-AR')} • 📍 {sug.lugar}</div>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </>
+                                    )}
+                                    {recintos.length > 0 && (
+                                        <>
+                                            <div style={{padding:'0.5rem 1rem', fontSize:'0.75rem', color:'var(--text-dim)', fontWeight:'bold', borderBottom:'1px solid rgba(255,255,255,0.1)', marginTop:sugerencias.length > 0 ? '0.5rem' : 0}}>RECINTOS</div>
+                                            {recintos.map((rec, idx) => (
+                                                <div key={idx} onMouseDown={(e) => { e.preventDefault(); setBusqueda(rec.nombre); setCategoriaFiltro(''); cargarEventos(); setSugerencias([]); setRecintos([]); setMostrarSugerencias(false); }} style={{padding:'0.75rem 1rem', cursor:'pointer', borderBottom:'1px solid rgba(255,255,255,0.05)', display:'flex', alignItems:'center', gap:'0.75rem', background:'transparent', transition:'background 0.2s'}} onMouseEnter={(e) => e.currentTarget.style.background='rgba(99,102,241,0.2)'} onMouseLeave={(e) => e.currentTarget.style.background='transparent'}}>
+                                                    <span style={{fontSize:'1.5rem'}}>📍</span>
+                                                    <div style={{flex:1}}>
+                                                        <div style={{fontWeight:'bold', color:'white'}}>{rec.nombre}</div>
+                                                        <div style={{fontSize:'0.8rem', color:'var(--text-muted)'}}>{rec.cantidad} evento{rec.cantidad !== 1 ? 's' : ''}</div>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </>
+                                    )}
                                 </div>
                             )}
                         </div>
