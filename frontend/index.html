@@ -2763,6 +2763,14 @@
             const [solicitudes, setSolicitudes] = useState([]);
             const [cargandoSolicitudes, setCargandoSolicitudes] = useState(false);
             
+            const parseFecha = (fecha) => {
+                if (!fecha) return new Date(0);
+                if (fecha.includes(' ') && fecha.match(/\d{2}:\d{2}:\d{2}/)) {
+                    return new Date(fecha.replace(' ', 'T'));
+                }
+                return new Date(fecha + 'T12:00:00');
+            };
+            
             useEffect(() => {
                 cargarEventos();
             }, []);
