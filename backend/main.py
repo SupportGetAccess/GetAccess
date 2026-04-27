@@ -2331,6 +2331,14 @@ def validar_entrada(datos: ValidarEntradaRequest, credentials: HTTPAuthorization
     if not entrada:
         raise HTTPException(status_code=404, detail="Entrada no encontrada")
     
+    if datos.evento_id and entrada[3] != datos.evento_id:
+        return {
+            "valida": False,
+            "estado": "rechazada",
+            "mensaje": "Este ticket no corresponde a este evento",
+            "entrada_id": entrada[0]
+        }
+    
     if entrada[2] != "pagada":
         return {
             "valida": False,

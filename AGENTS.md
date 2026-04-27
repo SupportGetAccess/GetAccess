@@ -10,7 +10,7 @@
 - ** Siempre dar URLs de PRODUCCIÓN al usuario, nunca localhost**
 
 ## 🚀 REGLA: SIEMPRE COMMIT Y PUSH
-**Cada vez que完成es UNA SOLA modificación en cualquier archivo, DEBES:**
+**Cada vez que el usuario solicite un cambio o funcionalidad nueva, al finalizar DEBES:**
 1. Hacer `git add -A`
 2. Hacer `git commit -m "mensaje descriptivo"`
 3. Hacer `git push`

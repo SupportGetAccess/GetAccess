@@ -1109,7 +1109,7 @@ try {
                                     <div className="scanner-title">
                                         <span>📷</span> Escanear Codigo QR
                                     </div>
-                                    <button className={`scan-btn ${scanning ? 'scanning' : ''}`} onClick={scanning ? stopCamera : startCamera}>
+                                    <button className={`scan-btn ${scanning ? 'scanning' : ''} ${!eventoId ? 'disabled-btn' : ''}`} onClick={scanning ? stopCamera : startCamera} disabled={!eventoId}>
                                         {scanning ? '⏹️ Detener' : '▶️ Iniciar Scanner'}
                                     </button>
                                 </div>
@@ -1120,7 +1120,7 @@ try {
                                     <form className="manual-input" onSubmit={handleManualSubmit}>
                                         <div className="input-group">
                                             <input value={manualCode} onChange={e => setManualCode(e.target.value)} placeholder="GA-000001-001" />
-                                            <button type="submit">Validar</button>
+                                            <button type="submit" disabled={!eventoId}>Validar</button>
                                         </div>
                                     </form>
                                     <div className="image-upload">
