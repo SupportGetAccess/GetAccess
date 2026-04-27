@@ -612,8 +612,7 @@ Valores por defecto (fallback) incluidos en el cÃ³digo para desarrollo.
 
 ## ðŸ‘¤ CREDENCIALES
 
-- **Admin**: admin@getaccess.com / admin123
-- **Usuario prueba**: guilles10@yahoo.com.ar / guille123
+[Eliminar por seguridad]
 
 ---
 
@@ -988,9 +987,9 @@ DeberÃ­an retornar JSON con datos (no 500)
 
  #   = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = 
  
- # #   =Ø'Ý  P E N D I E N T E :   A d m i n   P a n e l   -   E v e n t o s   F i n a l i z a d o s 
+ # #   =ï¿½'ï¿½  P E N D I E N T E :   A d m i n   P a n e l   -   E v e n t o s   F i n a l i z a d o s 
  
- * * I M P O R T A N T E :   E s t o s   c a m b i o s   d e b e n   h a c e r s e   1   p o r   v e z ,   g e n e r ó   p r o b l e m a s   c u a n d o   s e   a p l i c a r o n   t o d o s   j u n t o s . * * 
+ * * I M P O R T A N T E :   E s t o s   c a m b i o s   d e b e n   h a c e r s e   1   p o r   v e z ,   g e n e r ï¿½   p r o b l e m a s   c u a n d o   s e   a p l i c a r o n   t o d o s   j u n t o s . * * 
  
  E n   e l   p a n e l   ' S e l e c c i o n a   u n   e v e n t o   p a r a   e d i t a r ' : 
  
@@ -999,10 +998,10 @@ DeberÃ­an retornar JSON con datos (no 500)
  
  2 .   [   ]   O r g a n i z a d o r :   b o t o n e s   E d i t a r / E l i m i n a r   d e s h a b i l i t a d o s   e n   e v e n t o s   f i n a l i z a d o s 
  
- 3 .   [   ]   O r g a n i z a d o r :   b o t ó n   E l i m i n a r   m u e s t r a   m e n s a j e 
-       -   P a r a   e l i m i n a r   u n   e v e n t o ,   c o m u n í c a t e   c o n   e l   a d m i n i s t r a d o r   o   e s c r i b e   a   s o p o r t e @ g e t a c c e s s . c o m . a r 
+ 3 .   [   ]   O r g a n i z a d o r :   b o t ï¿½ n   E l i m i n a r   m u e s t r a   m e n s a j e 
+       -   P a r a   e l i m i n a r   u n   e v e n t o ,   c o m u n ï¿½ c a t e   c o n   e l   a d m i n i s t r a d o r   o   e s c r i b e   a   s o p o r t e @ g e t a c c e s s . c o m . a r 
  
- 4 .   [   ]   B a d g e   ' <ØÁß  F i n a l i z a d o '   e n   a d m i n   p a n e l  
+ 4 .   [   ]   B a d g e   ' <ï¿½ï¿½ï¿½  F i n a l i z a d o '   e n   a d m i n   p a n e l  
  
 
 

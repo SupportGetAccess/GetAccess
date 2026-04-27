@@ -580,7 +580,7 @@ def enviar_email(to_email: str, subject: str, html_content: str):
         print(f"Error sending email: {e}")
         return False
 
-app = FastAPI(title="Access ON API", version="1.0.0")
+app = FastAPI(title="Access ON API", version="1.0.0", docs_url=None, redoc_url=None, openapi_url=None)
 
 @app.on_event("startup")
 async def startup_event():
