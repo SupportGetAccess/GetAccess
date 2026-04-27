@@ -43,35 +43,11 @@
 
 **TAMBIEN: Cada vez que se modifique el frontend (archivos HTML/CSS/JS), se deben reiniciar TODOS los servicios.**
 
-Para reiniciar todos los servicios en Windows PowerShell:
-```powershell
-# 1. Matar todos los procesos Python
-powershell -Command "Stop-Process -Name python -Force -ErrorAction SilentlyContinue"
-
-# 2. Iniciar backend HTTP (Puerto 8000)
-powershell -Command "Start-Process python -ArgumentList '-m','uvicorn','main:app','--host','0.0.0.0','--port','8000' -WorkingDirectory 'C:\Users\guill\eventos_tickets_full\backend'"
-
-# 3. Iniciar backend HTTPS (Puerto 8443)
-powershell -Command "Start-Process python -ArgumentList 'C:/Users/guill/eventos_tickets_full/backend/serve_https.py'"
-
-# 4. Iniciar frontend HTTP (Puerto 3000)
-powershell -Command "Start-Process python -ArgumentList 'C:/Users/guill/eventos_tickets_full/frontend/serve.py'"
-
-# 5. Verificar
-powershell -Command "Invoke-WebRequest -Uri 'http://localhost:8000/health' -UseBasicParsing | Select-Object -ExpandProperty StatusCode"
-powershell -Command "Invoke-WebRequest -Uri 'http://localhost:3000/' -UseBasicParsing | Select-Object -ExpandProperty StatusCode"
-```
-
 ## URLs
-### PC (localhost - HTTP)
-- Frontend: http://localhost:3000
-- Backend API: http://localhost:8000
-- Scanner QR: http://localhost:3000/scanner.html
-
-### Celular (Red local - HTTPS)
-- Frontend: https://192.168.1.40:3443
-- Backend API: https://192.168.1.40:8443
-- Scanner QR: https://192.168.1.40:3443/scanner.html
+### Solo Producción
+- **Frontend**: https://getaccess.com.ar
+- **Scanner**: https://getaccess.com.ar/scanner.html
+- **Backend**: https://getaccess-d3um.onrender.com
 
 ## Credenciales
 - Las credenciales de admin están en las variables de entorno del sistema
@@ -133,9 +109,8 @@ powershell -Command "Invoke-WebRequest -Uri 'http://localhost:3000/' -UseBasicPa
 4. **Contraseñas**: Usar bcrypt con salt para hash (ya implementado)
 
 ## 📱 REGLA: MODIFICACIONES AL SCANNER QR
-Cada vez que se modifique el scanner (scanner.html), DEBO enviar las URLs de prueba al usuario:
-- **PC**: http://localhost:3000/scanner.html
-- **Celular**: https://192.168.1.40:3443/scanner.html
+Cada vez que se modifique el scanner (scanner.html), DEBO enviar las URLs de producción al usuario:
+- **Producción**: https://getaccess.com.ar/scanner.html
 
 ## ⚠️ REGLA: CERRAR SESIÓN
 Cuando el usuario diga **"Cerrar sesión"** o indique que terminó la sesión de trabajo, DEBO:
