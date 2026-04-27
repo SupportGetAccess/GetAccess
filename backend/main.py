@@ -483,8 +483,9 @@ def fetch_all(db, query, params=None):
     if db.is_postgres:
         cur = db._conn.cursor()
         cur.execute(query.replace('?', '%s') if '?' in query else query, params or [])
+        columns = [desc[0] for desc in cur.description] if cur.description else []
         rows = cur.fetchall()
-        return [dict(r) for r in rows]
+        return [dict(zip(columns, row)) for row in rows] if columns else []
     else:
         cursor = db.execute(query, params or [])
         return cursor.fetchall()
