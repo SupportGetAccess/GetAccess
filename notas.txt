@@ -1140,6 +1140,11 @@ El sitio es funcional y seguro para usar. Los puntos arriba son mejoras opcional
 2. [ ] Primera prueba con usuarios reales
 3. [ ] Monitorear errores en Render logs
 
+## PENDIENTE (para manana)
+1. [ ] Crear pagina de Politica de Privacidad visible en el sitio
+   - Ubicacion: /privacidad.html (o agregar al index.html)
+   - Contenido: Politica de Privacidad de notas.txt
+
 ## Si hay problemas de performance:
 1. [ ] Revisar consultas lentas en Supabase
 2. [ ] Considerar cambiar a PostgreSQL de Render
