@@ -1204,6 +1204,49 @@ El sitio es funcional y seguro para usar. Los puntos arriba son mejoras opcional
 
 ---
 
-Ultima actualizacion: 26/04/2026
+# ============================================================================
+# SESION 27 DE ABRIL 2026
+
+## CAMBIOS IMPLEMENTADOS
+
+### 1. Fix parseFecha - Invalid Date
+**Problema**: Algunos eventos mostraban "Invalid Date" en el frontend.
+**Causa**: La función `parseFecha` tenía un bug de recursión infinita cuando la fecha era nula.
+**Solución**: Corregida la función en múltiples componentes:
+- Eventos (ya tenía)
+- AdminPanel (agregada)
+- MisEntradas (agregada)
+- AceptarTransferenciasList (agregada)
+- Carrito (agregada)
+
+### 2. Política de Privacidad
+**Cambio**: Solo aparece en el listado de eventos, no en otras vistas.
+**Ubicación**: Footer condicional en App.js basado en `vista === 'eventos'`
+
+### 3. Botón "Cerrar sesión"
+**Cambio**: Ahora muestra "🚪 Cerrar sesión" en el header (antes solo "🚪")
+
+### 4. Galería de imágenes (hasta 4)
+**Implementación**:
+- Frontend: 4 thumbnails alineados en formulario crear/editar evento
+- Backend: guarda como JSON array en columna `imagen`
+- Backwards compatible con eventos de 1 imagen
+
+### 5. Scanner QR - Validación de evento
+**Cambios**:
+- Botón "Iniciar Scanner" deshabilitado hasta seleccionar evento
+- Botón "Validar" (manual) deshabilitado hasta seleccionar evento
+- Backend valida que el ticket corresponda al evento seleccionado
+- Mensaje de error: "Este ticket no corresponde a este evento"
+
+## ARCHIVOS MODIFICADOS
+- frontend/index.html
+- frontend/scanner.html
+- backend/main.py
+- AGENTS.md
+
+---
+
+Ultima actualizacion: 27/04/2026
 
 (End of file - total 1153 lines)
