@@ -33,6 +33,6 @@ jobs:
         run: |
           git config --local user.email "backup@getaccess.com"
           git config --local user.name "GetAccess Backup"
-          git add backups/
+          git add -f backups/
           git commit -m "Backup: $(date +%Y-%m-%d)" || exit 0
           git push
