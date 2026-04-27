@@ -1211,10 +1211,10 @@
                             {mostrarSugerencias && (sugerencias.length > 0 || recintos.length > 0) && (
                                 <div style={{position:'absolute', top:'100%', left:0, right:0, background:'var(--bg-card)', borderRadius:'12px', border:'2px solid rgba(255,255,255,0.1)', marginTop:'0.5rem', maxHeight:'350px', overflowY:'auto', zIndex:1000, boxShadow:'0 4px 20px rgba(0,0,0,0.5)'}}>
                                     {sugerencias.length > 0 && (
-                                        <>
+                                        <div>
                                             <div style={{padding:'0.5rem 1rem', fontSize:'0.75rem', color:'var(--text-dim)', fontWeight:'bold', borderBottom:'1px solid rgba(255,255,255,0.1)'}}>EVENTOS</div>
                                             {sugerencias.map(sug => (
-                                                <div key={sug.id} onMouseDown={(e) => { e.preventDefault(); irADetalle(sug.id); setBusqueda(''); setSugerencias([]); setRecintos([]); setMostrarSugerencias(false); }} style={{padding:'0.75rem 1rem', cursor:'pointer', borderBottom:'1px solid rgba(255,255,255,0.05)', display:'flex', alignItems:'center', gap:'0.75rem', background:'transparent', transition:'background 0.2s'}} onMouseEnter={(e) => e.currentTarget.style.background='rgba(99,102,241,0.2)'} onMouseLeave={(e) => e.currentTarget.style.background='transparent'}}>
+                                                <div key={sug.id} onMouseDown={(e) => { e.preventDefault(); irADetalle(sug.id); setBusqueda(''); setSugerencias([]); setRecintos([]); setMostrarSugerencias(false); }} style={{padding:'0.75rem 1rem', cursor:'pointer', borderBottom:'1px solid rgba(255,255,255,0.05)', display:'flex', alignItems:'center', gap:'0.75rem', background:'transparent'}}>
                                                     {sug.imagen ? <img src={sug.imagen} alt="" style={{width:40, height:40, objectFit:'cover', borderRadius:'8px'}} /> : <span style={{fontSize:'1.5rem'}}>🎫</span>}
                                                     <div style={{flex:1}}>
                                                         <div style={{fontWeight:'bold', color:'white'}}>{sug.nombre}</div>
@@ -1222,13 +1222,13 @@
                                                     </div>
                                                 </div>
                                             ))}
-                                        </>
+                                        </div>
                                     )}
                                     {recintos.length > 0 && (
-                                        <>
+                                        <div>
                                             <div style={{padding:'0.5rem 1rem', fontSize:'0.75rem', color:'var(--text-dim)', fontWeight:'bold', borderBottom:'1px solid rgba(255,255,255,0.1)', marginTop:sugerencias.length > 0 ? '0.5rem' : 0}}>RECINTOS</div>
                                             {recintos.map((rec, idx) => (
-                                                <div key={idx} onMouseDown={(e) => { e.preventDefault(); setBusqueda(rec.nombre); setCategoriaFiltro(''); cargarEventos(); setSugerencias([]); setRecintos([]); setMostrarSugerencias(false); }} style={{padding:'0.75rem 1rem', cursor:'pointer', borderBottom:'1px solid rgba(255,255,255,0.05)', display:'flex', alignItems:'center', gap:'0.75rem', background:'transparent', transition:'background 0.2s'}} onMouseEnter={(e) => e.currentTarget.style.background='rgba(99,102,241,0.2)'} onMouseLeave={(e) => e.currentTarget.style.background='transparent'}}>
+                                                <div key={idx} onMouseDown={(e) => { e.preventDefault(); setBusqueda(rec.nombre); setCategoriaFiltro(''); cargarEventos(); setSugerencias([]); setRecintos([]); setMostrarSugerencias(false); }} style={{padding:'0.75rem 1rem', cursor:'pointer', borderBottom:'1px solid rgba(255,255,255,0.05)', display:'flex', alignItems:'center', gap:'0.75rem', background:'transparent'}}>
                                                     <span style={{fontSize:'1.5rem'}}>📍</span>
                                                     <div style={{flex:1}}>
                                                         <div style={{fontWeight:'bold', color:'white'}}>{rec.nombre}</div>
@@ -1236,7 +1236,7 @@
                                                     </div>
                                                 </div>
                                             ))}
-                                        </>
+                                        </div>
                                     )}
                                 </div>
                             )}
