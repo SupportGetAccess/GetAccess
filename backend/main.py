@@ -1307,9 +1307,12 @@ def buscar_eventos(q: str = None, limite: int = 10, db = Depends(get_db)):
     
     try:
         eventos = fetch_all(db, query)
+        print(f"DEBUG: {eventos}")
         return {"eventos": eventos, "recintos": []}
     except Exception as e:
+        import traceback
         print(f"Error busqueda: {e}")
+        print(traceback.format_exc())
         return {"eventos": [], "recintos": []}
 
 @app.get("/api/eventos/{evento_id}")
