@@ -8,6 +8,9 @@ Usage:
 
 Requiere:
     pip install psycopg2-binary
+
+Para GitHub Actions:
+    DATABASE_URL debe estar en secrets
 """
 
 import os
@@ -16,11 +19,22 @@ from datetime import datetime
 import psycopg2
 from pathlib import Path
 
-# Configuración - cambiar si es necesario
-DATABASE_URL = os.environ.get(
-    "DATABASE_URL",
-    "postgresql://postgres.xgwbcepopluehupublkz:%40Supabase1982@aws-1-sa-east-1.pooler.supabase.com:5432/postgres"
-)
+# Intentar leer de variable de entorno o config
+DATABASE_URL = os.environ.get("DATABASE_URL")
+
+# Si no hay variable, intentar de config.py
+if not DATABASE_URL:
+    try:
+        import config
+        DATABASE_URL = config.DATABASE_URL
+    except:
+        pass
+
+if not DATABASE_URL:
+    print("ERROR: DATABASE_URL no configurada")
+    print("  - Exportar: export DATABASE_URL='postgresql://...'")
+    print("  - O configurar en config.py")
+    exit(1)
 
 TABLAS = [
     "usuarios",
