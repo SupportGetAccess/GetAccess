@@ -1296,11 +1296,11 @@ def buscar_eventos(q: str = None, limite: int = 10, db = Depends(get_db)):
     
     q_search = f"%{q.lower()}%"
     
-    # Buscar eventos usando raw SQL
+    # Buscar eventos - PostgreSQL usa ILIKE para case-insensitive
     query_eventos = f"""
         SELECT id, nombre, fecha, lugar, precio, COALESCE(imagen, '') as imagen, COALESCE(categoria, '') as categoria 
         FROM eventos 
-        WHERE LOWER(nombre) LIKE '{q_search}' OR LOWER(descripcion) LIKE '{q_search}' OR LOWER(lugar) LIKE '{q_search}'
+        WHERE LOWER(nombre) ILIKE '{q_search}' OR LOWER(descripcion) ILIKE '{q_search}' OR LOWER(lugar) ILIKE '{q_search}'
         ORDER BY fecha
         LIMIT {limite}
     """
@@ -1308,7 +1308,7 @@ def buscar_eventos(q: str = None, limite: int = 10, db = Depends(get_db)):
     query_recintos = f"""
         SELECT lugar AS nombre, COUNT(*) as cantidad 
         FROM eventos 
-        WHERE LOWER(lugar) LIKE '{q_search}'
+        WHERE LOWER(lugar) ILIKE '{q_search}'
         GROUP BY lugar
         ORDER BY cantidad DESC
         LIMIT 5
