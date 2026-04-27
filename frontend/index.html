@@ -1208,7 +1208,7 @@
                                 onBlur={() => setTimeout(() => setMostrarSugerencias(false), 150)}
                                 style={{width:'100%', padding:'1rem', borderRadius:'12px', border:'2px solid rgba(255,255,255,0.1)', background:'rgba(0,0,0,0.3)', color:'white', fontSize:'1rem'}}
                             />
-{mostrarSugerencias && (sugerencias.length > 0 || recintos.length > 0) && (
+                            {mostrarSugerencias && (sugerencias.length > 0 || recintos.length > 0) && (
                                 <div style={{position:'absolute', top:'100%', left:0, right:0, background:'var(--bg-card)', borderRadius:'12px', border:'2px solid rgba(255,255,255,0.1)', marginTop:'0.5rem', maxHeight:'350px', overflowY:'auto', zIndex:1000, boxShadow:'0 4px 20px rgba(0,0,0,0.5)'}}>
                                     {sugerencias.length > 0 && (
                                         <>
