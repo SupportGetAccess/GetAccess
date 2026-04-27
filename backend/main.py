@@ -1295,10 +1295,8 @@ def buscar_eventos(q: str = None, limite: int = 10, db = Depends(get_db)):
         return {"eventos": [], "recintos": []}
     
     q_search = f"%{q}%"
-    print(f"DEBUG: Buscando con q={q}")
     
-    # Buscar eventos - ILIKE es case-insensitive en PostgreSQL
-    query_eventos = f"""
+    query = f"""
         SELECT id, nombre, fecha, lugar, precio, COALESCE(imagen, '') as imagen, COALESCE(categoria, '') as categoria 
         FROM eventos 
         WHERE nombre ILIKE '{q_search}' OR descripcion ILIKE '{q_search}' OR lugar ILIKE '{q_search}'
@@ -1306,13 +1304,8 @@ def buscar_eventos(q: str = None, limite: int = 10, db = Depends(get_db)):
         LIMIT {limite}
     """
     
-    print(f"DEBUG query: {query_eventos}")
-    
     try:
-        cursor_eventos = db.execute(query_eventos)
-        eventos = [dict(row) for row in cursor_eventos.fetchall()]
-        print(f"DEBUG eventos: {eventos}")
-        
+        eventos = fetch_all(db, query)
         return {"eventos": eventos, "recintos": []}
     except Exception as e:
         print(f"Error busqueda: {e}")
