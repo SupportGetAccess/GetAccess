@@ -1090,3 +1090,44 @@ Deberían retornar JSON con datos (no 500)
 - Swagger docs fue deshabilitado por seguridad
 - Caching implementado pero no funciona con multiples workers (dejado en codigo)
 - Backups se descargan desde GitHub Actions, no se suben al repo
+
+---
+
+# ============================================================================
+# EVALUACION PRE-LANZAMIENTO (26/04/2026)
+
+## Estado General
+
+| Aspecto | Estado | Notas |
+|---------|--------|-------|
+| Funcionalidades | Listo | Registro, login, eventos, compras, ScannerQR, transferencias, analytics |
+| Seguridad | Aceptable | Rate limiting, indexes, credenciales fuera del codigo |
+| Respaldo | Basico | Backup manual/automatico configurado |
+| Performance | Lento | ~2.5s en queries (latencia Supabase) |
+| Uptime | Bueno | Render + Cloudflare |
+
+## Puntos a Considerar (MEJORAS FUTURAS)
+
+### Alta Prioridad
+1. **Performance** - Queries tardan ~2.5s. Posibles soluciones:
+   - Usar PostgreSQL de Render (misma red)
+   - Optimizar queries
+   - Agregar mas indexes
+
+2. **CAPTCHA** - Necesario cuando haya mas trafico para evitar spam en registros
+
+### Media Prioridad
+3. **Backup externo** - Subir automaticamente a Drive (requiere API de pago)
+4. **Monitoreo** - Alertas si el sitio se cae (UptimeRobot ya configurado)
+
+### Baja Prioridad
+5. **2FA** - Autenticacion de dos factores paraadmin
+6. **Security headers** - X-Frame-Options, CSP (puede romper algo)
+
+---
+
+## decision: LANZAR Y MEJORAR SOBRE LA MARCHA
+
+El sitio es funcional y seguro para usar. Los puntos arriba son mejoras opcionales.
+
+(End of file - total 1136 lines)
