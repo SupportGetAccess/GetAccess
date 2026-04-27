@@ -1211,6 +1211,7 @@ class EventoCreate(BaseModel):
     precio: float
     capacidad: int
     imagen: Optional[str] = None
+    imagenes: Optional[List[str]] = None
     categoria: Optional[str] = None
     comision: Optional[float] = 0
 
@@ -1418,14 +1419,22 @@ def crear_evento(evento: EventoCreate, credentials: HTTPAuthorizationCredentials
     if evento_fecha < datetime.datetime.now():
         raise HTTPException(status_code=400, detail="La fecha ingresada no debe ser anterior a la fecha actual")
     
+    import json
+    
+    imagen_a_guardar = None
+    if evento.imagenes and len(evento.imagenes) > 0:
+        imagen_a_guardar = json.dumps(evento.imagenes)
+    elif evento.imagen:
+        imagen_a_guardar = evento.imagen
+    
     cursor = db.execute(
         "INSERT INTO eventos (nombre, descripcion, fecha, lugar, precio, capacidad, vendidos, imagen, categoria, creado_por, comision) VALUES (?, ?, ?, ?, ?, ?, 0, ?, ?, ?, ?, ?)",
-        (evento.nombre, evento.fecha + " 20:00:00", evento.lugar, evento.precio, evento.capacidad, evento.imagen, evento.categoria, user_id, evento.comision)
+        (evento.nombre, evento.fecha + " 20:00:00", evento.lugar, evento.precio, evento.capacidad, imagen_a_guardar, evento.categoria, user_id, evento.comision)
     )
     db.commit()
     print(f">>> EVENTO CREADO: {evento.nombre}, ID: {cursor.lastrowid}, Fecha: {evento.fecha}")
     fecha_formateada = evento.fecha + " 20:00:00"
-    return {"id": cursor.lastrowid, "nombre": evento.nombre, "descripcion": evento.descripcion, "fecha": fecha_formateada, "lugar": evento.lugar, "precio": evento.precio, "capacidad": evento.capacidad, "imagen": evento.imagen, "categoria": evento.categoria}
+    return {"id": cursor.lastrowid, "nombre": evento.nombre, "descripcion": evento.descripcion, "fecha": fecha_formateada, "lugar": evento.lugar, "precio": evento.precio, "capacidad": evento.capacidad, "imagen": imagen_a_guardar, "categoria": evento.categoria}
 
 class EventoUpdate(BaseModel):
     nombre: Optional[str] = None
@@ -1435,6 +1444,7 @@ class EventoUpdate(BaseModel):
     precio: Optional[float] = None
     capacidad: Optional[int] = None
     imagen: Optional[str] = None
+    imagenes: Optional[List[str]] = None
     categoria: Optional[str] = None
     comision: Optional[float] = None
 
@@ -1494,9 +1504,17 @@ def actualizar_evento(evento_id: int, evento: EventoUpdate, credentials: HTTPAut
     if evento.capacidad is not None:
         updates.append("capacidad = ?")
         params.append(evento.capacidad)
-    if evento.imagen is not None:
-        updates.append("imagen = ?")
-        params.append(evento.imagen)
+    if evento.imagen is not None or evento.imagenes is not None:
+        import json
+        if evento.imagenes and len(evento.imagenes) > 0:
+            imagen_value = json.dumps(evento.imagenes)
+        elif evento.imagen:
+            imagen_value = evento.imagen
+        else:
+            imagen_value = None
+        if imagen_value:
+            updates.append("imagen = ?")
+            params.append(imagen_value)
     if evento.categoria is not None:
         updates.append("categoria = ?")
         params.append(evento.categoria)

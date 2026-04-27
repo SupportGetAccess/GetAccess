@@ -1010,9 +1010,11 @@
                         {vista === 'recuperar' && <RecuperarPassword setVista={setVista} />}
                         {vista === 'reset-password' && <ResetPassword setVista={setVista} toast={toast} />}
                         {vista === 'detalle-evento' && <DetalleEvento eventoId={eventoId} />}
+                        {vista === 'eventos' && (
                         <div style={{textAlign:'center', padding:'2rem', color:'var(--text-dim)', fontSize:'0.8rem', borderTop:'1px solid rgba(99,102,241,0.1)', marginTop:'2rem'}}>
                             <a href="/privacidad.html" style={{color:'var(--text-dim)', textDecoration:'none'}}>Política de Privacidad</a>
                         </div>
+                        )}
                     </div>
                     {toast && <div className={'toast ' + toast.type}>{toast.message}</div>}
                 </AuthContext.Provider>
@@ -1051,7 +1053,7 @@
                                 <button className={vista === 'mis-entradas' ? 'active' : ''} onClick={() => setVista('mis-entradas')}>🎟️ Mis Entradas</button>
                                 <button className={vista === 'perfil' ? 'active' : ''} onClick={() => setVista('perfil')}>👤 Perfil</button>
                                 {(user && (user.rol === 'admin' || user.rol === 'organizer')) && <button className={vista === 'admin' ? 'active' : ''} onClick={() => setVista('admin')}>⚙️ Admin</button>}
-                                <div className="user-info"><span>👤 {user.nombre}</span><button onClick={logout}>🚪</button></div>
+                                <div className="user-info"><span>👤 {user.nombre}</span><button onClick={logout}>🚪 Cerrar sesión</button></div>
                             </>
                         ) : (
                             <>
@@ -2779,8 +2781,8 @@
             const { user, token, showToast, irADetalle } = useContext(AuthContext);
             const [eventos, setEventos] = useState([]);
             const [loading, setLoading] = useState(true);
-            const [form, setForm] = useState({ nombre: '', descripcion: '', fecha: '', lugar: '', precio: '', capacidad: '', imagen: '', categoria: '' });
-            const [imagenPreview, setImagenPreview] = useState(null);
+            const [form, setForm] = useState({ nombre: '', descripcion: '', fecha: '', lugar: '', precio: '', capacidad: '', imagen: '', imagenes: ['', '', '', ''], categoria: '' });
+            const [imagenPreviews, setImagenPreviews] = useState([null, null, null, null]);
             const [editando, setEditando] = useState(null);
             const [guardando, setGuardando] = useState(false);
             const [tab, setTab] = useState('crear');
@@ -2871,7 +2873,7 @@
                 } catch (err) { showToast('Error de conexión', 'error'); }
             };
 
-            const handleImagenFile = (e) => {
+            const handleImagenFile = (index, e) => {
                 const file = e.target.files[0];
                 if (file) {
                     if (!file.type.startsWith('image/')) {
@@ -2884,16 +2886,24 @@
                     }
                     const reader = new FileReader();
                     reader.onloadend = () => {
-                        setForm({ ...form, imagen: reader.result });
-                        setImagenPreview(reader.result);
+                        const nuevasImagenes = [...form.imagenes];
+                        nuevasImagenes[index] = reader.result;
+                        const nuevosPreviews = [...imagenPreviews];
+                        nuevosPreviews[index] = reader.result;
+                        setForm({ ...form, imagenes: nuevasImagenes });
+                        setImagenPreviews(nuevosPreviews);
                     };
                     reader.readAsDataURL(file);
                 }
             };
             
-            const limpiarImagen = () => {
-                setForm({ ...form, imagen: '' });
-                setImagenPreview(null);
+            const limpiarImagen = (index) => {
+                const nuevasImagenes = [...form.imagenes];
+                nuevasImagenes[index] = '';
+                const nuevosPreviews = [...imagenPreviews];
+                nuevosPreviews[index] = null;
+                setForm({ ...form, imagenes: nuevasImagenes });
+                setImagenPreviews(nuevosPreviews);
             };
             
             const crearEvento = async (e) => {
@@ -2902,6 +2912,8 @@
                     showToast('Completa todos los campos requeridos', 'error');
                     return;
                 }
+                
+                const imagenesValidas = form.imagenes.filter(img => img && img.length > 0);
                 
                 setGuardando(true);
                 try {
@@ -2915,15 +2927,15 @@
                             lugar: form.lugar,
                             precio: parseFloat(form.precio),
                             capacidad: parseInt(form.capacidad),
-                            imagen: form.imagen || null,
+                            imagenes: imagenesValidas.length > 0 ? imagenesValidas : null,
                             categoria: form.categoria || null
                         })
                     });
                     
                     if (res.ok) {
                         showToast('Evento creado exitosamente', 'success');
-                        setForm({ nombre: '', descripcion: '', fecha: '', lugar: '', precio: '', capacidad: '', imagen: '', categoria: '', comision: 0 });
-                        setImagenPreview(null);
+                        setForm({ nombre: '', descripcion: '', fecha: '', lugar: '', precio: '', capacidad: '', imagen: '', imagenes: ['', '', '', ''], categoria: '', comision: 0 });
+                        setImagenPreviews([null, null, null, null]);
                         cargarEventos();
                     } else {
                         const data = await res.json();
@@ -2934,6 +2946,31 @@
             };
             
             const editarEvento = (ev) => {
+                let imagenesCargadas = ['', '', '', ''];
+                let previewsCargados = [null, null, null, null];
+                
+                if (ev.imagen) {
+                    try {
+                        const parsed = JSON.parse(ev.imagen);
+                        if (Array.isArray(parsed)) {
+                            parsed.forEach((img, i) => {
+                                if (i < 4 && img) {
+                                    imagenesCargadas[i] = img;
+                                    previewsCargados[i] = img;
+                                }
+                            });
+                        } else if (typeof parsed === 'string' && parsed.length > 0) {
+                            imagenesCargadas[0] = parsed;
+                            previewsCargados[0] = parsed;
+                        }
+                    } catch {
+                        if (ev.imagen && ev.imagen.length > 0 && typeof ev.imagen === 'string') {
+                            imagenesCargadas[0] = ev.imagen;
+                            previewsCargados[0] = ev.imagen;
+                        }
+                    }
+                }
+                
                 setEditando(ev);
                 setForm({
                     nombre: ev.nombre || '',
@@ -2943,10 +2980,11 @@
                     precio: ev.precio?.toString() || '',
                     capacidad: ev.capacidad?.toString() || '',
                     imagen: ev.imagen || '',
+                    imagenes: imagenesCargadas,
                     categoria: ev.categoria || '',
                     comision: ev.comision || 0
                 });
-                setImagenPreview(ev.imagen || null);
+                setImagenPreviews(previewsCargados);
                 setTab('editar');
             };
             
@@ -2956,6 +2994,8 @@
                     showToast('Completa todos los campos requeridos', 'error');
                     return;
                 }
+                
+                const imagenesValidas = form.imagenes.filter(img => img && img.length > 0);
                 
                 setGuardando(true);
                 try {
@@ -2969,7 +3009,7 @@
                             lugar: form.lugar,
                             precio: parseFloat(form.precio),
                             capacidad: parseInt(form.capacidad),
-                            imagen: form.imagen || null,
+                            imagenes: imagenesValidas.length > 0 ? imagenesValidas : null,
                             categoria: form.categoria || null,
                             comision: parseFloat(form.comision) || 0
                         })
@@ -2978,7 +3018,8 @@
                     if (res.ok) {
                         showToast('Evento actualizado correctamente', 'success');
                         setEditando(null);
-                        setForm({ nombre: '', descripcion: '', fecha: '', lugar: '', precio: '', capacidad: '', imagen: '', categoria: '', comision: 0 });
+                        setForm({ nombre: '', descripcion: '', fecha: '', lugar: '', precio: '', capacidad: '', imagen: '', imagenes: ['', '', '', ''], categoria: '', comision: 0 });
+                        setImagenPreviews([null, null, null, null]);
                         setTab('crear');
                         cargarEventos();
                     } else {
@@ -3017,8 +3058,8 @@
             
             const cancelarEdicion = () => {
                 setEditando(null);
-                setForm({ nombre: '', descripcion: '', fecha: '', lugar: '', precio: '', capacidad: '', imagen: '', categoria: '', comision: 0 });
-                setImagenPreview(null);
+                setForm({ nombre: '', descripcion: '', fecha: '', lugar: '', precio: '', capacidad: '', imagen: '', imagenes: ['', '', '', ''], categoria: '', comision: 0 });
+                setImagenPreviews([null, null, null, null]);
                 setTab('crear');
             };
             
@@ -3032,7 +3073,7 @@
                     </div>
                     
                     <div style={{display:'flex', gap:'0.5rem', marginBottom:'1.5rem', flexWrap:'wrap'}}>
-                        {(user && (user.rol === 'admin' || user.rol === 'organizer')) && <button onClick={() => { setTab('crear'); setEditando(null); setForm({ nombre: '', descripcion: '', fecha: '', lugar: '', precio: '', capacidad: '', imagen: '', categoria: '', comision: 0 }); }} style={{background: tab === 'crear' ? 'var(--gradient)' : 'rgba(255,255,255,0.1)', border:'none', color:'white', padding:'0.8rem 1.5rem', borderRadius:'12px', cursor:'pointer', fontWeight:'600', boxShadow: tab === 'crear' ? 'var(--glow)' : 'none'}}>➕ Crear Evento</button>}
+                        {(user && (user.rol === 'admin' || user.rol === 'organizer')) && <button onClick={() => { setTab('crear'); setEditando(null); setForm({ nombre: '', descripcion: '', fecha: '', lugar: '', precio: '', capacidad: '', imagen: '', imagenes: ['', '', '', ''], categoria: '', comision: 0 }); setImagenPreviews([null, null, null, null]); }} style={{background: tab === 'crear' ? 'var(--gradient)' : 'rgba(255,255,255,0.1)', border:'none', color:'white', padding:'0.8rem 1.5rem', borderRadius:'12px', cursor:'pointer', fontWeight:'600', boxShadow: tab === 'crear' ? 'var(--glow)' : 'none'}}>➕ Crear Evento</button>}
                         {user && (user.rol === 'admin' || user.rol === 'organizer') && <button onClick={() => setTab('editar')} style={{background: tab === 'editar' ? 'var(--gradient)' : 'rgba(255,255,255,0.1)', border:'none', color:'white', padding:'0.8rem 1.5rem', borderRadius:'12px', cursor:'pointer', fontWeight:'600', boxShadow: tab === 'editar' ? 'var(--glow)' : 'none'}}>✏️ Editar / Eliminar</button>}
                         {user && (user.rol === 'admin' || user.rol === 'organizer') && <button onClick={() => setTab('scanner')} style={{background: tab === 'scanner' ? 'var(--gradient)' : 'rgba(255,255,255,0.1)', border:'none', color:'white', padding:'0.8rem 1.5rem', borderRadius:'12px', cursor:'pointer', fontWeight:'600', boxShadow: tab === 'scanner' ? 'var(--glow)' : 'none'}}>📷 Scanner QR</button>}
                         <button onClick={() => setTab('analytics')} style={{background: tab === 'analytics' ? 'var(--gradient)' : 'rgba(255,255,255,0.1)', border:'none', color:'white', padding:'0.8rem 1.5rem', borderRadius:'12px', cursor:'pointer', fontWeight:'600', boxShadow: tab === 'analytics' ? 'var(--glow)' : 'none'}}>📊 Analytics</button>
@@ -3067,20 +3108,26 @@
                                         </select>
                                     </div>
                                     <div className="form-group">
-                                        <label>🖼️ Imagen del Evento (opcional)</label>
-                                        <div style={{display:'flex', gap:'0.5rem', alignItems:'center', marginBottom:'0.75rem'}}>
-                                            <label className="btn" style={{padding:'0.7rem 1rem', cursor:'pointer', fontSize:'0.9rem', flex:1, textAlign:'center'}}>
-                                                📁 {form.imagen ? 'Cambiar imagen' : 'Subir imagen'}
-                                                <input type="file" accept="image/*" onChange={handleImagenFile} style={{display:'none'}} />
-                                            </label>
+                                        <label>🖼️ Imágenes del Evento (hasta 4, opcional)</label>
+                                        <div style={{display:'grid', gridTemplateColumns:'repeat(4, 1fr)', gap:'0.5rem', marginBottom:'0.75rem'}}>
+                                            {[0, 1, 2, 3].map(i => (
+                                                <div key={i} style={{position:'relative', aspectRatio:'1', border:'2px dashed rgba(255,255,255,0.2)', borderRadius:'8px', overflow:'hidden', display:'flex', alignItems:'center', justifyContent:'center', background:'rgba(0,0,0,0.2)'}}>
+                                                    {imagenPreviews[i] ? (
+                                                        <>
+                                                            <img src={imagenPreviews[i]} alt={`Preview ${i+1}`} style={{width:'100%', height:'100%', objectFit:'cover'}} />
+                                                            <button onClick={() => limpiarImagen(i)} style={{position:'absolute', top:'2px', right:'2px', background:'rgba(239,68,68,0.9)', color:'white', border:'none', borderRadius:'50%', width:'20px', height:'20px', cursor:'pointer', fontSize:'10px', lineHeight:'20px', padding:0}}>✕</button>
+                                                        </>
+                                                    ) : (
+                                                        <label style={{cursor:'pointer', width:'100%', height:'100%', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', color:'var(--text-dim)', fontSize:'0.7rem'}}>
+                                                            <span style={{fontSize:'1.2rem'}}>📷</span>
+                                                            <span>Img {i+1}</span>
+                                                            <input type="file" accept="image/*" onChange={(e) => handleImagenFile(i, e)} style={{display:'none'}} />
+                                                        </label>
+                                                    )}
+                                                </div>
+                                            ))}
                                         </div>
-                                        {form.imagen && (
-                                            <div style={{marginTop:'0.75rem', position:'relative'}}>
-                                                <img src={form.imagen} alt="Preview" style={{width:'100%', maxHeight:'150px', objectFit:'cover', borderRadius:'12px', border:'2px solid rgba(255,255,255,0.1)'}} />
-                                                <button onClick={limpiarImagen} style={{position:'absolute', top:'8px', right:'8px', background:'rgba(239,68,68,0.9)', color:'white', border:'none', borderRadius:'50%', width:'28px', height:'28px', cursor:'pointer', fontSize:'14px'}}>✕</button>
-                                            </div>
-                                        )}
-                                        <small style={{color:'var(--text-dim)', fontSize:'0.75rem', marginTop:'0.5rem', display:'block'}}>Máx 5MB. Formatos: JPG, PNG, GIF, WebP</small>
+                                        <small style={{color:'var(--text-dim)', fontSize:'0.75rem', display:'block'}}>Máx 5MB c/u. Formatos: JPG, PNG, GIF, WebP</small>
                                     </div>
                                 </div>
                                 <button type="submit" className="btn btn-block" disabled={guardando}>{guardando ? <span className="spinner"></span> : '✅ Crear Evento'}</button>
@@ -3121,20 +3168,26 @@
                                                 </select>
                                             </div>
                                             <div className="form-group">
-                                                <label>🖼️ Imagen del Evento (opcional)</label>
-                                                <div style={{display:'flex', gap:'0.5rem', alignItems:'center', marginBottom:'0.75rem'}}>
-                                                    <label className="btn" style={{padding:'0.7rem 1rem', cursor:'pointer', fontSize:'0.9rem', flex:1, textAlign:'center'}}>
-                                                        📁 {form.imagen ? 'Cambiar imagen' : 'Subir imagen'}
-                                                        <input type="file" accept="image/*" onChange={handleImagenFile} style={{display:'none'}} />
-                                                    </label>
+                                                <label>🖼️ Imágenes del Evento (hasta 4, opcional)</label>
+                                                <div style={{display:'grid', gridTemplateColumns:'repeat(4, 1fr)', gap:'0.5rem', marginBottom:'0.75rem'}}>
+                                                    {[0, 1, 2, 3].map(i => (
+                                                        <div key={i} style={{position:'relative', aspectRatio:'1', border:'2px dashed rgba(255,255,255,0.2)', borderRadius:'8px', overflow:'hidden', display:'flex', alignItems:'center', justifyContent:'center', background:'rgba(0,0,0,0.2)'}}>
+                                                            {imagenPreviews[i] ? (
+                                                                <>
+                                                                    <img src={imagenPreviews[i]} alt={`Preview ${i+1}`} style={{width:'100%', height:'100%', objectFit:'cover'}} />
+                                                                    <button onClick={() => limpiarImagen(i)} style={{position:'absolute', top:'2px', right:'2px', background:'rgba(239,68,68,0.9)', color:'white', border:'none', borderRadius:'50%', width:'20px', height:'20px', cursor:'pointer', fontSize:'10px', lineHeight:'20px', padding:0}}>✕</button>
+                                                                </>
+                                                            ) : (
+                                                                <label style={{cursor:'pointer', width:'100%', height:'100%', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', color:'var(--text-dim)', fontSize:'0.7rem'}}>
+                                                                    <span style={{fontSize:'1.2rem'}}>📷</span>
+                                                                    <span>Img {i+1}</span>
+                                                                    <input type="file" accept="image/*" onChange={(e) => handleImagenFile(i, e)} style={{display:'none'}} />
+                                                                </label>
+                                                            )}
+                                                        </div>
+                                                    ))}
                                                 </div>
-                                                {form.imagen && (
-                                                    <div style={{marginTop:'0.75rem', position:'relative'}}>
-                                                        <img src={form.imagen} alt="Preview" style={{width:'100%', maxHeight:'150px', objectFit:'cover', borderRadius:'12px', border:'2px solid rgba(255,255,255,0.1)'}} />
-                                                        <button onClick={limpiarImagen} style={{position:'absolute', top:'8px', right:'8px', background:'rgba(239,68,68,0.9)', color:'white', border:'none', borderRadius:'50%', width:'28px', height:'28px', cursor:'pointer', fontSize:'14px'}}>✕</button>
-                                                    </div>
-                                                )}
-                                                <small style={{color:'var(--text-dim)', fontSize:'0.75rem', marginTop:'0.5rem', display:'block'}}>Máx 5MB. Formatos: JPG, PNG, GIF, WebP</small>
+                                                <small style={{color:'var(--text-dim)', fontSize:'0.75rem', display:'block'}}>Máx 5MB c/u. Formatos: JPG, PNG, GIF, WebP</small>
                                             </div>
                                         </div>
                                         <button type="submit" className="btn btn-block" disabled={guardando}>{guardando ? <span className="spinner"></span> : '💾 Guardar Cambios'}</button>
