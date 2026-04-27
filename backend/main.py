@@ -1294,36 +1294,28 @@ def buscar_eventos(q: str = None, limite: int = 10, db = Depends(get_db)):
     if not q or len(q) < 2:
         return {"eventos": [], "recintos": []}
     
-    q_search = f"%{q.lower()}%"
+    q_search = f"%{q}%"
+    print(f"DEBUG: Buscando con q={q}")
     
-    # Buscar eventos - PostgreSQL usa ILIKE para case-insensitive
+    # Buscar eventos - ILIKE es case-insensitive en PostgreSQL
     query_eventos = f"""
         SELECT id, nombre, fecha, lugar, precio, COALESCE(imagen, '') as imagen, COALESCE(categoria, '') as categoria 
         FROM eventos 
-        WHERE LOWER(nombre) ILIKE '{q_search}' OR LOWER(descripcion) ILIKE '{q_search}' OR LOWER(lugar) ILIKE '{q_search}'
+        WHERE nombre ILIKE '{q_search}' OR descripcion ILIKE '{q_search}' OR lugar ILIKE '{q_search}'
         ORDER BY fecha
         LIMIT {limite}
     """
     
-    query_recintos = f"""
-        SELECT lugar AS nombre, COUNT(*) as cantidad 
-        FROM eventos 
-        WHERE LOWER(lugar) ILIKE '{q_search}'
-        GROUP BY lugar
-        ORDER BY cantidad DESC
-        LIMIT 5
-    """
+    print(f"DEBUG query: {query_eventos}")
     
     try:
         cursor_eventos = db.execute(query_eventos)
         eventos = [dict(row) for row in cursor_eventos.fetchall()]
+        print(f"DEBUG eventos: {eventos}")
         
-        cursor_recintos = db.execute(query_recintos)
-        recintos = [dict(row) for row in cursor_recintos.fetchall()]
-        
-        return {"eventos": eventos, "recintos": recintos}
+        return {"eventos": eventos, "recintos": []}
     except Exception as e:
-        print(f"Error en busqueda: {e}")
+        print(f"Error busqueda: {e}")
         return {"eventos": [], "recintos": []}
 
 @app.get("/api/eventos/{evento_id}")
