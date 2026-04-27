@@ -625,6 +625,10 @@ async def serve_index():
     print(f"DEBUG: Serving index from {FRONTEND_DIR / 'index.html'}")
     return FileResponse(FRONTEND_DIR / "index.html")
 
+@app.get("/privacidad.html")
+async def serve_privacidad():
+    return FileResponse(FRONTEND_DIR / "privacidad.html")
+
 @app.get("/test-api")
 def test_api():
     return {"test": "ok", "message": "API is working"}
