@@ -2272,6 +2272,14 @@
             const [procesando, setProcesando] = useState(false);
             const [carrito, setCarrito] = useState([]);
             
+            const parseFecha = (fecha) => {
+                if (!fecha) return new Date(0);
+                if (fecha.includes(' ') && fecha.match(/\d{2}:\d{2}:\d{2}/)) {
+                    return new Date(fecha.replace(' ', 'T'));
+                }
+                return new Date(fecha + 'T12:00:00');
+            };
+            
             useEffect(() => {
                 const stored = JSON.parse(localStorage.getItem('carrito') || '[]');
                 setCarrito(stored);
@@ -2484,6 +2492,14 @@
             const { showToast } = useContext(AuthContext);
             const [transferenciasPendientes, setTransferenciasPendientes] = useState([]);
             
+            const parseFecha = (fecha) => {
+                if (!fecha) return new Date(0);
+                if (fecha.includes(' ') && fecha.match(/\d{2}:\d{2}:\d{2}/)) {
+                    return new Date(fecha.replace(' ', 'T'));
+                }
+                return new Date(fecha + 'T12:00:00');
+            };
+            
             useEffect(() => {
                 const savedToken = sessionStorage.getItem('token');
                 if (savedToken) {
@@ -2682,6 +2698,14 @@
             const { showToast, setVista } = useContext(AuthContext);
             const [transferencias, setTransferencias] = useState([]);
             const [loading, setLoading] = useState(true);
+            
+            const parseFecha = (fecha) => {
+                if (!fecha) return new Date(0);
+                if (fecha.includes(' ') && fecha.match(/\d{2}:\d{2}:\d{2}/)) {
+                    return new Date(fecha.replace(' ', 'T'));
+                }
+                return new Date(fecha + 'T12:00:00');
+            };
             
             useEffect(() => {
                 const savedToken = sessionStorage.getItem('token');
