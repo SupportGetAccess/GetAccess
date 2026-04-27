@@ -3169,6 +3169,37 @@ if __name__ == "__main__":
         except:
             pass
         
+        # Crear indexes para optimizar queries
+        try:
+            cur.execute("CREATE INDEX IF NOT EXISTS idx_eventos_creado_por ON eventos(creado_por)")
+        except:
+            pass
+        
+        try:
+            cur.execute("CREATE INDEX IF NOT EXISTS idx_entradas_usuario ON entradas(usuario_id)")
+        except:
+            pass
+        
+        try:
+            cur.execute("CREATE INDEX IF NOT EXISTS idx_entradas_evento ON entradas(evento_id)")
+        except:
+            pass
+        
+        try:
+            cur.execute("CREATE INDEX IF NOT EXISTS idx_validaciones_entrada ON validaciones(entrada_id)")
+        except:
+            pass
+        
+        try:
+            cur.execute("CREATE INDEX IF NOT EXISTS idx_transferencias_entrada ON transferencias(entrada_id)")
+        except:
+            pass
+        
+        try:
+            cur.execute("CREATE INDEX IF NOT EXISTS idx_entradas_estado ON entradas(estado)")
+        except:
+            pass
+        
         cur.execute("""
             CREATE TABLE IF NOT EXISTS evento_imagenes (
                 id SERIAL PRIMARY KEY,
@@ -3256,6 +3287,32 @@ if __name__ == "__main__":
                 UNIQUE(ip, fecha)
             )
         """)
+        
+        # Indexes para PostgreSQL
+        try:
+            cur.execute("CREATE INDEX IF NOT EXISTS idx_eventos_creado_por ON eventos(creado_por)")
+        except:
+            pass
+        try:
+            cur.execute("CREATE INDEX IF NOT EXISTS idx_entradas_usuario ON entradas(usuario_id)")
+        except:
+            pass
+        try:
+            cur.execute("CREATE INDEX IF NOT EXISTS idx_entradas_evento ON entradas(evento_id)")
+        except:
+            pass
+        try:
+            cur.execute("CREATE INDEX IF NOT EXISTS idx_validaciones_entrada ON validaciones(entrada_id)")
+        except:
+            pass
+        try:
+            cur.execute("CREATE INDEX IF NOT EXISTS idx_transferencias_entrada ON transferencias(entrada_id)")
+        except:
+            pass
+        try:
+            cur.execute("CREATE INDEX IF NOT EXISTS idx_entradas_estado ON entradas(estado)")
+        except:
+            pass
         
         conn.commit()
         
