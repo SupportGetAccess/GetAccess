@@ -1029,3 +1029,64 @@ Deberían retornar JSON con datos (no 500)
 
 ### Pendiente:
 - Badge '<⚠️ Finalizado' en admin panel
+
+---
+
+# ============================================================================
+# SESION 26 DE ABRIL 2026 - MEJORAS DE SEGURIDAD Y PERFORMANCE
+
+## MEJORAS IMPLEMENTADAS
+
+### 1. SEGURIDAD
+
+1. **Swagger Docs deshabilitado**
+   - Documentacion API ya NO esta公开 en produccion
+   - Endpoints afectados: /docs, /redoc, /openapi.json
+   - Commits: 8125228
+
+2. **Database Indexes creados**
+   - idx_eventos_creado_por
+   - idx_entradas_usuario
+   - idx_entradas_evento
+   - idx_validaciones_entrada
+   - idx_transferencias_entrada
+   - idx_entradas_estado
+   - Commit: f619a33
+
+3. **Rate Limiting** (ya estaba implementado)
+   - 100 requests por 60 segundos
+   - Bloquea despues de ~6 requests en produccion
+
+### 2. BACKUP AUTOMATICO
+
+1. **Script local** (backend/backup.py)
+   - Ejecutar: python backend/backup.py
+   - Requiere: pip install psycopg2-binary
+   - Guarda en: backups/YYYYMMDD_HHMMSS/
+
+2. **GitHub Actions** (automatico daily)
+   - Ubicacion: .github/workflows/manual.yml
+   - Corre: daily a las 6:00 UTC (3:00 AM Argentina)
+   - Descargar: Actions -> Daily Backup -> backup-files
+   - Artifact se guarda por 90 dias
+
+### 3. CONFIGURACIONES DE GITHUB
+
+- Secret DATABASE_URL configurado en Settings -> Secrets
+- Workflow: Daily Backup
+
+### 4. ARCHIVOS CREADOS/MODIFICADOS
+
+- backend/backup.py
+- backend/requirements_backup.txt
+- .github/workflows/manual.yml
+- .gitignore (agregado backups/)
+
+---
+
+## NOTAS
+
+- Credenciales eliminadas de notas.txt (por seguridad)
+- Swagger docs fue deshabilitado por seguridad
+- Caching implementado pero no funciona con multiples workers (dejado en codigo)
+- Backups se descargan desde GitHub Actions, no se suben al repo
