@@ -1148,4 +1148,57 @@ El sitio es funcional y seguro para usar. Los puntos arriba son mejoras opcional
 1. [ ] Agregar CAPTCHA en registro
 2. [ ] Agregar rate limiting mas estricto
 
+---
+
+# ============================================================================
+# POLITICA DE PRIVACIDAD
+
+## Get Access - Politica de Privacidad
+
+### 1. Datos que Recopilamos
+
+**Datos proporcionados por el usuario:**
+- Nombre y apellido
+- Email
+- Contrasena (hasheada)
+
+**Datos de uso:**
+- Historial de compras de entradas
+- Eventos visitados
+- Fechas de ingreso al sistema
+
+### 2. Como Usamos los Datos
+
+- Procesar compras de entradas
+- Enviar confirmaciones por email
+- Validacion de entradas en eventos
+- Estadisticas anonimas de uso
+
+### 3. Proteccion de Datos
+
+- Contrasenas hasheadas con bcrypt
+- Conexion HTTPS (SSL/TLS)
+- Credenciales en variables de entorno
+
+### 4. Retencion de Datos
+
+- Cuentas inactivas: eliminadas despues de 12 meses
+- Datos de compras: retenidos por tiempo requerido por ley
+- Backups: almacenados en GitHub (accesible solo por admins)
+
+### 5. Derechos del Usuario
+
+- Ver sus datos: /api/auth/me
+- Eliminar cuenta: escribir a soporte@getaccess.com.ar
+- Solicitar exportacion de datos: escribir a soporte@getaccess.com.ar
+
+### 6. Contacto
+
+- Email: soporte@getaccess.com.ar
+- WEB: https://getaccess.com.ar
+
+---
+
+Ultima actualizacion: 26/04/2026
+
 (End of file - total 1153 lines)
