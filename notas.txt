@@ -1130,4 +1130,22 @@ Deberían retornar JSON con datos (no 500)
 
 El sitio es funcional y seguro para usar. Los puntos arriba son mejoras opcionales.
 
-(End of file - total 1136 lines)
+---
+
+# ============================================================================
+# TAREA PARA 27/04/2026 - SIGUIENTE SESION
+
+## Lanzamiento
+1. [ ] Verificar que todo este funcionando en produccion
+2. [ ] Primera prueba con usuarios reales
+3. [ ] Monitorear errores en Render logs
+
+## Si hay problemas de performance:
+1. [ ] Revisar consultas lentas en Supabase
+2. [ ] Considerar cambiar a PostgreSQL de Render
+
+## Si hay spam:
+1. [ ] Agregar CAPTCHA en registro
+2. [ ] Agregar rate limiting mas estricto
+
+(End of file - total 1153 lines)
