@@ -1350,12 +1350,15 @@
             };
             
             const agregarImagen = async () => {
-                if (!nuevaImagen.trim()) { showToast('Ingresa una URL de imagen', 'error'); return; }
+                if (!nuevaImagen.trim()) { showToast('Ingresa una URL o selecciona un archivo', 'error'); return; }
                 try {
+                    const formData = new FormData();
+                    formData.append('url', nuevaImagen);
+                    formData.append('orden', evento.imagenes?.length || 0);
                     const res = await fetch(API_URL + '/api/eventos/' + eventoId + '/imagenes', {
                         method: 'POST',
-                        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
-                        body: JSON.stringify({ url: nuevaImagen, orden: evento.imagenes?.length || 0 })
+                        headers: { 'Authorization': 'Bearer ' + token },
+                        body: formData
                     });
                     if (res.ok) {
                         showToast('Imagen agregada', 'success');
