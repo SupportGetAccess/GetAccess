@@ -3041,24 +3041,30 @@
                     return;
                 }
                 
-                const imagenesValidas = form.imagenes.filter(img => img && img.length > 0);
-                
                 setGuardando(true);
                 try {
+                    const formData = new FormData();
+                    formData.append('nombre', form.nombre);
+                    formData.append('descripcion', form.descripcion);
+                    formData.append('fecha', form.fecha);
+                    formData.append('lugar', form.lugar);
+                    formData.append('precio', form.precio);
+                    formData.append('capacidad', form.capacidad);
+                    formData.append('categoria', form.categoria || '');
+                    formData.append('comision', form.comision || 0);
+                    
+                    // Agregar las imágenes - solo las nuevas (archivos), no las URLs existentes
+                    imagenArchivos.forEach((archivo, index) => {
+                        if (archivo && typeof archivo !== 'string') {
+                            // Solo enviar si es un archivo nuevo (no string/URL)
+                            formData.append(`imagen_${index + 1}`, archivo);
+                        }
+                    });
+                    
                     const res = await fetch(API_URL + '/api/eventos/' + editando.id, {
                         method: 'PUT',
-                        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
-                        body: JSON.stringify({
-                            nombre: form.nombre,
-                            descripcion: form.descripcion,
-                            fecha: form.fecha,
-                            lugar: form.lugar,
-                            precio: parseFloat(form.precio),
-                            capacidad: parseInt(form.capacidad),
-                            imagenes: imagenesValidas.length > 0 ? imagenesValidas : null,
-                            categoria: form.categoria || null,
-                            comision: parseFloat(form.comision) || 0
-                        })
+                        headers: { 'Authorization': 'Bearer ' + token },
+                        body: formData
                     });
                     
                     if (res.ok) {
@@ -3066,6 +3072,7 @@
                         setEditando(null);
                         setForm({ nombre: '', descripcion: '', fecha: '', lugar: '', precio: '', capacidad: '', imagen: '', imagenes: ['', '', '', ''], categoria: '', comision: 0 });
                         setImagenPreviews([null, null, null, null]);
+                        setImagenArchivos([null, null, null, null]);
                         setTab('crear');
                         cargarEventos();
                     } else {

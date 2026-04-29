@@ -1477,7 +1477,22 @@ class EventoUpdate(BaseModel):
     comision: Optional[float] = None
 
 @app.put("/api/eventos/{evento_id}")
-def actualizar_evento(evento_id: int, evento: EventoUpdate, credentials: HTTPAuthorizationCredentials = Depends(security), db = Depends(get_db)):
+async def actualizar_evento(evento_id: int, 
+    nombre: str = Form(None),
+    descripcion: str = Form(""),
+    fecha: str = Form(None),
+    lugar: str = Form(None),
+    precio: float = Form(None),
+    capacidad: int = Form(None),
+    categoria: str = Form(""),
+    comision: float = Form(0),
+    imagen_1: UploadFile = File(None),
+    imagen_2: UploadFile = File(None),
+    imagen_3: UploadFile = File(None),
+    imagen_4: UploadFile = File(None),
+    credentials: HTTPAuthorizationCredentials = Depends(security), 
+    db = Depends(get_db)
+):
     token = credentials.credentials
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
@@ -1486,7 +1501,7 @@ def actualizar_evento(evento_id: int, evento: EventoUpdate, credentials: HTTPAut
     except:
         raise HTTPException(status_code=401, detail="Token inválido")
     
-    cursor = db.execute("SELECT id, creado_por FROM eventos WHERE id = ?", (evento_id,))
+    cursor = db.execute("SELECT id, creado_por, imagen FROM eventos WHERE id = ?", (evento_id,))
     evento_row = cursor.fetchone()
     if not evento_row:
         raise HTTPException(status_code=404, detail="Evento no encontrado")
@@ -1504,8 +1519,8 @@ def actualizar_evento(evento_id: int, evento: EventoUpdate, credentials: HTTPAut
         except:
             raise HTTPException(status_code=403, detail="Solo puedes editar tus propios eventos")
     
-    if evento.fecha is not None:
-        evento_fecha_str = evento.fecha.replace('Z', '')
+    if fecha is not None:
+        evento_fecha_str = fecha.replace('Z', '')
         if '+' in evento_fecha_str:
             evento_fecha_str = evento_fecha_str.split('+')[0]
         evento_fecha = datetime.datetime.fromisoformat(evento_fecha_str)
@@ -1514,41 +1529,66 @@ def actualizar_evento(evento_id: int, evento: EventoUpdate, credentials: HTTPAut
     
     updates = []
     params = []
-    if evento.nombre is not None:
+    if nombre is not None:
         updates.append("nombre = ?")
-        params.append(evento.nombre)
-    if evento.descripcion is not None:
+        params.append(nombre)
+    if descripcion is not None:
         updates.append("descripcion = ?")
-        params.append(evento.descripcion)
-    if evento.fecha is not None:
+        params.append(descripcion)
+    if fecha is not None:
         updates.append("fecha = ?")
-        params.append(evento.fecha)
-    if evento.lugar is not None:
+        params.append(fecha)
+    if lugar is not None:
         updates.append("lugar = ?")
-        params.append(evento.lugar)
-    if evento.precio is not None:
+        params.append(lugar)
+    if precio is not None:
         updates.append("precio = ?")
-        params.append(evento.precio)
-    if evento.capacidad is not None:
+        params.append(precio)
+    if capacidad is not None:
         updates.append("capacidad = ?")
-        params.append(evento.capacidad)
-    if evento.imagen is not None or evento.imagenes is not None:
-        import json
-        if evento.imagenes and len(evento.imagenes) > 0:
-            imagen_value = json.dumps(evento.imagenes)
-        elif evento.imagen:
-            imagen_value = evento.imagen
-        else:
-            imagen_value = None
-        if imagen_value:
-            updates.append("imagen = ?")
-            params.append(imagen_value)
-    if evento.categoria is not None:
+        params.append(capacidad)
+    if categoria is not None:
         updates.append("categoria = ?")
-        params.append(evento.categoria)
-    if evento.comision is not None:
+        params.append(categoria)
+    if comision is not None:
         updates.append("comision = ?")
-        params.append(evento.comision)
+        params.append(comision)
+    
+    # Manejar imágenes nuevas
+    imagenes_nuevas = []
+    imagenes = [imagen_1, imagen_2, imagen_3, imagen_4]
+    
+    # Obtener imágenes existentes
+    imagen_existente = evento_row[2] if len(evento_row) > 2 else None
+    imagenes_existentes = []
+    if imagen_existente:
+        try:
+            imagenes_existentes = json.loads(imagen_existente) if imagen_existente.startswith('[') else []
+        except:
+            imagenes_existentes = []
+    
+    for i, img in enumerate(imagenes):
+        if img and img.filename:
+            ext = os.path.splitext(img.filename)[1].lower()
+            if ext not in ['.jpg', '.jpeg', '.png', '.gif', '.webp']:
+                ext = '.jpg'
+            nombre_archivo = f"{uuid.uuid4()}{ext}"
+            ruta_archivo = IMAGES_DIR / nombre_archivo
+            
+            contenido = await img.read()
+            with open(ruta_archivo, "wb") as f:
+                f.write(contenido)
+            
+            imagenes_nuevas.append(f"images/{nombre_archivo}")
+        elif i < len(imagenes_existentes):
+            # Mantener la imagen existente
+            imagenes_nuevas.append(imagenes_existentes[i])
+    
+    if imagenes_nuevas:
+        import json
+        imagen_value = json.dumps(imagenes_nuevas)
+        updates.append("imagen = ?")
+        params.append(imagen_value)
     
     if not updates:
         raise HTTPException(status_code=400, detail="No hay campos para actualizar")
