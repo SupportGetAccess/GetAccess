@@ -1250,3 +1250,135 @@ El sitio es funcional y seguro para usar. Los puntos arriba son mejoras opcional
 Ultima actualizacion: 27/04/2026
 
 (End of file - total 1153 lines)
+
+---
+
+# ============================================================================
+# SESION 29 DE ABRIL 2026
+
+## CAMBIOS IMPLEMENTADOS
+
+### 1. Sistema de carga de imágenes locales (4 imágenes como archivos)
+
+**Problema original**: Las imágenes se guardaban como base64 en la base de datos, causando errores al mostrar (URLs incorrectas como `["data:image/..."]`).
+
+**Solución implementada**:
+- Las imágenes ahora se guardan como archivos en `frontend/images/`
+- Frontend envía las imágenes como FormData (no más JSON/base64)
+- Backend acepta UploadFile y guarda los archivos en el servidor
+
+**Archivos modificados**:
+- `backend/main.py`:
+  - Endpoint POST /api/eventos/ ahora acepta Form con archivos
+  - Endpoint PUT /api/eventos/{id} ahora acepta Form con archivos
+  - Imágenes se guardan con nombre único (UUID) en `frontend/images/`
+  - Imágenes existentes se mantienen al editar
+- `frontend/index.html`:
+  - `handleImagenFile` ahora guarda el archivo (no base64)
+  - `crearEvento` usa FormData para enviar imágenes
+  - `guardarEdicion` usa FormData para enviar imágenes
+  - `editarEvento` carga imágenes existentes en `imagenArchivos`
+  - `getImagenUrl` mejorado para manejar rutas de archivos
+
+**Características**:
+- Hasta 4 imágenes por evento
+- Formatos: JPG, PNG, GIF, WebP
+- Máximo 5MB por imagen
+- Disponible para Admin y Organizador
+
+### 2. Fix eventos finalizados no se mostraban correctamente
+
+**Problema**: Eventos con fecha pasada no aparecían como "Finalizado".
+
+**Causa**: `parseFecha()` sin argumento retornaba `new Date(0)` (1/1/1970) en vez de la fecha actual.
+
+**Solución**: Cambiar `parseFecha()` por `new Date()` en las comparaciones:
+```javascript
+// Antes (incorrecto):
+const esPasado = parseFecha(evento.fecha) < parseFecha();
+
+// Después (correcto):
+const esPasado = parseFecha(evento.fecha) < new Date();
+```
+
+**Ubicaciones corregidas**:
+- Línea 1290: Lista de eventos
+- Línea 3075: AdminPanel - crear evento
+- Línea 3251: AdminPanel - editar evento
+
+**Efecto visual**:
+- Opacidad reducida (0.6) en eventos finalizados
+- Badge "🏁 Finalizado" visible
+- Botón comprar deshabilitado
+
+### 3. Fix panel de edición de eventos
+
+**Problema**: Al editar un evento, las imágenes existentes no se mostraban correctamente.
+
+**Solución**:
+- `editarEvento` ahora carga las imágenes en `imagenArchivos`
+- Formularios de crear/editar usan `getImagenUrl` para mostrar las imágenes correctamente
+- Backend PUT acepta FormData (como el POST)
+
+### 4. Fix previews de imágenes
+
+**Problema**: Los previews mostraban la ruta cruda sin procesar.
+
+**Solución**: Usar `getImagenUrl()` en los tags `<img>` de los formularios:
+```javascript
+// Antes:
+<img src={imagenPreviews[i]} ... />
+
+// Después:
+<img src={getImagenUrl(imagenPreviews[i])} ... />
+```
+
+## COMMITS REALIZADOS
+
+- `c6c48a7` - Add local file upload for event images (4 images as files, not base64)
+- `b34a404` - Fix getImagenUrl to handle file paths correctly
+- `196db58` - Fix image preview in edit form - use getImagenUrl for correct path
+- `1620af9` - Fix edit event - now uses FormData for images like create
+- `49eed5d` - Fix events showing as finalized - use new Date() instead of parseFecha()
+
+## FUNCIONALIDADES ACTUALES
+
+| Funcionalidad | Estado |
+|---------------|--------|
+| Cargar 4 imágenes locales (crear) | ✅ |
+| Cargar 4 imágenes locales (editar) | ✅ |
+| Mostrar imágenes existentes en edit | ✅ |
+| Eliminar imágenes al editar | ✅ |
+| Eventos finalizados marcados | ✅ |
+| Admin puede crear/editar eventos | ✅ |
+| Organizador puede crear/editar eventos | ✅ |
+
+---
+
+## NOTAS TÉCNICAS
+
+### Rutas de imágenes
+- Las imágenes se guardan en: `frontend/images/{uuid}.{ext}`
+- Se sirven desde: `/images/{nombre_archivo}`
+- La columna `imagen` en la tabla eventos guarda: `["images/xxx.jpg", "images/yyy.jpg"]`
+
+### FormData estructura
+```javascript
+// Crear evento:
+formData.append('nombre', ...)
+formData.append('descripcion', ...)
+formData.append('fecha', ...)
+formData.append('lugar', ...)
+formData.append('precio', ...)
+formData.append('capacidad', ...)
+formData.append('categoria', ...)
+formData.append('comision', ...)
+formData.append('imagen_1', archivo1)
+formData.append('imagen_2', archivo2)
+formData.append('imagen_3', archivo3)
+formData.append('imagen_4', archivo4)
+```
+
+---
+
+*Última sesión: Miércoles 29 de Abril 2026 - Sistema de imágenes locales implementado*
