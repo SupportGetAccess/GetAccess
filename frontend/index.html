@@ -1431,9 +1431,7 @@
                                         ))}
                                         {isAdmin && (
                                             <div className="galeria-add">
-                                                <input type="url" placeholder="URL de imagen (opcional)" value={nuevaImagen} onChange={e => setNuevaImagen(e.target.value)} onClick={e => e.stopPropagation()} style={{width:'80%',padding:'0.5rem',border:'none',background:'transparent',color:'white',textAlign:'center',fontSize:'0.85rem',marginBottom:'0.5rem'}} />
-                                                <label style={{color:'#aaa',fontSize:'0.75rem',display:'block',marginBottom:'0.25rem'}}>O selecciona un archivo de tu dispositivo:</label>
-                                                <input type="file" accept="image/*" onChange={async e => { const file = e.target.files[0]; if (file && file.size > 2000000) { showToast('La imagen debe ser menor a 2MB', 'error'); return; } if (file) { const reader = new FileReader(); reader.onload = ev => { setNuevaImagen(ev.target.result); }; reader.readAsDataURL(file); } }} style={{color:'white',fontSize:'0.75rem'}} />
+                                                <input type="url" placeholder="URL de imagen" value={nuevaImagen} onChange={e => setNuevaImagen(e.target.value)} onClick={e => e.stopPropagation()} style={{width:'80%',padding:'0.5rem',border:'none',background:'transparent',color:'white',textAlign:'center',fontSize:'0.85rem'}} />
                                                 <button onClick={e => { e.stopPropagation(); agregarImagen(); }} style={{background:'var(--primary)',border:'none',color:'white',padding:'0.5rem 1rem',borderRadius:'8px',cursor:'pointer',fontSize:'0.85rem',marginTop:'0.5rem'}}>Agregar</button>
                                             </div>
                                         )}
