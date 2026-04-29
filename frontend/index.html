@@ -2989,6 +2989,7 @@
             const editarEvento = (ev) => {
                 let imagenesCargadas = ['', '', '', ''];
                 let previewsCargados = [null, null, null, null];
+                let archivosCargados = [null, null, null, null];
                 
                 if (ev.imagen) {
                     try {
@@ -2998,16 +2999,19 @@
                                 if (i < 4 && img) {
                                     imagenesCargadas[i] = img;
                                     previewsCargados[i] = img;
+                                    archivosCargados[i] = img; // Marcar como existente
                                 }
                             });
                         } else if (typeof parsed === 'string' && parsed.length > 0) {
                             imagenesCargadas[0] = parsed;
                             previewsCargados[0] = parsed;
+                            archivosCargados[0] = parsed;
                         }
                     } catch {
                         if (ev.imagen && ev.imagen.length > 0 && typeof ev.imagen === 'string') {
                             imagenesCargadas[0] = ev.imagen;
                             previewsCargados[0] = ev.imagen;
+                            archivosCargados[0] = ev.imagen;
                         }
                     }
                 }
@@ -3026,6 +3030,7 @@
                     comision: ev.comision || 0
                 });
                 setImagenPreviews(previewsCargados);
+                setImagenArchivos(archivosCargados);
                 setTab('editar');
             };
             
@@ -3155,7 +3160,7 @@
                                                 <div key={i} style={{position:'relative', aspectRatio:'1', border:'2px dashed rgba(255,255,255,0.2)', borderRadius:'8px', overflow:'hidden', display:'flex', alignItems:'center', justifyContent:'center', background:'rgba(0,0,0,0.2)'}}>
                                                     {imagenPreviews[i] ? (
                                                         <>
-                                                            <img src={imagenPreviews[i]} alt={`Preview ${i+1}`} style={{width:'100%', height:'100%', objectFit:'cover'}} />
+                                                            <img src={getImagenUrl(imagenPreviews[i])} alt={`Preview ${i+1}`} style={{width:'100%', height:'100%', objectFit:'cover'}} />
                                                             <button onClick={() => limpiarImagen(i)} style={{position:'absolute', top:'2px', right:'2px', background:'rgba(239,68,68,0.9)', color:'white', border:'none', borderRadius:'50%', width:'20px', height:'20px', cursor:'pointer', fontSize:'10px', lineHeight:'20px', padding:0}}>✕</button>
                                                         </>
                                                     ) : (
@@ -3215,7 +3220,7 @@
                                                         <div key={i} style={{position:'relative', aspectRatio:'1', border:'2px dashed rgba(255,255,255,0.2)', borderRadius:'8px', overflow:'hidden', display:'flex', alignItems:'center', justifyContent:'center', background:'rgba(0,0,0,0.2)'}}>
                                                             {imagenPreviews[i] ? (
                                                                 <>
-                                                                    <img src={imagenPreviews[i]} alt={`Preview ${i+1}`} style={{width:'100%', height:'100%', objectFit:'cover'}} />
+                                                                    <img src={getImagenUrl(imagenPreviews[i])} alt={`Preview ${i+1}`} style={{width:'100%', height:'100%', objectFit:'cover'}} />
                                                                     <button onClick={() => limpiarImagen(i)} style={{position:'absolute', top:'2px', right:'2px', background:'rgba(239,68,68,0.9)', color:'white', border:'none', borderRadius:'50%', width:'20px', height:'20px', cursor:'pointer', fontSize:'10px', lineHeight:'20px', padding:0}}>✕</button>
                                                                 </>
                                                             ) : (
