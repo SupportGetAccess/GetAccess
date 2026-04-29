@@ -1346,7 +1346,7 @@ class ImagenCreate(BaseModel):
     orden: int = 0
 
 @app.post("/api/eventos/{evento_id}/imagenes")
-def agregar_imagen(evento_id: int, url: str = Form(...), orden: int = Form(0), credentials: HTTPAuthorizationCredentials = Depends(security), db = Depends(get_db)):
+async def agregar_imagen(evento_id: int, request: Request, credentials: HTTPAuthorizationCredentials = Depends(security), db = Depends(get_db)):
     token = credentials.credentials
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
@@ -1360,6 +1360,10 @@ def agregar_imagen(evento_id: int, url: str = Form(...), orden: int = Form(0), c
     cursor = db.execute("SELECT id FROM eventos WHERE id = ?", (evento_id,))
     if not cursor.fetchone():
         raise HTTPException(status_code=404, detail="Evento no encontrado")
+    
+    body = await request.form()
+    url = body.get("url")
+    orden = body.get("orden", "0")
     
     cursor = db.execute("INSERT INTO evento_imagenes (evento_id, url, orden) VALUES (?, ?, ?)", (evento_id, url, orden))
     db.commit()
