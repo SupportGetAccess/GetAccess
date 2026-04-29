@@ -1428,8 +1428,8 @@
                                         ))}
                                         {isAdmin && (
                                             <div className="galeria-add">
-                                                <input type="url" placeholder="URL de imagen" value={nuevaImagen} onChange={e => setNuevaImagen(e.target.value)} onClick={e => e.stopPropagation()} style={{width:'80%',padding:'0.5rem',border:'none',background:'transparent',color:'white',textAlign:'center',fontSize:'0.85rem'}} />
-                                                <button onClick={e => { e.stopPropagation(); agregarImagen(); }} style={{background:'var(--primary)',border:'none',color:'white',padding:'0.5rem 1rem',borderRadius:'8px',cursor:'pointer',fontSize:'0.85rem'}}>Agregar</button>
+                                                <input type="url" placeholder="Pega una URL pública de imagen (Imgbox, Imgur, etc.)" value={nuevaImagen} onChange={e => setNuevaImagen(e.target.value)} onClick={e => e.stopPropagation()} style={{width:'80%',padding:'0.5rem',border:'none',background:'transparent',color:'white',textAlign:'center',fontSize:'0.85rem'}} />
+                                                <button onClick={e => { e.stopPropagation(); agregarImagen(); }} style={{background:'var(--primary)',border:'none',color:'white',padding:'0.5rem 1rem',borderRadius:'8px',cursor:'pointer',fontSize:'0.85rem',marginTop:'0.5rem'}}>Agregar</button>
                                             </div>
                                         )}
                                     </div>
