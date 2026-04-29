@@ -1,10 +1,11 @@
-from fastapi import FastAPI, Depends, HTTPException, status, Request, Form
+from fastapi import FastAPI, Depends, HTTPException, status, Request, Form, UploadFile, File
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, EmailStr
 from typing import List, Optional
+import uuid
 from collections import defaultdict
 from datetime import datetime, timedelta
 import uvicorn
@@ -609,8 +610,8 @@ FRONTEND_DIR = BACKEND_DIR.parent / "frontend"
 
 # Serve static files (images)
 IMAGES_DIR = FRONTEND_DIR / "images"
-if IMAGES_DIR.exists():
-    app.mount("/images", StaticFiles(directory=str(IMAGES_DIR)), name="images")
+IMAGES_DIR.mkdir(exist_ok=True)
+app.mount("/images", StaticFiles(directory=str(IMAGES_DIR)), name="images")
 
 # Debug: print the paths
 print(f"DEBUG: BACKEND_DIR = {BACKEND_DIR}")
@@ -1391,7 +1392,22 @@ def eliminar_imagen(evento_id: int, imagen_id: int, credentials: HTTPAuthorizati
     return {"message": "Imagen eliminada"}
 
 @app.post("/api/eventos/")
-def crear_evento(evento: EventoCreate, credentials: HTTPAuthorizationCredentials = Depends(security), db = Depends(get_db)):
+async def crear_evento(
+    nombre: str = Form(...),
+    descripcion: str = Form(""),
+    fecha: str = Form(...),
+    lugar: str = Form(...),
+    precio: float = Form(...),
+    capacidad: int = Form(...),
+    categoria: str = Form(""),
+    comision: float = Form(0),
+    imagen_1: UploadFile = File(None),
+    imagen_2: UploadFile = File(None),
+    imagen_3: UploadFile = File(None),
+    imagen_4: UploadFile = File(None),
+    credentials: HTTPAuthorizationCredentials = Depends(security), 
+    db = Depends(get_db)
+):
     token = credentials.credentials
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
@@ -1407,29 +1423,44 @@ def crear_evento(evento: EventoCreate, credentials: HTTPAuthorizationCredentials
     if user_rol not in ['admin', 'organizer']:
         raise HTTPException(status_code=403, detail="Solo administradores y organizadores pueden crear eventos")
     
-    evento_fecha_str = evento.fecha.replace('Z', '')
+    evento_fecha_str = fecha.replace('Z', '')
     if '+' in evento_fecha_str:
         evento_fecha_str = evento_fecha_str.split('+')[0]
     evento_fecha = datetime.datetime.fromisoformat(evento_fecha_str)
     if evento_fecha < datetime.datetime.now():
         raise HTTPException(status_code=400, detail="La fecha ingresada no debe ser anterior a la fecha actual")
     
-    import json
+    # Guardar imágenes en el servidor
+    imagenes_guardadas = []
+    imagenes = [imagen_1, imagen_2, imagen_3, imagen_4]
     
-    imagen_a_guardar = None
-    if evento.imagenes and len(evento.imagenes) > 0:
-        imagen_a_guardar = json.dumps(evento.imagenes)
-    elif evento.imagen:
-        imagen_a_guardar = evento.imagen
+    for img in imagenes:
+        if img and img.filename:
+            # Generar nombre único para la imagen
+            ext = os.path.splitext(img.filename)[1].lower()
+            if ext not in ['.jpg', '.jpeg', '.png', '.gif', '.webp']:
+                ext = '.jpg'
+            nombre_archivo = f"{uuid.uuid4()}{ext}"
+            ruta_archivo = IMAGES_DIR / nombre_archivo
+            
+            # Guardar el archivo
+            contenido = await img.read()
+            with open(ruta_archivo, "wb") as f:
+                f.write(contenido)
+            
+            imagenes_guardadas.append(f"images/{nombre_archivo}")
+    
+    # Guardar la primera imagen como imagen principal y el resto como galería
+    imagen_a_guardar = json.dumps(imagenes_guardadas) if imagenes_guardadas else None
     
     cursor = db.execute(
         "INSERT INTO eventos (nombre, descripcion, fecha, lugar, precio, capacidad, vendidos, imagen, categoria, creado_por, comision) VALUES (?, ?, ?, ?, ?, ?, 0, ?, ?, ?, ?, ?)",
-        (evento.nombre, evento.fecha + " 20:00:00", evento.lugar, evento.precio, evento.capacidad, imagen_a_guardar, evento.categoria, user_id, evento.comision)
+        (nombre, fecha + " 20:00:00", lugar, precio, capacidad, imagen_a_guardar, categoria, user_id, comision)
     )
     db.commit()
-    print(f">>> EVENTO CREADO: {evento.nombre}, ID: {cursor.lastrowid}, Fecha: {evento.fecha}")
-    fecha_formateada = evento.fecha + " 20:00:00"
-    return {"id": cursor.lastrowid, "nombre": evento.nombre, "descripcion": evento.descripcion, "fecha": fecha_formateada, "lugar": evento.lugar, "precio": evento.precio, "capacidad": evento.capacidad, "imagen": imagen_a_guardar, "categoria": evento.categoria}
+    print(f">>> EVENTO CREADO: {nombre}, ID: {cursor.lastrowid}, Fecha: {fecha}")
+    fecha_formateada = fecha + " 20:00:00"
+    return {"id": cursor.lastrowid, "nombre": nombre, "descripcion": descripcion, "fecha": fecha_formateada, "lugar": lugar, "precio": precio, "capacidad": capacidad, "imagen": imagen_a_guardar, "categoria": categoria}
 
 class EventoUpdate(BaseModel):
     nombre: Optional[str] = None

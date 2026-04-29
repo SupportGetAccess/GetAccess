@@ -922,6 +922,17 @@
             : 'https://getaccess.com.ar';
         const getImagenUrl = (img) => {
             if (!img) return null;
+            // Si es un JSON array, parsear y usar la primera imagen
+            if (img.startsWith('[')) {
+                try {
+                    const parsed = JSON.parse(img);
+                    if (Array.isArray(parsed) && parsed.length > 0) {
+                        img = parsed[0];
+                    }
+                } catch (e) {
+                    return null;
+                }
+            }
             if (img.startsWith('data:') || img.startsWith('http')) return img;
             return API_URL + '/' + img;
         };
@@ -1388,7 +1399,11 @@
                 } catch (err) { showToast('Error de conexión', 'error'); }
             };
             
-            const todasImagenes = evento ? [evento.imagen, ...(evento.imagenes || []).map(i => i.url)].filter(Boolean) : [];
+            const todasImagenes = evento ? (
+                evento.imagen && evento.imagen.startsWith('[') 
+                    ? (() => { try { return JSON.parse(evento.imagen); } catch(e) { return []; } })()
+                    : evento.imagen ? [evento.imagen] : []
+            ).concat((evento.imagenes || []).map(i => i.url)).filter(Boolean) : [];
             
             if (loading) return <div className="loading">Cargando...</div>;
             if (error) return <div className="empty-state"><span>❌</span><p>{error}</p><button className="btn" onClick={() => setVista('eventos')}>Volver a eventos</button></div>;
@@ -2794,6 +2809,7 @@
             const [loading, setLoading] = useState(true);
             const [form, setForm] = useState({ nombre: '', descripcion: '', fecha: '', lugar: '', precio: '', capacidad: '', imagen: '', imagenes: ['', '', '', ''], categoria: '' });
             const [imagenPreviews, setImagenPreviews] = useState([null, null, null, null]);
+            const [imagenArchivos, setImagenArchivos] = useState([null, null, null, null]);
             const [editando, setEditando] = useState(null);
             const [guardando, setGuardando] = useState(false);
             const [tab, setTab] = useState('crear');
@@ -2897,24 +2913,25 @@
                     }
                     const reader = new FileReader();
                     reader.onloadend = () => {
-                        const nuevasImagenes = [...form.imagenes];
-                        nuevasImagenes[index] = reader.result;
                         const nuevosPreviews = [...imagenPreviews];
                         nuevosPreviews[index] = reader.result;
-                        setForm({ ...form, imagenes: nuevasImagenes });
                         setImagenPreviews(nuevosPreviews);
                     };
                     reader.readAsDataURL(file);
+                    // Guardar el archivo real
+                    const nuevosArchivos = [...imagenArchivos];
+                    nuevosArchivos[index] = file;
+                    setImagenArchivos(nuevosArchivos);
                 }
             };
             
             const limpiarImagen = (index) => {
-                const nuevasImagenes = [...form.imagenes];
-                nuevasImagenes[index] = '';
                 const nuevosPreviews = [...imagenPreviews];
                 nuevosPreviews[index] = null;
-                setForm({ ...form, imagenes: nuevasImagenes });
                 setImagenPreviews(nuevosPreviews);
+                const nuevosArchivos = [...imagenArchivos];
+                nuevosArchivos[index] = null;
+                setImagenArchivos(nuevosArchivos);
             };
             
             const crearEvento = async (e) => {
@@ -2924,29 +2941,36 @@
                     return;
                 }
                 
-                const imagenesValidas = form.imagenes.filter(img => img && img.length > 0);
-                
                 setGuardando(true);
                 try {
+                    const formData = new FormData();
+                    formData.append('nombre', form.nombre);
+                    formData.append('descripcion', form.descripcion);
+                    formData.append('fecha', form.fecha);
+                    formData.append('lugar', form.lugar);
+                    formData.append('precio', form.precio);
+                    formData.append('capacidad', form.capacidad);
+                    formData.append('categoria', form.categoria || '');
+                    formData.append('comision', form.comision || 0);
+                    
+                    // Agregar las imágenes como archivos
+                    imagenArchivos.forEach((archivo, index) => {
+                        if (archivo) {
+                            formData.append(`imagen_${index + 1}`, archivo);
+                        }
+                    });
+                    
                     const res = await fetch(API_URL + '/api/eventos/', {
                         method: 'POST',
-                        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
-                        body: JSON.stringify({
-                            nombre: form.nombre,
-                            descripcion: form.descripcion,
-                            fecha: form.fecha,
-                            lugar: form.lugar,
-                            precio: parseFloat(form.precio),
-                            capacidad: parseInt(form.capacidad),
-                            imagenes: imagenesValidas.length > 0 ? imagenesValidas : null,
-                            categoria: form.categoria || null
-                        })
+                        headers: { 'Authorization': 'Bearer ' + token },
+                        body: formData
                     });
                     
                     if (res.ok) {
                         showToast('Evento creado exitosamente', 'success');
                         setForm({ nombre: '', descripcion: '', fecha: '', lugar: '', precio: '', capacidad: '', imagen: '', imagenes: ['', '', '', ''], categoria: '', comision: 0 });
                         setImagenPreviews([null, null, null, null]);
+                        setImagenArchivos([null, null, null, null]);
                         cargarEventos();
                     } else {
                         const data = await res.json();
