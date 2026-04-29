@@ -933,7 +933,13 @@
                     return null;
                 }
             }
-            if (img.startsWith('data:') || img.startsWith('http')) return img;
+            // Si es base64 (data:image...), retornarlo directamente
+            if (img.startsWith('data:')) return img;
+            // Si ya es una URL completa (http/https), retornarla
+            if (img.startsWith('http')) return img;
+            // Si es una ruta relativa (images/...), construir la URL completa
+            if (img.startsWith('images/')) return API_URL + '/' + img;
+            // Para cualquier otra cosa, intentar como ruta
             return API_URL + '/' + img;
         };
         const AuthContext = createContext(null);
