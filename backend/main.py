@@ -603,8 +603,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.mount("/static", StaticFiles(directory="static"), name="static")
-
 # Get the directory where the main.py is located (backend folder)
 BACKEND_DIR = Path(__file__).parent
 FRONTEND_DIR = BACKEND_DIR.parent / "frontend"
