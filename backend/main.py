@@ -604,16 +604,6 @@ app.add_middleware(
 )
 
 app.mount("/static", StaticFiles(directory="static"), name="static")
-    allow_origins=[
-        "https://getaccess.com.ar",
-        "https://getaccess-d3um.onrender.com",
-        "http://localhost:3000",
-        "https://192.168.1.40:3443"
-    ],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
 
 # Get the directory where the main.py is located (backend folder)
 BACKEND_DIR = Path(__file__).parent
