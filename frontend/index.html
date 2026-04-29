@@ -1287,7 +1287,7 @@
                     ) : (
                         <div className="eventos-grid">
                             {eventos.map(evento => {
-                                const esPasado = parseFecha(evento.fecha) < parseFecha();
+                                const esPasado = parseFecha(evento.fecha) < new Date();
                                 return (
                                 <div key={evento.id} className="evento-card" style={{opacity: esPasado ? 0.6 : 1}}>
                                     <div className="evento-img" onClick={() => !esPasado && irADetalle(evento.id)} style={{cursor: esPasado ? 'default' : 'pointer'}}>
