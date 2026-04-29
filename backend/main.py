@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Depends, HTTPException, status, Request
+from fastapi import FastAPI, Depends, HTTPException, status, Request, Form
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, HTMLResponse
@@ -595,12 +595,15 @@ def enviar_email(to_email: str, subject: str, html_content: str):
 
 app = FastAPI(title="Access ON API", version="1.0.0", docs_url=None, redoc_url=None, openapi_url=None)
 
-@app.on_event("startup")
-async def startup_event():
-    pass
-
 app.add_middleware(
     CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+app.mount("/static", StaticFiles(directory="static"), name="static")
     allow_origins=[
         "https://getaccess.com.ar",
         "https://getaccess-d3um.onrender.com",
@@ -1355,7 +1358,7 @@ class ImagenCreate(BaseModel):
     orden: int = 0
 
 @app.post("/api/eventos/{evento_id}/imagenes")
-def agregar_imagen(evento_id: int, imagen: ImagenCreate, credentials: HTTPAuthorizationCredentials = Depends(security), db = Depends(get_db)):
+def agregar_imagen(evento_id: int, url: str = Form(...), orden: int = Form(0), credentials: HTTPAuthorizationCredentials = Depends(security), db = Depends(get_db)):
     token = credentials.credentials
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
@@ -1370,10 +1373,10 @@ def agregar_imagen(evento_id: int, imagen: ImagenCreate, credentials: HTTPAuthor
     if not cursor.fetchone():
         raise HTTPException(status_code=404, detail="Evento no encontrado")
     
-    cursor = db.execute("INSERT INTO evento_imagenes (evento_id, url, orden) VALUES (?, ?, ?)", (evento_id, imagen.url, imagen.orden))
+    cursor = db.execute("INSERT INTO evento_imagenes (evento_id, url, orden) VALUES (?, ?, ?)", (evento_id, url, orden))
     db.commit()
     
-    return {"id": cursor.lastrowid, "url": imagen.url, "orden": imagen.orden}
+    return {"id": cursor.lastrowid, "url": url, "orden": orden}
 
 @app.delete("/api/eventos/{evento_id}/imagenes/{imagen_id}")
 def eliminar_imagen(evento_id: int, imagen_id: int, credentials: HTTPAuthorizationCredentials = Depends(security), db = Depends(get_db)):
