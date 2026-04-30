@@ -43,6 +43,9 @@ try:
     BREVO_SENDER_EMAIL = config.BREVO_SENDER_EMAIL
     BREVO_SENDER_NAME = config.BREVO_SENDER_NAME
     DATABASE_URL = config.DATABASE_URL
+    SUPABASE_URL = config.SUPABASE_URL
+    SUPABASE_SERVICE_KEY = config.SUPABASE_SERVICE_KEY
+    STORAGE_BUCKET = config.STORAGE_BUCKET
     RATE_LIMIT_WINDOW = config.RATE_LIMIT_WINDOW
     RATE_LIMIT_MAX = config.RATE_LIMIT_MAX
     PRODUCTION_URL = config.PRODUCTION_URL
@@ -101,6 +104,24 @@ security_logger.addHandler(handler)
 def log_security(evento: str, detalles: str = ""):
     """Registrar eventos de seguridad"""
     security_logger.info(f"{evento}: {detalles}")
+
+def upload_to_storage(file_content: bytes, filename: str) -> str:
+    """Subir imagen a Supabase Storage y devolver URL pública"""
+    try:
+        url = f"{SUPABASE_URL}/storage/v1/object/{STORAGE_BUCKET}/{filename}"
+        headers = {
+            "Authorization": f"Bearer {SUPABASE_SERVICE_KEY}",
+            "Content-Type": "application/octet-stream"
+        }
+        response = requests.post(url, data=file_content, headers=headers)
+        if response.status_code in [200, 201]:
+            return f"{SUPABASE_URL}/storage/v1/object/public/{STORAGE_BUCKET}/{filename}"
+        else:
+            print(f">>> ERROR upload Storage: {response.status_code} - {response.text}")
+            return None
+    except Exception as e:
+        print(f">>> EXCEPTION upload Storage: {e}")
+        return None
 
 def get_client_ip(request: Request) -> str:
     """Obtener IP real del cliente"""
@@ -1432,25 +1453,22 @@ async def crear_evento(
     if evento_fecha < datetime.datetime.now():
         raise HTTPException(status_code=400, detail="La fecha ingresada no debe ser anterior a la fecha actual")
     
-    # Guardar imágenes en el servidor
+    # Guardar imágenes en Supabase Storage
     imagenes_guardadas = []
     imagenes = [imagen_1, imagen_2, imagen_3, imagen_4]
     
     for img in imagenes:
         if img and img.filename:
-            # Generar nombre único para la imagen
             ext = os.path.splitext(img.filename)[1].lower()
             if ext not in ['.jpg', '.jpeg', '.png', '.gif', '.webp']:
                 ext = '.jpg'
             nombre_archivo = f"{uuid.uuid4()}{ext}"
-            ruta_archivo = IMAGES_DIR / nombre_archivo
             
-            # Guardar el archivo
             contenido = await img.read()
-            with open(ruta_archivo, "wb") as f:
-                f.write(contenido)
+            url = upload_to_storage(contenido, nombre_archivo)
             
-            imagenes_guardadas.append(f"images/{nombre_archivo}")
+            if url:
+                imagenes_guardadas.append(url)
     
     # Guardar la primera imagen como imagen principal y el resto como galería
     imagen_a_guardar = json.dumps(imagenes_guardadas) if imagenes_guardadas else None
@@ -1573,13 +1591,12 @@ async def actualizar_evento(evento_id: int,
             if ext not in ['.jpg', '.jpeg', '.png', '.gif', '.webp']:
                 ext = '.jpg'
             nombre_archivo = f"{uuid.uuid4()}{ext}"
-            ruta_archivo = IMAGES_DIR / nombre_archivo
             
             contenido = await img.read()
-            with open(ruta_archivo, "wb") as f:
-                f.write(contenido)
+            url = upload_to_storage(contenido, nombre_archivo)
             
-            imagenes_nuevas.append(f"images/{nombre_archivo}")
+            if url:
+                imagenes_nuevas.append(url)
         elif i < len(imagenes_existentes):
             # Mantener la imagen existente
             imagenes_nuevas.append(imagenes_existentes[i])

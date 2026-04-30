@@ -95,6 +95,11 @@ import os
 # Format: postgresql://postgres.xgwbcepopluehupublkz:[PASSWORD]@aws-1-sa-east-1.pooler.supabase.com:5432/postgres
 SUPABASE_URI = os.environ.get("SUPABASE_URI", "postgresql://postgres.xgwbcepopluehupublkz:%40Supabase1982@aws-1-sa-east-1.pooler.supabase.com:5432/postgres")
 
+# Supabase Storage (para imágenes)
+SUPABASE_URL = "https://xgwbcepopluehupublkz.supabase.co"
+SUPABASE_SERVICE_KEY = os.environ.get("SUPABASE_SERVICE_KEY", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhnd2JjZXBwbHVlaHVwdWJsa3oiLCJyb2xlIjoiYW5vbiIsImlhdCI6MTY0MjU0MjQwMCwiZXhwIjoxOTU4MTE4NDAwfQ.R8n-MCP-bWOHVdS3YPQvZIHgnh7D-qVafR1z-Kk5R8E")
+STORAGE_BUCKET = "eventos-images"
+
 if os.environ.get("RENDER"):
     # Producción: usar Supabase
     DATABASE_URL = SUPABASE_URI
