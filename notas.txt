@@ -1382,3 +1382,81 @@ formData.append('imagen_4', archivo4)
 ---
 
 *Última sesión: Miércoles 29 de Abril 2026 - Sistema de imágenes locales implementado*
+
+# ============================================================================
+# SESION 30 DE ABRIL 2026
+
+## CAMBIOS IMPLEMENTADOS
+
+### 1. Backup automatizado en GitHub Actions
+
+**Problema**: El workflow de backup fallaba.
+
+**Solución**:
+- Corregido workflow `.github/workflows/backup.yml`
+- Usar variable SUPABASE_URI en vez de DATABASE_URL
+- Forzar git add con `-f` para carpeta backups ignorada en .gitignore
+- Usar token GIT_PAT para push (crear PAT en GitHub con scope repo)
+- Eliminar workflows duplicados (manual.yml, BackupGA.yml)
+
+**Secretos configurados en GitHub**:
+- SUPABASE_URI: postgresql://postgres.xgwbcepopluehupublkz:%40Supabase1982@aws-1-sa-east-1.pooler.supabase.com:5432/postgres
+- GIT_PAT: (token generado manualmente)
+
+**Resultado**: Backup daily funciona ✅
+
+### 2. Imágenes en Supabase Storage
+
+**Problema**: Imágenes locales se pierden con cada deploy (Render borra archivos).
+
+**Solución implementada**:
+1. Crear bucket "eventos-images" en Supabase Storage (público)
+2. Crear políticas de acceso en Storage:
+   - allow_all (SELECT, INSERT, UPDATE, DELETE)
+3. Modificar backend para subir a Supabase Storage:
+   - Nueva función `upload_to_storage()` en main.py
+   - Modificar POST /api/eventos/ para usar Storage
+   - Modificar PUT /api/eventos/{id} para usar Storage
+4. Configurar nueva service key en config.py
+
+**Errores corregidos**:
+- "signature verification failed" → Service key incorrecta
+- "Invalid Compact JWS" → Faltaba header apikey
+- "Bucket not found" → Agregar políticas de Storage
+
+**Resultado**: Imágenes se guardan en Supabase Storage (no se pierden) ✅
+
+### 3. Imágenes eliminadas del evento "Día del Animal"
+
+**Problema**: Imágenes antiguas en BD apuntaban a archivos inexistentes (404).
+
+**Solución**: Eliminar imágenes locales de eventos con error:
+- Evento ID 13 (Día del Animal): imagen = NULL
+
+**Comando usado**:
+```python
+cur.execute('UPDATE eventos SET imagen = NULL WHERE id = 13')
+```
+
+## ARCHIVOS MODIFICADOS
+
+- `.github/workflows/backup.yml` - Corregido workflow
+- `backend/config.py` - Agregado SUPABASE_URL, SUPABASE_SERVICE_KEY, STORAGE_BUCKET
+- `backend/main.py` - Nueva función upload_to_storage, modificados endpoints de eventos
+- Eliminado: `.github/workflows/manual.yml`, `.github/workflows/BackupGA.yml`
+
+## CONFIGURACIÓN ACTUAL
+
+### Supabase Storage
+- Bucket: eventos-images (público)
+- URL: https://xgwbcepopluehupublkz.supabase.co/storage/v1/object/public/eventos-images/
+- Service Key: sb_secret_g7jXnewkLz-v6Jzu7Gci1Q_J3_mGb5L (nuevo formato)
+
+### GitHub Actions - Backup
+- Schedule: daily 6:00 UTC (3:00 AM Argentina)
+- Manual: Actions → Daily Backup → Run workflow
+- Secrets: SUPABASE_URI, GIT_PAT
+
+---
+
+*Última sesión: Jueves 30 de Abril 2026 - Backup automatizado y Supabase Storage implementado*
