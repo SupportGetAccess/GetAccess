@@ -111,6 +111,7 @@ def upload_to_storage(file_content: bytes, filename: str) -> str:
         url = f"{SUPABASE_URL}/storage/v1/object/{STORAGE_BUCKET}/{filename}"
         headers = {
             "Authorization": f"Bearer {SUPABASE_SERVICE_KEY}",
+            "apikey": SUPABASE_SERVICE_KEY,
             "Content-Type": "application/octet-stream"
         }
         response = requests.post(url, data=file_content, headers=headers)
