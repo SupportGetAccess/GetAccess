@@ -97,7 +97,7 @@ SUPABASE_URI = os.environ.get("SUPABASE_URI", "postgresql://postgres.xgwbcepoplu
 
 # Supabase Storage (para imágenes)
 SUPABASE_URL = "https://xgwbcepopluehupublkz.supabase.co"
-SUPABASE_SERVICE_KEY = os.environ.get("SUPABASE_SERVICE_KEY", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhnd2JjZXBwbHVlaHVwdWJsa3oiLCJyb2xlIjoiYW5vbiIsImlhdCI6MTY0MjU0MjQwMCwiZXhwIjoxOTU4MTE4NDAwfQ.R8n-MCP-bWOHVdS3YPQvZIHgnh7D-qVafR1z-Kk5R8E")
+SUPABASE_SERVICE_KEY = os.environ.get("SUPABASE_SERVICE_KEY", "sb_secret_g7jXnewkLz-v6Jzu7Gci1Q_J3_mGb5L")
 STORAGE_BUCKET = "eventos-images"
 
 if os.environ.get("RENDER"):
