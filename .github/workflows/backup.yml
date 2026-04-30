@@ -28,7 +28,9 @@ jobs:
       - name: Run backup
         env:
           SUPABASE_URI: postgresql://postgres.xgwbcepopluehupublkz:%40Supabase1982@aws-1-sa-east-1.pooler.supabase.com:5432/postgres
-        run: python backend/backup.py
+        run: |
+          python backend/backup.py 2>&1 | tee output.log
+          echo "=== EXIT CODE: $? ==="
       
       - name: Commit backup
         run: |
