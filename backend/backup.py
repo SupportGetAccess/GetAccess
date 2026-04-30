@@ -20,7 +20,7 @@ import psycopg2
 from pathlib import Path
 
 # Intentar leer de variable de entorno o config
-DATABASE_URL = os.environ.get("DATABASE_URL")
+DATABASE_URL = os.environ.get("DATABASE_URL") or os.environ.get("SUPABASE_URI")
 
 # Si no hay variable, intentar de config.py
 if not DATABASE_URL:

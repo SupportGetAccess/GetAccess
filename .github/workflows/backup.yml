@@ -27,7 +27,7 @@ jobs:
       
       - name: Run backup
         env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          SUPABASE_URI: ${{ secrets.SUPABASE_URI }}
         run: python backend/backup.py
       
       - name: Commit backup
