@@ -1264,9 +1264,6 @@ def listar_eventos(categoria: str = None, busqueda: str = None, mis_eventos: boo
         query = "SELECT id, nombre, descripcion, fecha, lugar, precio, capacidad, vendidos, COALESCE(imagen, '') as imagen, COALESCE(categoria, '') as categoria, COALESCE(comision, 0) as comision FROM eventos WHERE 1=1"
         params = []
         
-        # Ocultar eventos Superclásico del frontend público
-        query += " AND nombre NOT ILIKE '%superclasico%' AND nombre NOT ILIKE '%superclásico%'"
-        
         if user_id:
             query += " AND creado_por = ?"
             params.append(user_id)
