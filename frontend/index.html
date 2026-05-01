@@ -929,7 +929,9 @@
             // Si es un JSON array (string), parsear y usar la primera imagen
             if (img && typeof img === 'string' && img.startsWith('[')) {
                 try {
-                    const parsed = JSON.parse(img);
+                    // Decodificar URL-encoded JSON primero
+                    let decoded = decodeURIComponent(img);
+                    const parsed = JSON.parse(decoded);
                     if (Array.isArray(parsed) && parsed.length > 0) {
                         img = parsed[0];
                     }
