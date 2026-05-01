@@ -939,6 +939,8 @@
                     return null;
                 }
             }
+            // Verificar que img es válido antes de continuar
+            if (!img || typeof img !== 'string') return null;
             // Si es base64 (data:image...), retornarlo directamente
             if (img.startsWith('data:')) return img;
             // Si ya es una URL completa (http/https), retornarla
