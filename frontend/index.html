@@ -926,19 +926,22 @@
             if (Array.isArray(img) && img.length > 0) {
                 img = img[0];
             }
-            // Si es un JSON array (string), parsear y usar la primera imagen
-            if (img && typeof img === 'string' && (img.startsWith('[') || img.startsWith('%5B'))) {
-                try {
-                    // Decodificar URL-encoded JSON primero
-                    let decoded = decodeURIComponent(img);
-                    const parsed = JSON.parse(decoded);
-                    if (Array.isArray(parsed) && parsed.length > 0) {
-                        img = parsed[0];
-                        console.log('DEBUG: Imagen parseada a:', img);
+            // Si es un string, verificar si contiene un JSON array
+            if (img && typeof img === 'string') {
+                const trimmed = img.trim();
+                // Verificar si es un JSON array (comienza con [)
+                if (trimmed.startsWith('[') || trimmed.startsWith('%5B')) {
+                    try {
+                        let decoded = decodeURIComponent(trimmed);
+                        const parsed = JSON.parse(decoded);
+                        if (Array.isArray(parsed) && parsed.length > 0) {
+                            img = parsed[0];
+                            console.log('DEBUG: Imagen parseada a:', img);
+                        }
+                    } catch (e) {
+                        console.log('DEBUG: Error parseando imagen:', e);
+                        return null;
                     }
-                } catch (e) {
-                    console.log('DEBUG: Error parseando imagen:', e);
-                    return null;
                 }
             }
             // Verificar que img es válido antes de continuar
