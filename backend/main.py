@@ -1265,7 +1265,7 @@ def listar_eventos(categoria: str = None, busqueda: str = None, mis_eventos: boo
         params = []
         
         # Ocultar eventos Superclásico del frontend público
-        query += " AND nombre NOT ILIKE '%superclasico%'"
+        query += " AND nombre NOT ILIKE '%superclasico%' AND nombre NOT ILIKE '%superclásico%'"
         
         if user_id:
             query += " AND creado_por = ?"
