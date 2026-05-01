@@ -927,7 +927,7 @@
                 img = img[0];
             }
             // Si es un JSON array (string), parsear y usar la primera imagen
-            if (img && typeof img === 'string' && img.startsWith('[')) {
+            if (img && typeof img === 'string' && (img.startsWith('[') || img.startsWith('%5B'))) {
                 try {
                     // Decodificar URL-encoded JSON primero
                     let decoded = decodeURIComponent(img);
@@ -941,6 +941,8 @@
             }
             // Verificar que img es válido antes de continuar
             if (!img || typeof img !== 'string') return null;
+            // Si parece un JSON array, no usarla como URL
+            if (img.startsWith('[') || img.startsWith('%5B')) return null;
             // Si es base64 (data:image...), retornarlo directamente
             if (img.startsWith('data:')) return img;
             // Si ya es una URL completa (http/https), retornarla
