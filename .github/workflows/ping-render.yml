@@ -1,0 +1,11 @@
+name: Ping Render
+on:
+  schedule:
+    - cron: '*/5 * * * *'
+  workflow_dispatch:
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping Render
+        run: curl -s -o /dev/null -w "%{http_code}" https://getaccess-d3um.onrender.com/health
