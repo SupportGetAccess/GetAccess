@@ -1,0 +1,4 @@
+id,email,nombre,apellido,password,verificado,codigo_verificacion,rol
+5,test5052@test.com,Test,User,$2b$12$aRY6oZAvz78.nJCsGynVCOHTyLCeZf3DBre4xrlKOg3AkrAgrW.Cu,0,962554,usuario
+1,guilles10@yahoo.com.ar,Willy,De QQQ,$2b$12$.qCKq32QKqf6kwXXyRjWYemdrnlt6MdrjBKqzcGPoNqKWj4/1sm9q,1,,admin
+2,aantoniaa1982@gmail.com,Antoñita,Del Jardín,$2b$12$tYJHUMjw2YYpVw/ddfTwt.//rIOyq6rxYZWUSHRf6A9OxeNZ/obIO,1,,organizer
