@@ -90,4 +90,24 @@ El frontend no mostraba las miniaturas correctamente en la búsqueda.
 
 ---
 
-*Última sesión: Viernes 1 de Mayo 2026*
+## SESIÓN LUNES 4 DE MAYO 2026
+
+### Solución: GitHub Actions para mantener Render activo
+
+**Problema**: UptimeRobot gratuito solo permite método HEAD, no funciona con `/health`.
+
+**Solución implementada**:
+- Crear workflow de GitHub Actions que hace ping cada 5 minutos
+- Endpoint: `https://getaccess-d3um.onrender.com/health`
+- Funciona 24/7 desde servidores de GitHub
+
+**Archivos modificados**:
+- Creado: `.github/workflows/ping-render.yml`
+
+**Verificación**:
+- Workflow ejecuta exitosamente (7s de duración)
+- Health endpoint responde: `{"status":"healthy"}`
+
+---
+
+*Última sesión: Lunes 4 de Mayo 2026*
