@@ -2215,32 +2215,18 @@ async def crear_pago_qr(datos: dict, credentials: HTTPAuthorizationCredentials =
     }
     
     try:
-        # Crear orden QR usando la API v1/orders
+        # Crear orden QR usando API older (mpmobile/instore)
         import uuid
         response = requests.post(
-            f"{MERCADOPAGO_API_URL}/v1/orders",
+            f"{MERCADOPAGO_API_URL}/mpmobile/instore/qr/{MERCADOPAGO_QR_USER_ID}/GetAccess QR",
             json={
-                "type": "qr",
-                "total_amount": str(total),
-                "description": f"GetAccess - {len(entradas)} entrada(s)",
                 "external_reference": qr_order_id,
-                "expiration_time": "PT5M",
-                "config": {
-                    "qr": {
-                        "external_pos_id": MERCADOPAGO_QR_EXTERNAL_POS_ID,
-                        "mode": "dynamic"
-                    }
-                },
-                "transactions": {
-                    "payments": [
-                        {"amount": str(total)}
-                    ]
-                }
+                "total_amount": total,
+                "description": f"GetAccess - {len(entradas)} entrada(s)"
             },
             headers={
                 "Authorization": f"Bearer {MERCADO_PAGO_ACCESS_TOKEN}",
-                "Content-Type": "application/json",
-                "X-Idempotency-Key": str(uuid.uuid4())
+                "Content-Type": "application/json"
             },
             timeout=30
         )
@@ -2249,8 +2235,16 @@ async def crear_pago_qr(datos: dict, credentials: HTTPAuthorizationCredentials =
         
         if response.status_code in [200, 201]:
             data = response.json()
-            qr_data_str = data.get("type_response", {}).get("qr_data", "")
-            qr_image_url = f"{QUICKCHART_URL}?size=300x300&text={qr_data_str}" if qr_data_str else None
+            # Older API response
+            qrs = data.get("qrs", [])
+            if qrs and len(qrs) > 0:
+                qr_image_url = qrs[0].get("image", "")
+                qr_data_str = qrs[0].get("qr_data", "")
+                if not qr_image_url and qr_data_str:
+                    qr_image_url = f"{QUICKCHART_URL}?size=300x300&text={qr_data_str}"
+            else:
+                qr_data_str = data.get("qr_data", "")
+                qr_image_url = f"{QUICKCHART_URL}?size=300x300&text={qr_data_str}" if qr_data_str else None
             
             return {
                 "qr_order_id": qr_order_id,
