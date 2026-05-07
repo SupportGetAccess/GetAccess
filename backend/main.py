@@ -2213,14 +2213,21 @@ async def crear_pago_qr(datos: dict, credentials: HTTPAuthorizationCredentials =
     }
     
     try:
-        # Crear orden de pago QR fijo
-        # El QR fijo tiene monto predefined, pero también podemos usar orders
+        # Crear orden QR usando la API v1/orders
         response = requests.post(
-            f"{MERCADOPAGO_API_URL}/mpmv-instore/qr/{MERCADOPAGO_QR_USER_ID}/{MERCADOPAGO_QR_EXTERNAL_POS_ID}/orders",
+            f"{MERCADOPAGO_API_URL}/v1/orders",
             json={
+                "type": "qr",
+                "total_amount": str(total),
+                "description": f"GetAccess - {len(entradas)} entrada(s)",
                 "external_reference": qr_order_id,
-                "total_amount": total,
-                "description": f"GetAccess - {len(entradas)} entrada(s)"
+                "expiration_time": "PT5M",
+                "config": {
+                    "qr": {
+                        "external_pos_id": MERCADOPAGO_QR_EXTERNAL_POS_ID,
+                        "mode": "dynamic"
+                    }
+                }
             },
             headers={
                 "Authorization": f"Bearer {MERCADO_PAGO_ACCESS_TOKEN}",
@@ -2231,14 +2238,16 @@ async def crear_pago_qr(datos: dict, credentials: HTTPAuthorizationCredentials =
         
         print(f">>> QR ORDER RESPONSE: {response.status_code} - {response.text}")
         
-        if response.status_code in [200, 201]:
+if response.status_code in [200, 201]:
             data = response.json()
-            qr_data = data.get("qr_data", {})
+            qr_data_str = data.get("type_response", {}).get("qr_data", "")
+            qr_image_url = f"{QUICKCHART_URL}?size=300x300&text={qr_data_str}" if qr_data_str else None
+            
             return {
                 "qr_order_id": qr_order_id,
-                "qr_code": qr_data.get("qr_code") or qr_data.get("image"),
+                "qr_code": qr_image_url,
                 "total": total,
-                "expires_in": 300,  # 5 minutos
+                "expires_in": 300,
                 "entradas": [{"id": e[0], "nombre": e[3], "cantidad": e[1]} for e in entradas]
             }
         else:
