@@ -110,4 +110,27 @@ El frontend no mostraba las miniaturas correctamente en la búsqueda.
 
 ---
 
-*Última sesión: Lunes 4 de Mayo 2026*
+## SESIÓN JUEVES 7 DE MAYO 2026
+
+### Fix: Imágenes de eventos 13 y 14 como JSON array escapado
+
+**Problema**: Eventos 13 y 14 guardados como `"[\"https://...\", \"...\"]"` con comillas escapadas.
+
+**Solución**:
+- `getImagenUrl()` ahora detecta strings que empiezan con `"` y los parsea como JSON
+- `todasImagenes` también verifica `startsWith('"')`
+- Quitados logs de debug
+
+### Fix: parseFecha not defined en ModalCompra
+
+**Problema**: `parseFecha` usada en ModalCompra pero no estaba definida ahí.
+
+**Solución**: Agregada función `parseFecha` dentro de ModalCompra.
+
+### Fix: Error CSP de Mercadopago (no bloqueante)
+
+El redirect a MP genera error CSP en consola pero el pago funciona OK.
+
+---
+
+*Última sesión: Jueves 7 de Mayo 2026*

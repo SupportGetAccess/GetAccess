@@ -1383,9 +1383,20 @@
             
             const comprar = async (cantidad) => {
                 const storedCarrito = JSON.parse(localStorage.getItem('carrito') || '[]');
-                const nuevoItem = { id: evento.id, nombre: evento.nombre, fecha: evento.fecha, lugar: evento.lugar, precio: evento.precio, cantidad: cantidad };
-                const nuevoCarrito = [...storedCarrito, nuevoItem];
-                localStorage.setItem('carrito', JSON.stringify(nuevoCarrito));
+                
+                // Verificar si ya existe el evento en el carrito
+                const idx = storedCarrito.findIndex(item => item.id === evento.id);
+                
+                if (idx >= 0) {
+                    // Ya existe: incrementar cantidad
+                    storedCarrito[idx].cantidad += cantidad;
+                } else {
+                    // Nuevo: agregar item
+                    const nuevoItem = { id: evento.id, nombre: evento.nombre, fecha: evento.fecha, lugar: evento.lugar, precio: evento.precio, cantidad: cantidad };
+                    storedCarrito.push(nuevoItem);
+                }
+                
+                localStorage.setItem('carrito', JSON.stringify(storedCarrito));
                 showToast('Entrada agregada al carrito', 'success');
                 setModal(null);
             };
@@ -2412,12 +2423,12 @@
                     <div className="hero"><h1>🛒 Carrito de Compras</h1><p>{carrito.length} entrada(s) en tu carrito</p></div>
                     <div style={{maxWidth: '800px', margin: '0 auto', padding: '1rem'}}>
                         <div className="entradas-list">
-                            {carrito.map(item => {
+                            {carrito.map((item, index) => {
                                 const precioBase = item.precio;
                                 const comision = item.comision || 0;
                                 const precioConComision = precioBase * (1 + comision / 100);
                                 return (
-                                <div key={item.id} className="entrada-card">
+                                <div key={index} className="entrada-card">
                                     <div className="entrada-info">
                                         <h4>🎪 {item.nombre}</h4>
                                         <p>📅 {parseFecha(item.fecha).toLocaleDateString('es-AR')}</p>
