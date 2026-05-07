@@ -929,7 +929,7 @@
             // Si es un string, verificar si contiene un JSON array
             if (img && typeof img === 'string') {
                 const trimmed = img.trim();
-                // Verificar si es un JSON array (comienza con [)
+                // Verificar si es un JSON array (comienza con [ o con " que indica JSON escapado)
                 if (trimmed.startsWith('[') || trimmed.startsWith('%5B')) {
                     try {
                         let decoded = decodeURIComponent(trimmed);
@@ -943,11 +943,24 @@
                         return null;
                     }
                 }
+                // Verificar si es un JSON array escapado ("[\"...\""])
+                else if (trimmed.startsWith('"') && trimmed.includes('\\"')) {
+                    try {
+                        const parsed = JSON.parse(trimmed);
+                        if (Array.isArray(parsed) && parsed.length > 0) {
+                            img = parsed[0];
+                            console.log('DEBUG: Imagen parseada (escaped) a:', img);
+                        }
+                    } catch (e) {
+                        console.log('DEBUG: Error parseando imagen escapada:', e);
+                        return null;
+                    }
+                }
             }
             // Verificar que img es válido antes de continuar
             if (!img || typeof img !== 'string') return null;
             // Si parece un JSON array, no usarla como URL
-            if (img.startsWith('[') || img.startsWith('%5B')) return null;
+            if (img.startsWith('[') || img.startsWith('%5B') || img.startsWith('"')) return null;
             // Si es base64 (data:image...), retornarlo directamente
             if (img.startsWith('data:')) return img;
             // Si ya es una URL completa (http/https), retornarla
@@ -1421,7 +1434,9 @@
             };
             
             const todasImagenes = evento ? (
-                evento.imagen && evento.imagen.startsWith('[') 
+                evento.imagen && (
+                    evento.imagen.startsWith('[') || evento.imagen.startsWith('"')
+                ) 
                     ? (() => { try { return JSON.parse(evento.imagen); } catch(e) { return []; } })()
                     : evento.imagen ? [evento.imagen] : []
             ).concat((evento.imagenes || []).map(i => i.url)).filter(Boolean) : [];
