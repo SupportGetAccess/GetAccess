@@ -2251,7 +2251,8 @@ async def crear_pago_qr(datos: dict, credentials: HTTPAuthorizationCredentials =
                 "entradas": [{"id": e[0], "nombre": e[3], "cantidad": e[1]} for e in entradas]
             }
         else:
-            raise HTTPException(status_code=500, detail="Error al crear QR de pago")
+            print(f">>> QR ERROR: {response.text}")
+            raise HTTPException(status_code=500, detail=f"Error al crear QR: {response.text[:200]}")
     except HTTPException:
         raise
     except Exception as e:
