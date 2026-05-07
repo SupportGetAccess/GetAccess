@@ -2230,6 +2230,11 @@ async def crear_pago_qr(datos: dict, credentials: HTTPAuthorizationCredentials =
                         "external_pos_id": MERCADOPAGO_QR_EXTERNAL_POS_ID,
                         "mode": "dynamic"
                     }
+                },
+                "transactions": {
+                    "payments": [
+                        {"amount": str(total)}
+                    ]
                 }
             },
             headers={
