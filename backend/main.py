@@ -2216,6 +2216,7 @@ async def crear_pago_qr(datos: dict, credentials: HTTPAuthorizationCredentials =
     
     try:
         # Crear orden QR usando la API v1/orders
+        import uuid
         response = requests.post(
             f"{MERCADOPAGO_API_URL}/v1/orders",
             json={
@@ -2233,7 +2234,8 @@ async def crear_pago_qr(datos: dict, credentials: HTTPAuthorizationCredentials =
             },
             headers={
                 "Authorization": f"Bearer {MERCADO_PAGO_ACCESS_TOKEN}",
-                "Content-Type": "application/json"
+                "Content-Type": "application/json",
+                "X-Idempotency-Key": str(uuid.uuid4())
             },
             timeout=30
         )
