@@ -78,7 +78,7 @@ except ImportError:
     BREVO_API_URL = "https://api.brevo.com/v3/smtp/email"
     MERCADOPAGO_API_URL = "https://api.mercadopago.com"
     MERCADOPAGO_ACCESS_TOKEN = "APP_USR-2888302331727804-031609-eb4c51fc6c1654d701d4a5f3b24fbcd7-1921694"
-    MERCADOPAGO_QR_EXTERNAL_POS_ID = "EXTERNALPOSGA001"
+    MERCADOPAGO_QR_EXTERNAL_POS_ID = "131700932"
     MERCADOPAGO_QR_USER_ID = "2888302331727804"
     QUICKCHART_URL = "https://quickchart.io/qr"
     EMAIL_LOGO_URL = "https://getaccess.now.sh/logo.png"
@@ -2220,7 +2220,7 @@ async def crear_pago_qr(datos: dict, credentials: HTTPAuthorizationCredentials =
         # Crear orden QR usando API older (mpmobile/instore)
         import uuid
         response = requests.post(
-            f"{MERCADOPAGO_API_URL}/mpmobile/instore/qr/{MERCADOPAGO_QR_USER_ID}/GetAccess QR",
+            f"{MERCADOPAGO_API_URL}/mpmobile/instore/qr/{MERCADOPAGO_QR_USER_ID}/GetAccessQR",
             json={
                 "external_reference": qr_order_id,
                 "total_amount": total,
