@@ -936,10 +936,8 @@
                         const parsed = JSON.parse(decoded);
                         if (Array.isArray(parsed) && parsed.length > 0) {
                             img = parsed[0];
-                            console.log('DEBUG: Imagen parseada a:', img);
                         }
                     } catch (e) {
-                        console.log('DEBUG: Error parseando imagen:', e);
                         return null;
                     }
                 }
@@ -949,10 +947,8 @@
                         const parsed = JSON.parse(trimmed);
                         if (Array.isArray(parsed) && parsed.length > 0) {
                             img = parsed[0];
-                            console.log('DEBUG: Imagen parseada (escaped) a:', img);
                         }
                     } catch (e) {
-                        console.log('DEBUG: Error parseando imagen escapada:', e);
                         return null;
                     }
                 }
