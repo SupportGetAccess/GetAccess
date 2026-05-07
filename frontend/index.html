@@ -1218,9 +1218,20 @@
             const comprar = async (cantidad) => {
                 const savedToken = sessionStorage.getItem('token');
                 const storedCarrito = JSON.parse(localStorage.getItem('carrito') || '[]');
-                const nuevoItem = { id: modal.id, nombre: modal.nombre, fecha: modal.fecha, lugar: modal.lugar, precio: modal.precio, cantidad: cantidad, comision: modal.comision || 0 };
-                const nuevoCarrito = [...storedCarrito, nuevoItem];
-                localStorage.setItem('carrito', JSON.stringify(nuevoCarrito));
+                
+                // Verificar si ya existe el evento en el carrito
+                const idx = storedCarrito.findIndex(item => item.id === modal.id);
+                
+                if (idx >= 0) {
+                    // Ya existe: incrementar cantidad
+                    storedCarrito[idx].cantidad += cantidad;
+                } else {
+                    // Nuevo: agregar item
+                    const nuevoItem = { id: modal.id, nombre: modal.nombre, fecha: modal.fecha, lugar: modal.lugar, precio: modal.precio, cantidad: cantidad, comision: modal.comision || 0 };
+                    storedCarrito.push(nuevoItem);
+                }
+                
+                localStorage.setItem('carrito', JSON.stringify(storedCarrito));
                 showToast('Entrada agregada al carrito', 'success');
                 setModal(null);
             };
