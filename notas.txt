@@ -133,4 +133,73 @@ El redirect a MP genera error CSP en consola pero el pago funciona OK.
 
 ---
 
+## SESIÓN JUEVES 7 DE MAYO 2026 (CONTINUACIÓN)
+
+### Implementación: Pago con QR de MercadoPago
+
+**Meta**: Reducir comisiones de ~3.5% a 0.8% usando QR de MercadoPago.
+
+**Estado**: ❌ SIN COMPLETAR - hay problemas con la API de MP
+
+## Lo que se implementó:
+
+### Backend (`backend/main.py`):
+- Endpoint `/api/pagos/qr` - crea orden de pago QR
+- Endpoint `/api/pagos/webhook-qr` - recibe notificaciones de pago
+- Endpoint `/api/pagos/qr/{id}/status` - verifica estado
+- Configuración en `config.py`: MERCADOPAGO_QR_USER_ID, MERCADOPAGO_QR_EXTERNAL_POS_ID
+
+### Frontend (`frontend/index.html`):
+- Selector entre "Link de Pago" y "QR"
+- Modal que muestra código QR
+- Botón "Verificar Pago"
+- Código pusheado y deployado
+
+### Problemas encontrados:
+
+1. **API vieja** (`/mpmobile/instore/qr/{user_id}/{external_id}`):
+   - Error: `invalid_caller_id` - el user_id no es compatible
+
+2. **API nueva** (`/v1/orders`):
+   - Error: `pos_not_found` - la caja no está registrada para esta API
+
+### Análisis:
+
+Hay dos sistemas de QR en MercadoPago:
+- **Sistema viejo** (`/mpmobile/instore/`): requiere user_id + nombre de caja
+- **Sistema nuevo** (`/v1/orders`): requiere external_pos_id específico
+
+La caja "GetAccessQR" existe pero está configurada para el sistema viejo, no para v1/orders.
+
+## Pendiente para Continuar
+
+### Opción 1: Crear nueva caja para v1/orders
+1. Ir al panel de MP → Puntos de venta
+2. Crear nueva caja específicamente para QR dinámico
+3. Obtener el external_pos_id de esa nueva caja
+4. Actualizar el código con el nuevo ID
+
+### Opción 2: Quedarse con Link de pago
+- El link funciona (~3.5% comisión)
+- No requiere más cambios
+- El QR queda como proyecto pendiente
+
+### Opción 3: Investigar más
+- Buscar en documentación de MP cómo usar la API v1/orders con la caja existente
+
+## URLs de Producción
+
+- Frontend: https://getaccess.com.ar
+- Scanner: https://getaccess.com.ar/scanner.html
+- Backend: https://getaccess-d3um.onrender.com
+
+## Para Continuar
+
+Cuando lean este archivo:
+1. Decidir qué opción prefieren
+2. Si es Opción 1, crear la caja nueva en MP y darme el ID
+3. Si es Opción 2, el link de pago ya funciona
+
+---
+
 *Última sesión: Jueves 7 de Mayo 2026*
