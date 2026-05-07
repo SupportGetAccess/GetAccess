@@ -2220,7 +2220,7 @@ async def crear_pago_qr(datos: dict, credentials: HTTPAuthorizationCredentials =
         # Crear orden QR usando API older (mpmobile/instore)
         import uuid
         response = requests.post(
-            f"{MERCADOPAGO_API_URL}/mpmobile/instore/qr/{MERCADOPAGO_QR_USER_ID}/GetAccess QR",
+            f"{MERCADOPAGO_API_URL}/mpmobile/instore/qr/{MERCADOPAGO_QR_USER_ID}/GetAccessQR",
             json={
                 "external_reference": qr_order_id,
                 "total_amount": total,
