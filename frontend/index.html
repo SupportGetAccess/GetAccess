@@ -1035,7 +1035,7 @@
             };
             
             return (
-                <AuthContext.Provider value={{ user, token, login, logout, showToast, setUser, setVista, irADetalle }}>
+                <AuthContext.Provider value={{ user, token, login, logout, showToast, setUser, setVista, irADetalle, setCarrito: setCarrito, setUser: setUser }}>
                     <Header vista={vista} setVista={setVista} user={user} logout={logout} carrito={carrito} />
                     <div className="container">
                         {vista === 'eventos' && <Eventos />}
@@ -2357,7 +2357,7 @@
         }
 
         function Carrito() {
-            const { token, showToast, setVista } = useContext(AuthContext);
+            const { token, showToast, setVista, setCarrito: setCarritoGlobal } = useContext(AuthContext);
             const [procesando, setProcesando] = useState(false);
             const [carrito, setCarrito] = useState([]);
             
@@ -2387,6 +2387,10 @@
                 return sum + (precioConComision * (e.cantidad || 1));
             }, 0);
             
+            const [metodoPago, setMetodoPago] = useState('link');  // 'link' o 'qr'
+            const [qrData, setQrData] = useState(null);
+            const [qrTimer, setQrTimer] = useState(null);
+            
             const pagarTodo = async () => {
                 if (!token) { showToast('Inicia sesión para pagar', 'error'); setVista('login'); return; }
                 if (carrito.length === 0) return;
@@ -2404,22 +2408,62 @@
                         entradaIds.push(entrada.id);
                     }
                     
-                    const pagoRes = await fetch(API_URL + '/api/pagos/carrito', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
-                        body: JSON.stringify({ entrada_ids: entradaIds })
-                    });
-                    const pago = await pagoRes.json();
-                    
-                    if (pagoRes.ok && pago.init_point) {
-                        localStorage.removeItem('carrito');
-                        showToast('Redirigiendo a MercadoPago...', 'success');
-                        window.location.href = pago.init_point;
+                    if (metodoPago === 'qr') {
+                        const qrRes = await fetch(API_URL + '/api/pagos/qr', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+                            body: JSON.stringify({ entrada_ids: entradaIds })
+                        });
+                        const qr = await qrRes.json();
+                        if (qrRes.ok && qr.qr_code) {
+                            setQrData(qr);
+                            const timer = setTimeout(async () => {
+                                showToast('Tiempo de pago expirado', 'error');
+                                setQrData(null);
+                            }, 300000);
+                            setQrTimer(timer);
+                            return;
+                        } else {
+                            showToast(qr.detail || 'Error al generar QR', 'error');
+                        }
                     } else {
-                        showToast(pago.detail || 'Error al procesar pago', 'error');
+                        const pagoRes = await fetch(API_URL + '/api/pagos/carrito', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+                            body: JSON.stringify({ entrada_ids: entradaIds })
+                        });
+                        const pago = await pagoRes.json();
+                        
+                        if (pagoRes.ok && pago.init_point) {
+                            localStorage.removeItem('carrito');
+                            showToast('Redirigiendo a MercadoPago...', 'success');
+                            window.location.href = pago.init_point;
+                        } else {
+                            showToast(pago.detail || 'Error al procesar pago', 'error');
+                        }
                     }
                 } catch (err) { showToast(err.message, 'error'); }
                 setProcesando(false);
+            };
+            
+            const cerrarQrModal = () => {
+                if (qrTimer) clearTimeout(qrTimer);
+                setQrData(null);
+            };
+            
+            const verificarPagoQr = async () => {
+                if (!qrData) return;
+                try {
+                    const res = await fetch(API_URL + '/api/pagos/qr/' + qrData.qr_order_id + '/status');
+                    const status = await res.json();
+                    if (status.estado === 'pagado') {
+                        showToast('Pago confirmado!', 'success');
+                        localStorage.removeItem('carrito');
+                        setCarrito([]);
+                        setVista('mis-entradas');
+                        cerrarQrModal();
+                    }
+                } catch (err) { console.error(err); }
             };
             
             if (carrito.length === 0) {
@@ -2455,12 +2499,46 @@
                         <div className="modal-total" style={{marginTop: '1rem', padding: '1rem', background: 'linear-gradient(135deg, #6366f1, #ec4899)', borderRadius: '12px', color: 'white'}}>
                             💵 Total: ${total.toLocaleString('es-AR')}
                         </div>
-                        <button className="btn" style={{width: '100%', marginTop: '1rem'}} onClick={pagarTodo} disabled={procesando}>
-                            {procesando ? 'Procesando...' : '💳 Pagar'}
+                        <div style={{marginTop: '1rem', display: 'flex', gap: '0.5rem'}}>
+                            <button 
+                                className={metodoPago === 'link' ? 'btn' : 'btn btn-secondary'} 
+                                style={{flex: 1}}
+                                onClick={() => setMetodoPago('link')}
+                            >
+                                🔗 Link de Pago
+                            </button>
+                            <button 
+                                className={metodoPago === 'qr' ? 'btn' : 'btn btn-secondary'} 
+                                style={{flex: 1}}
+                                onClick={() => setMetodoPago('qr')}
+                            >
+                                📱 QR
+                            </button>
+                        </div>
+                        <button className="btn" style={{width: '100%', marginTop: '0.5rem'}} onClick={pagarTodo} disabled={procesando}>
+                            {procesando ? 'Procesando...' : metodoPago === 'qr' ? '📱 Generar QR' : '💳 Pagar'}
                         </button>
                         <button className="btn btn-secondary" style={{width: '100%', marginTop: '0.5rem'}} onClick={() => setVista('eventos')}>
                             + Agregar más entradas
                         </button>
+                        {qrData && (
+                            <div className="modal-overlay" onClick={cerrarQrModal}>
+                                <div className="modal" onClick={e => e.stopPropagation()} style={{maxWidth: '400px', textAlign: 'center'}}>
+                                    <h3>📱 Escanea el QR</h3>
+                                    <p style={{marginBottom: '1rem'}}>Total: ${qrData.total.toLocaleString('es-AR')}</p>
+                                    <img src={qrData.qr_code} alt="QR de pago" style={{maxWidth: '250px', borderRadius: '12px'}} />
+                                    <p style={{marginTop: '1rem', fontSize: '14px', color: '#666'}}>
+                                        Tiempo restante: 5 minutos
+                                    </p>
+                                    <button className="btn" style={{width: '100%', marginTop: '1rem'}} onClick={verificarPagoQr}>
+                                        🔄 Verificar Pago
+                                    </button>
+                                    <button className="btn btn-secondary" style={{width: '100%', marginTop: '0.5rem'}} onClick={cerrarQrModal}>
+                                        Cancelar
+                                    </button>
+                                </div>
+                            </div>
+                        )}
                     </div>
                 </>
             );

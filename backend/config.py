@@ -45,6 +45,11 @@ MERCADOPAGO_API_URL = "https://api.mercadopago.com"
 MERCADOPAGO_ACCESS_TOKEN = os.environ.get("MERCADO_PAGO_ACCESS_TOKEN", "APP_USR-2888302331727804-031609-eb4c51fc6c1654d701d4a5f3b24fbcd7-1921694")
 MERCADOPAGO_WEBHOOK_SECRET = os.environ.get("MERCADO_PAGO_WEBHOOK_SECRET", "webhook_secret_fallback")
 
+# MercadoPago QR (Cobros con Código QR)
+MERCADOPAGO_QR_USER_ID = os.environ.get("MERCADO_PAGO_QR_USER_ID", "2888302331727804")
+MERCADOPAGO_QR_EXTERNAL_POS_ID = os.environ.get("MERCADO_PAGO_QR_EXTERNAL_POS_ID", "GetAccess QR")
+MERCADOPAGO_QR_WEBHOOK_URL = os.environ.get("MERCADO_PAGO_QR_WEBHOOK_URL", f"{RENDER_URL}/api/pagos/webhook-qr")
+
 # Admin
 ADMIN_SECRET = "access_on_admin_secret_2026"
 

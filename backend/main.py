@@ -2178,6 +2178,132 @@ def crear_preferencia_carrito(datos: dict, credentials: HTTPAuthorizationCredent
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+# === QR FIJO (MercadoPago Cobos) ===
+# Endpoint para crear orden de pago QR fijo
+QR_PEDIDOS = {}  # {qr_order_id: {entrada_ids, total, created_at, estado}}
+
+@app.post("/api/pagos/qr")
+async def crear_pago_qr(datos: dict, credentials: HTTPAuthorizationCredentials = Depends(security), db = Depends(get_db)):
+    entrada_ids = datos.get("entrada_ids", [])
+    
+    if not entrada_ids:
+        raise HTTPException(status_code=400, detail="No hay entradas seleccionadas")
+    
+    # Obtener total de las entradas
+    placeholders = ','.join(['?'] * len(entrada_ids))
+    cursor = db.execute(f"""
+        SELECT e.id, e.cantidad, e.total, ev.nombre
+        FROM entradas e
+        JOIN eventos ev ON e.evento_id = ev.id
+        WHERE e.id IN ({placeholders}) AND e.estado = 'pendiente'
+    """, entrada_ids)
+    entradas = cursor.fetchall()
+    
+    if not entradas:
+        raise HTTPException(status_code=400, detail="No hay entradas pendientes")
+    
+    total = sum(ent[2] for ent in entradas)
+    qr_order_id = f"QR-{int(time.time())}-{random.randint(1000, 9999)}"
+    
+    QR_PEDIDOS[qr_order_id] = {
+        "entrada_ids": [e[0] for e in entradas],
+        "total": total,
+        "created_at": datetime.now(),
+        "estado": "pendiente"
+    }
+    
+    try:
+        # Crear orden de pago QR fijo
+        # El QR fijo tiene monto predefined, pero también podemos usar orders
+        response = requests.post(
+            f"{MERCADOPAGO_API_URL}/mpmv-instore/qr/{MERCADOPAGO_QR_USER_ID}/{MERCADOPAGO_QR_EXTERNAL_POS_ID}/orders",
+            json={
+                "external_reference": qr_order_id,
+                "total_amount": total,
+                "description": f"GetAccess - {len(entradas)} entrada(s)"
+            },
+            headers={
+                "Authorization": f"Bearer {MERCADO_PAGO_ACCESS_TOKEN}",
+                "Content-Type": "application/json"
+            },
+            timeout=30
+        )
+        
+        print(f">>> QR ORDER RESPONSE: {response.status_code} - {response.text}")
+        
+        if response.status_code in [200, 201]:
+            data = response.json()
+            qr_data = data.get("qr_data", {})
+            return {
+                "qr_order_id": qr_order_id,
+                "qr_code": qr_data.get("qr_code") or qr_data.get("image"),
+                "total": total,
+                "expires_in": 300,  # 5 minutos
+                "entradas": [{"id": e[0], "nombre": e[3], "cantidad": e[1]} for e in entradas]
+            }
+        else:
+            raise HTTPException(status_code=500, detail="Error al crear QR de pago")
+    except Exception as e:
+        print(f">>> ERROR CREANDO QR: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/pagos/webhook-qr")
+async def webhook_qr(request: Request, db = Depends(get_db)):
+    try:
+        body = await request.json()
+        print(f">>> WEBHOOK QR RECIBIDO: {body}")
+        
+        topic = body.get("type", "")
+        if topic == "payment":
+            payment = body.get("data", {})
+            payment_id = payment.get("id")
+            
+            if payment_id:
+                response = requests.get(
+                    f"{MERCADOPAGO_API_URL}/v1/payments/{payment_id}",
+                    headers={"Authorization": f"Bearer {MERCADO_PAGO_ACCESS_TOKEN}"},
+                    timeout=30
+                )
+                
+                if response.status_code == 200:
+                    pay_data = response.json()
+                    external_ref = pay_data.get("external_reference")
+                    status = pay_data.get("status")
+                    
+                    print(f">>> QR PAYMENT: {payment_id}, status={status}, ref={external_ref}")
+                    
+                    if external_ref in QR_PEDIDOS and status == "approved":
+                        pedido = QR_PEDIDOS[external_ref]
+                        pedido["estado"] = "pagado"
+                        pedido["payment_id"] = payment_id
+                        
+                        for entrada_id in pedido["entrada_ids"]:
+                            cursor = db.execute("SELECT id, estado FROM entradas WHERE id = ?", (entrada_id,))
+                            ent = cursor.fetchone()
+                            if ent and ent[1] == "pendiente":
+                                db.execute("UPDATE entradas SET estado = 'pagada' WHERE id = ?", (entrada_id,))
+                                db.commit()
+                                
+                                import string
+                                codigo = f"GA-{''.join(random.choices(string.ascii_uppercase + string.digits, k=10))}"
+                                db.execute("UPDATE entradas SET preference_id = ? WHERE id = ?", (codigo, entrada_id))
+                                db.commit()
+                                
+                                print(f">>> Entrada {entrada_id} marcada como pagada")
+                        
+                        return {"status": "ok"}
+        return {"status": "received"}
+    except Exception as e:
+        print(f">>> ERROR WEBHOOK QR: {e}")
+        return {"status": "error", "detail": str(e)}
+
+@app.get("/api/pagos/qr/{qr_order_id}/status")
+async def verificar_estado_qr(qr_order_id: str):
+    if qr_order_id in QR_PEDIDOS:
+        pedido = QR_PEDIDOS[qr_order_id]
+        return pedido
+    return {"estado": "no encontrado"}
+
 @app.post("/api/pagos/crear-preferencia")
 def crear_preferencia_pago(datos: dict, credentials: HTTPAuthorizationCredentials = Depends(security), db = Depends(get_db)):
     entrada_id = datos.get("entrada_id")
