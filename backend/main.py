@@ -626,7 +626,7 @@ app = FastAPI(title="Access ON API", version="1.0.0", docs_url=None, redoc_url=N
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=ALLOWED_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
