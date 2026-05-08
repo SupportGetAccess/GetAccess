@@ -78,8 +78,8 @@ except ImportError:
     BREVO_API_URL = "https://api.brevo.com/v3/smtp/email"
     MERCADOPAGO_API_URL = "https://api.mercadopago.com"
     MERCADOPAGO_ACCESS_TOKEN = "APP_USR-2888302331727804-031609-eb4c51fc6c1654d701d4a5f3b24fbcd7-1921694"
-    MERCADOPAGO_QR_EXTERNAL_POS_ID = "131700932"
-    MERCADOPAGO_QR_USER_ID = "2888302331727804"
+    MERCADOPAGO_QR_EXTERNAL_POS_ID = "GETACCESSQRD01"
+    MERCADOPAGO_QR_USER_ID = "1921694"
     QUICKCHART_URL = "https://quickchart.io/qr"
     EMAIL_LOGO_URL = "https://getaccess.now.sh/logo.png"
     DEFAULT_EVENT_IMAGES = [
@@ -2230,7 +2230,7 @@ async def crear_pago_qr(datos: dict, credentials: HTTPAuthorizationCredentials =
                 "config": {
                     "qr": {
                         "external_pos_id": MERCADOPAGO_QR_EXTERNAL_POS_ID,
-                        "mode": "static"
+                        "mode": "dynamic"
                     }
                 },
                 "transactions": {
