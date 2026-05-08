@@ -223,4 +223,119 @@ Cuando lean este archivo:
 
 ---
 
-*Última sesión: Viernes 8 de Mayo 2026*
+## SESIÓN VIERNES 8 DE MAYO 2026 (CONTINUACIÓN - TARDE)
+
+### 1. Seguridad: CORS corregido
+
+**Problema**: CORS estaba configurado como `allow_origins=["*"]` (cualquier sitio podía usar la API)
+
+**Solución**:
+- Cambiado a `allow_origins=ALLOWED_ORIGINS` (usa config.py)
+- Ahora solo permite: getaccess.com.ar, getaccess-d3um.onrender.com, y dev locals
+
+**Commit**: f65cf84
+
+---
+
+### 2. Fix Toast Timeout en rojo
+
+**Problema**: Toast "Su tiempo de espera ha finalizado" aparecía en azul (info)
+
+**Solución**:
+- Cambiado de `'info'` a `'error'` para que aparezca en rojo
+
+**Commit**: f619649
+
+---
+
+### 3. QR MercadoPago: Persistencia en Base de Datos
+
+**Problema crítico**: `QR_PEDIDOS` es un diccionario en memoria que se pierde cuando el servidor de Render se reinicia (~15 min de inactividad). Esto causaba que los pagos con QR no se confirmaran.
+
+**Solución implementada**:
+1. Al crear QR, guardar `qr_order_id` en `entradas.preference_id`
+2. Webhook ahora busca en DB si no está en memoria
+3. Endpoint `/api/pagos/qr/{id}/status` ahora busca en DB como fallback
+4. Nuevo endpoint `/api/pagos/qr/{id}/cancelar` - libera entradas
+5. Nuevos endpoints de debug para troubleshooting
+
+**Commits**:
+- f619649 - Fix: toast rojo timeout, QR persistente en DB
+- 6b54281 - Debug: endpoints para buscar y procesar entradas pendientes
+- c23c8d4 - Fix: debug endpoint query
+
+**Archivos modificados**:
+- `backend/main.py` - Lógica de persistencia QR
+- `frontend/index.html` - Toast en rojo
+
+---
+
+### 4. Fix UI: Botones de pago
+
+**Cambios**:
+- Botón "Link de Pago" a la derecha, "QR" a la izquierda
+- QR seleccionado por defecto
+- Texto: "📱 Pagar con QR" / "💳 Pagar con Link de pago"
+
+**Commit**: e6b359a
+
+---
+
+### 5. PAGO NO PROCESADO - URGENTE
+
+**Problema**: Un pago real de $15 fue realizado con QR pero NO se procesó correctamente.
+
+**Causa**: El servidor se reinició entre que se generó el QR y se pagó, perdiendo `QR_PEDIDOS` de memoria.
+
+**Estado actual**:
+- El usuario (guilles10@yahoo.com.ar) NO ve la entrada en "Mis Entradas"
+- MercadoPago muestra el pago como "aprobado"
+- La entrada quedó en estado "pendiente" en la DB
+
+**Pendiente**: Recuperar/reprocesar el pago del usuario.
+
+---
+
+## PENDIENTE PARA LA PRÓXIMA SESIÓN
+
+### Prioridad ALTA
+
+1. [ ] **Recuperar pago de $15 del usuario**
+   - Buscar entrada pendiente en Supabase (tabla `entradas`)
+   - Verificar si hay entradas con `estado='pendiente'` asociadas a `guilles10@yahoo.com.ar`
+   - Marcar como "pagada" y generar código GA-XXXXX
+   - O reimprimir la entrada si el sistema ya la marcó como pagada
+
+2. [ ] **Verificar que el fix de persistencia QR funciona**
+   - Hacer una compra de prueba con QR
+   - Esperar a que MP notifique el webhook
+   - Verificar que la entrada se marca como "pagada"
+   - Verificar que aparece en "Mis Entradas"
+
+3. [ ] **Seguridad - Continuar auditoría OWASP Top 10**
+   - La auditoría identificó estos pendientes:
+     - ❌ Inyección SQL en `/api/eventos/buscar` (usar parámetros seguros)
+     - ⚠️ Credenciales con fallbacks hardcodeados (rotar y mover a env vars)
+     - ⚠️ Rate limiting insuficiente en endpoints públicos
+     - ⚠️ Falta headers de seguridad (CSP, X-Frame, etc.)
+     - ⚠️ Manejo de errores expuesta stack traces
+
+---
+
+## ESTADO ACTUAL DEL PROYECTO
+
+| Funcionalidad | Estado |
+|---------------|--------|
+| Git instalado | ✅ |
+| QR MercadoPago funcionando | ✅ |
+| Countdown 5 min con redir a Eventos | ✅ |
+| Botón Cancelar libera entradas | ✅ |
+| Toast tiempo expirado en rojo | ✅ |
+| CORS restrictivo | ✅ |
+| QR persistente en DB | ✅ |
+| Entrada pagada se muestra en "Mis Entradas" | ⚠️ Verificar |
+| Pago de $15 sin procesar | ❌ Pendiente |
+
+---
+
+*Última sesión: Viernes 8 de Mayo 2026 (tarde)*
