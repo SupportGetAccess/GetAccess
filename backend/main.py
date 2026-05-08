@@ -2381,6 +2381,52 @@ async def cancelar_qr_pago(qr_order_id: str, db = Depends(get_db)):
     
     return {"success": True, "entrada_ids": entrada_ids}
 
+@app.get("/api/debug/entradas-pendientes/{email}")
+async def debug_entradas_pendientes(email: str, db = Depends(get_db)):
+    """Endpoint de debug para buscar entradas pendientes de un usuario"""
+    cursor = db.execute("""
+        SELECT e.id, e.evento_id, e.estado, e.preference_id, e.creado_en, ev.nombre
+        FROM entradas e
+        JOIN usuarios u ON e.usuario_id = u.id
+        JOIN eventos ev ON e.evento_id = ev.id
+        WHERE u.email = ? AND e.estado = 'pendiente'
+    """, (email,))
+    entradas = cursor.fetchall()
+    
+    return {
+        "email": email,
+        "entradas_pendientes": [
+            {
+                "id": e[0],
+                "evento_id": e[1],
+                "estado": e[2],
+                "preference_id": e[3],
+                "creado_en": e[4],
+                "evento_nombre": e[5]
+            }
+            for e in entradas
+        ]
+    }
+
+@app.post("/api/debug/procesar-entrada/{entrada_id}")
+async def debug_procesar_entrada(entrada_id: int, db = Depends(get_db)):
+    """Procesar una entrada pendiente y marcarla como pagada"""
+    cursor = db.execute("SELECT id, evento_id, estado, preference_id, usuario_id FROM entradas WHERE id = ?", (entrada_id,))
+    entrada = cursor.fetchone()
+    
+    if not entrada:
+        return {"success": False, "message": "Entrada no encontrada"}
+    
+    if entrada[2] == "pagada":
+        return {"success": False, "message": "Entrada ya está pagada"}
+    
+    # Marcar como pagada
+    codigo = f"GA-{''.join(random.choices(string.ascii_uppercase + string.digits, k=10))}"
+    db.execute("UPDATE entradas SET estado = 'pagada', preference_id = ? WHERE id = ?", (codigo, entrada_id))
+    db.commit()
+    
+    return {"success": True, "codigo": codigo, "entrada_id": entrada_id}
+
 @app.post("/api/pagos/crear-preferencia")
 def crear_preferencia_pago(datos: dict, credentials: HTTPAuthorizationCredentials = Depends(security), db = Depends(get_db)):
     entrada_id = datos.get("entrada_id")
