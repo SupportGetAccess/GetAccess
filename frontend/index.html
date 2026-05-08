@@ -2387,7 +2387,7 @@
                 return sum + (precioConComision * (e.cantidad || 1));
             }, 0);
             
-            const [metodoPago, setMetodoPago] = useState('link');  // 'link' o 'qr'
+            const [metodoPago, setMetodoPago] = useState('qr');  // 'qr' o 'link'
             const [qrData, setQrData] = useState(null);
             const [qrTimer, setQrTimer] = useState(null);
             const [qrCountdown, setQrCountdown] = useState(300);
@@ -2479,8 +2479,10 @@
                         });
                     } catch (e) { console.error(e); }
                 }
+                localStorage.removeItem('carrito');
+                setCarrito([]);
                 cerrarQrModal();
-                showToast('Compra cancelada', 'info');
+                showToast('Compra cancelada', 'error');
                 setVista('eventos');
             };
             
@@ -2534,18 +2536,18 @@
                         </div>
                         <div style={{marginTop: '1rem', display: 'flex', gap: '0.5rem'}}>
                             <button 
-                                className={metodoPago === 'link' ? 'btn' : 'btn btn-secondary'} 
-                                style={{flex: 1}}
-                                onClick={() => setMetodoPago('link')}
-                            >
-                                🔗 Link de Pago
-                            </button>
-                            <button 
                                 className={metodoPago === 'qr' ? 'btn' : 'btn btn-secondary'} 
                                 style={{flex: 1}}
                                 onClick={() => setMetodoPago('qr')}
                             >
                                 📱 QR
+                            </button>
+                            <button 
+                                className={metodoPago === 'link' ? 'btn' : 'btn btn-secondary'} 
+                                style={{flex: 1}}
+                                onClick={() => setMetodoPago('link')}
+                            >
+                                🔗 Link de Pago
                             </button>
                         </div>
                         <button className="btn" style={{width: '100%', marginTop: '0.5rem'}} onClick={pagarTodo} disabled={procesando}>
