@@ -2321,11 +2321,30 @@ async def webhook_qr(request: Request, db = Depends(get_db)):
         return {"status": "error", "detail": str(e)}
 
 @app.get("/api/pagos/qr/{qr_order_id}/status")
-async def verificar_estado_qr(qr_order_id: str):
+async def verificar_estado_qr(qr_order_id: str, db = Depends(get_db)):
     if qr_order_id in QR_PEDIDOS:
         pedido = QR_PEDIDOS[qr_order_id]
         return pedido
     return {"estado": "no encontrado"}
+
+@app.post("/api/pagos/qr/{qr_order_id}/cancelar")
+async def cancelar_qr_pago(qr_order_id: str, db = Depends(get_db)):
+    entrada_ids = []
+    
+    if qr_order_id in QR_PEDIDOS:
+        entrada_ids = QR_PEDIDOS[qr_order_id].get("entrada_ids", [])
+    else:
+        cursor = db.execute("SELECT id FROM entradas WHERE preference_id = ? AND estado = 'pendiente'", (qr_order_id,))
+        entrada_ids = [row[0] for row in cursor.fetchall()]
+    
+    if entrada_ids:
+        placeholders = ','.join(['?'] * len(entrada_ids))
+        db.execute(f"DELETE FROM entradas WHERE id IN ({placeholders})", entrada_ids)
+    
+    if qr_order_id in QR_PEDIDOS:
+        del QR_PEDIDOS[qr_order_id]
+    
+    return {"success": True, "entrada_ids": entrada_ids}
 
 @app.post("/api/pagos/crear-preferencia")
 def crear_preferencia_pago(datos: dict, credentials: HTTPAuthorizationCredentials = Depends(security), db = Depends(get_db)):

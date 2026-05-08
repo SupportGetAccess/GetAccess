@@ -2390,6 +2390,14 @@
             const [metodoPago, setMetodoPago] = useState('link');  // 'link' o 'qr'
             const [qrData, setQrData] = useState(null);
             const [qrTimer, setQrTimer] = useState(null);
+            const [qrCountdown, setQrCountdown] = useState(300);
+            const [qrExpirado, setQrExpirado] = useState(false);
+            
+            const formatCountdown = (seconds) => {
+                const mins = Math.floor(seconds / 60);
+                const secs = seconds % 60;
+                return `${mins}:${secs.toString().padStart(2, '0')}`;
+            };
             
             const pagarTodo = async () => {
                 if (!token) { showToast('Inicia sesión para pagar', 'error'); setVista('login'); return; }
@@ -2417,11 +2425,24 @@
                         const qr = await qrRes.json();
                         if (qrRes.ok && qr.qr_code) {
                             setQrData(qr);
-                            const timer = setTimeout(async () => {
-                                showToast('Tiempo de pago expirado', 'error');
-                                setQrData(null);
-                            }, 300000);
-                            setQrTimer(timer);
+                            setQrCountdown(300);
+                            setQrExpirado(false);
+                            setProcesando(false);
+                            const interval = setInterval(() => {
+                                setQrCountdown(prev => {
+                                    if (prev <= 1) {
+                                        clearInterval(interval);
+                                        showToast('Tiempo de pago expirado', 'error');
+                                        localStorage.removeItem('carrito');
+                                        setCarrito([]);
+                                        cerrarQrModal();
+                                        setVista('eventos');
+                                        return 0;
+                                    }
+                                    return prev - 1;
+                                });
+                            }, 1000);
+                            setQrTimer(interval);
                             return;
                         } else {
                             showToast(qr.detail || 'Error al generar QR', 'error');
@@ -2447,8 +2468,23 @@
             };
             
             const cerrarQrModal = () => {
-                if (qrTimer) clearTimeout(qrTimer);
+                if (qrTimer) clearInterval(qrTimer);
                 setQrData(null);
+                setQrExpirado(false);
+                setProcesando(false);
+            };
+            
+            const cancelarQr = async () => {
+                if (qrTimer) clearInterval(qrTimer);
+                if (qrData?.qr_order_id) {
+                    try {
+                        await fetch(API_URL + '/api/pagos/qr/' + qrData.qr_order_id + '/cancelar', {
+                            method: 'POST',
+                            headers: { 'Authorization': 'Bearer ' + token }
+                        });
+                    } catch (e) { console.error(e); }
+                }
+                setQrExpirado(true);
             };
             
             const verificarPagoQr = async () => {
@@ -2521,20 +2557,32 @@
                         <button className="btn btn-secondary" style={{width: '100%', marginTop: '0.5rem'}} onClick={() => setVista('eventos')}>
                             + Agregar más entradas
                         </button>
-                        {qrData && (
+                        {qrData && !qrExpirado && (
                             <div className="modal-overlay" onClick={cerrarQrModal}>
                                 <div className="modal" onClick={e => e.stopPropagation()} style={{maxWidth: '400px', textAlign: 'center'}}>
                                     <h3>📱 Escanea el QR</h3>
                                     <p style={{marginBottom: '1rem'}}>Total: ${qrData.total.toLocaleString('es-AR')}</p>
                                     <img src={qrData.qr_code} alt="QR de pago" style={{maxWidth: '250px', borderRadius: '12px'}} />
                                     <p style={{marginTop: '1rem', fontSize: '14px', color: '#666'}}>
-                                        Tiempo restante: 5 minutos
+                                        Tiempo restante: {formatCountdown(qrCountdown)}
                                     </p>
                                     <button className="btn" style={{width: '100%', marginTop: '1rem'}} onClick={verificarPagoQr}>
                                         🔄 Verificar Pago
                                     </button>
-                                    <button className="btn btn-secondary" style={{width: '100%', marginTop: '0.5rem'}} onClick={cerrarQrModal}>
+                                    <button className="btn btn-secondary" style={{width: '100%', marginTop: '0.5rem'}} onClick={cancelarQr}>
                                         Cancelar
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+                        
+                        {qrExpirado && (
+                            <div className="modal-overlay">
+                                <div className="modal" onClick={e => e.stopPropagation()} style={{maxWidth: '400px', textAlign: 'center'}}>
+                                    <h3>❌ Tiempo expirado</h3>
+                                    <p style={{margin: '1rem 0', color: '#666'}}>El pago fue rechazado, intentá nuevamente</p>
+                                    <button className="btn" style={{width: '100%'}} onClick={() => { setQrExpirado(false); setQrData(null); }}>
+                                        📱 Generar QR
                                     </button>
                                 </div>
                             </div>
