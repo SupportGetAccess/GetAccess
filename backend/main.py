@@ -2229,7 +2229,7 @@ async def crear_pago_qr(datos: dict, credentials: HTTPAuthorizationCredentials =
                 "expiration_time": "PT5M",
                 "config": {
                     "qr": {
-                        "external_pos_id": "GetAccessQR",
+                        "external_pos_id": MERCADOPAGO_QR_EXTERNAL_POS_ID,
                         "mode": "static"
                     }
                 },
