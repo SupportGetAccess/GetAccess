@@ -202,4 +202,25 @@ Cuando lean este archivo:
 
 ---
 
-*Última sesión: Jueves 7 de Mayo 2026*
+## SESIÓN VIERNES 8 DE MAYO 2026
+
+### Completado: MercadoPago QR
+
+**Problema**: La caja `GetAccessQR` (ID 131700932) no era compatible con la API v1/orders.
+
+**Solución**:
+1. Crear tienda via API con `external_id`: `GETACCESS01` (store_id: 82087096)
+2. Crear caja via API con `external_id`: `GETACCESSQRD01` (POS id: 131743603)
+3. Actualizar código:
+   - `external_pos_id`: `GETACCESSQRD01`
+   - `mode`: `dynamic` (antes era `static`)
+
+**Commits**:
+- 84f5e82 - Fix: MercadoPago QR con nueva caja GETACCESSQRD01
+- f6e29a6 - Fix: modo QR dynamic y external_id correcto
+
+**Estado**: ✅ FUNCIONANDO
+
+---
+
+*Última sesión: Viernes 8 de Mayo 2026*
