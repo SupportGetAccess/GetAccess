@@ -2384,29 +2384,33 @@ async def cancelar_qr_pago(qr_order_id: str, db = Depends(get_db)):
 @app.get("/api/debug/entradas-pendientes/{email}")
 async def debug_entradas_pendientes(email: str, db = Depends(get_db)):
     """Endpoint de debug para buscar entradas pendientes de un usuario"""
-    cursor = db.execute("""
-        SELECT e.id, e.evento_id, e.estado, e.preference_id, e.creado_en, ev.nombre
-        FROM entradas e
-        JOIN usuarios u ON e.usuario_id = u.id
-        JOIN eventos ev ON e.evento_id = ev.id
-        WHERE u.email = ? AND e.estado = 'pendiente'
-    """, (email,))
-    entradas = cursor.fetchall()
-    
-    return {
-        "email": email,
-        "entradas_pendientes": [
-            {
-                "id": e[0],
-                "evento_id": e[1],
-                "estado": e[2],
-                "preference_id": e[3],
-                "creado_en": e[4],
-                "evento_nombre": e[5]
-            }
-            for e in entradas
-        ]
-    }
+    try:
+        cursor = db.execute("""
+            SELECT e.id, e.evento_id, e.estado, e.preference_id, e.creado_en, ev.nombre
+            FROM entradas e
+            JOIN usuarios u ON e.usuario_id = u.id
+            JOIN eventos ev ON e.evento_id = ev.id
+            WHERE u.email = ? AND e.estado = 'pendiente'
+        """, (email,))
+        entradas = cursor.fetchall()
+        
+        return {
+            "email": email,
+            "entradas_pendientes": [
+                {
+                    "id": e[0],
+                    "evento_id": e[1],
+                    "estado": e[2],
+                    "preference_id": e[3],
+                    "creado_en": e[4],
+                    "evento_nombre": e[5]
+                }
+                for e in entradas
+            ]
+        }
+    except Exception as e:
+        import traceback
+        return {"error": str(e), "trace": traceback.format_exc(), "email": email}
 
 @app.post("/api/debug/procesar-entrada/{entrada_id}")
 async def debug_procesar_entrada(entrada_id: int, db = Depends(get_db)):
