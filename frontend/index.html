@@ -2391,7 +2391,6 @@
             const [qrData, setQrData] = useState(null);
             const [qrTimer, setQrTimer] = useState(null);
             const [qrCountdown, setQrCountdown] = useState(300);
-            const [qrExpirado, setQrExpirado] = useState(false);
             
             const formatCountdown = (seconds) => {
                 const mins = Math.floor(seconds / 60);
@@ -2426,16 +2425,13 @@
                         if (qrRes.ok && qr.qr_code) {
                             setQrData(qr);
                             setQrCountdown(300);
-                            setQrExpirado(false);
                             setProcesando(false);
                             const interval = setInterval(() => {
                                 setQrCountdown(prev => {
                                     if (prev <= 1) {
                                         clearInterval(interval);
-                                        showToast('Tiempo de pago expirado', 'error');
-                                        localStorage.removeItem('carrito');
-                                        setCarrito([]);
                                         cerrarQrModal();
+                                        showToast('Su tiempo de espera a finalizado', 'info');
                                         setVista('eventos');
                                         return 0;
                                     }
@@ -2470,7 +2466,6 @@
             const cerrarQrModal = () => {
                 if (qrTimer) clearInterval(qrTimer);
                 setQrData(null);
-                setQrExpirado(false);
                 setProcesando(false);
             };
             
@@ -2484,7 +2479,9 @@
                         });
                     } catch (e) { console.error(e); }
                 }
-                setQrExpirado(true);
+                cerrarQrModal();
+                showToast('Compra cancelada', 'info');
+                setVista('eventos');
             };
             
             const verificarPagoQr = async () => {
@@ -2552,13 +2549,13 @@
                             </button>
                         </div>
                         <button className="btn" style={{width: '100%', marginTop: '0.5rem'}} onClick={pagarTodo} disabled={procesando}>
-                            {procesando ? 'Procesando...' : metodoPago === 'qr' ? '📱 Generar QR' : '💳 Pagar'}
+                            {procesando ? 'Procesando...' : metodoPago === 'qr' ? '📱 Pagar con QR' : '💳 Pagar con Link de pago'}
                         </button>
                         <button className="btn btn-secondary" style={{width: '100%', marginTop: '0.5rem'}} onClick={() => setVista('eventos')}>
                             + Agregar más entradas
                         </button>
-                        {qrData && !qrExpirado && (
-                            <div className="modal-overlay" onClick={cerrarQrModal}>
+                        {qrData && (
+                            <div className="modal-overlay" onClick={cancelarQr}>
                                 <div className="modal" onClick={e => e.stopPropagation()} style={{maxWidth: '400px', textAlign: 'center'}}>
                                     <h3>📱 Escanea el QR</h3>
                                     <p style={{marginBottom: '1rem'}}>Total: ${qrData.total.toLocaleString('es-AR')}</p>
@@ -2571,18 +2568,6 @@
                                     </button>
                                     <button className="btn btn-secondary" style={{width: '100%', marginTop: '0.5rem'}} onClick={cancelarQr}>
                                         Cancelar
-                                    </button>
-                                </div>
-                            </div>
-                        )}
-                        
-                        {qrExpirado && (
-                            <div className="modal-overlay">
-                                <div className="modal" onClick={e => e.stopPropagation()} style={{maxWidth: '400px', textAlign: 'center'}}>
-                                    <h3>❌ Tiempo expirado</h3>
-                                    <p style={{margin: '1rem 0', color: '#666'}}>El pago fue rechazado, intentá nuevamente</p>
-                                    <button className="btn" style={{width: '100%'}} onClick={() => { setQrExpirado(false); setQrData(null); pagarTodo(); }}>
-                                        📱 Generar QR
                                     </button>
                                 </div>
                             </div>
