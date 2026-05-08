@@ -2581,7 +2581,7 @@
                                 <div className="modal" onClick={e => e.stopPropagation()} style={{maxWidth: '400px', textAlign: 'center'}}>
                                     <h3>❌ Tiempo expirado</h3>
                                     <p style={{margin: '1rem 0', color: '#666'}}>El pago fue rechazado, intentá nuevamente</p>
-                                    <button className="btn" style={{width: '100%'}} onClick={() => { setQrExpirado(false); setQrData(null); }}>
+                                    <button className="btn" style={{width: '100%'}} onClick={() => { setQrExpirado(false); setQrData(null); pagarTodo(); }}>
                                         📱 Generar QR
                                     </button>
                                 </div>
