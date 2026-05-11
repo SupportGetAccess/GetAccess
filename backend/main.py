@@ -1979,7 +1979,7 @@ async def webhook_mercadopago(request: Request, db = Depends(get_db)):
         print(f">>> WEBHOOK RECIBIDO desde {client_ip}: {body_json}")
 
         topic = body_json.get("type")
-        if topic == "payment":
+        if topic == "payment" or topic == "order":
             payment_id = body_json.get("data", {}).get("id")
 
             if payment_id:
