@@ -340,7 +340,7 @@ Cuando lean este archivo:
 
 ---
 
-## SESIÓN LUNES 11 DE MAYO 2026
+## SESIÓN LUNES 11 DE MAYO 2026 (CONTINUACIÓN)
 
 ### Fix: Pago de $15 recuperado - 3 entradas procesadas
 
@@ -361,4 +361,98 @@ Cuando lean este archivo:
 
 ---
 
-*Última sesión: Lunes 11 de Mayo 2026 (mañana)*
+## SESIÓN LUNES 11 DE MAYO 2026 (TARDE) - CIRCUITO QR COMPLETO
+
+### Objetivo: Probar el circuito completo de compra con QR
+
+**Problema inicial**: El webhook de MercadoPago no llegaba al procesar pagos QR.
+
+### Investigación realizada:
+
+1. **Webhook configurado en MP** → Apuntando a `https://getaccess-d3um.onrender.com/api/pagos/webhook`
+
+2. **El webhook existía pero solo para Checkout Pro (Link), no para Checkout API (QR)**
+   - Se creó nueva aplicación en MP: **GetAccessQR** (N° app: 8630460408704267)
+   - Producto: Checkout API
+   - API: API Orders
+   - Webhook configurado correctamente
+
+3. **Credenciales separadas para QR**:
+   - Mantener credenciales originales para Link (`MERCADOPAGO_ACCESS_TOKEN`)
+   - Nueva credencial para QR (`MERCADOPAGO_QR_ACCESS_TOKEN`):
+     `APP_USR-8630460408704267-051114-265c7321f63af4a028d5d2d7e37e3f3f-1921694`
+
+### Errores de sintaxis encontrados y corregidos:
+
+1. **Indentación inconsistente** en bloque `try-except` de imports
+   - Commit: 1a88400
+
+2. **Notification_url no soportado** por API `/v1/orders`
+   - MP rechaza el parámetro → Error 500
+   - El webhook ya estaba configurado en el panel, no necesita pasarse en la API
+
+3. **Webhook recibía `order.processed` pero código esperaba `payment.created`**
+   - El tipo del webhook era `order` (no `payment`)
+   - El status era `processed` (no `approved`)
+
+### Fixes implementados:
+
+#### Fix 1: Credenciales separadas para QR
+- `config.py`: Agregado `MERCADOPAGO_QR_ACCESS_TOKEN`
+- `main.py`: Endpoint QR usa `MERCADOPAGO_QR_ACCESS_TOKEN`
+- Commit: 522197d
+
+#### Fix 2: Soportar tipo `order` además de `payment`
+```python
+if topic == "payment" or topic == "order":
+```
+- Commit: a40007f
+
+#### Fix 3: Usar datos directos del payload para webhook de order
+- Para tipo `order`: usar `external_reference` y `status` del payload directamente
+- No llamar a la API (el payload ya tiene toda la info)
+- Commit: 7f6e657
+
+### Entradas procesadas manualmente:
+
+| Entrada | Evento | Código |
+|---------|--------|--------|
+| 77 | Conferencia Anual (ID 9) | GA-CQQFGU3A38 |
+| 78 | Conferencia Anual (ID 9) | GA-WFR36MXFJV |
+| 84 | Día del animal (ID 13) | GA-JGB199U2B0 |
+| 85 | Día del animal (ID 13) | GA-G5XL8YRR0R |
+
+### Estructura del circuito QR funcionando:
+
+```
+1. Usuario crea entrada → se genera QR
+2. external_reference (QR-xxx) se guarda en preference_id de la entrada
+3. Usuario paga con Modo QR
+4. MP envía webhook (tipo: order, status: processed)
+5. Código detecta tipo 'order' y usa datos directos del payload
+6. Entrada se marca como pagada
+7. Código GA-xxxxx generado y guardado
+8. Email con ticket enviado
+```
+
+### Commits de esta sesión:
+
+- 1a88400 - Fix: Corregir indentación en config try-except
+- 522197d - Fix: Credenciales separadas para QR (GetAccessQR)
+- 7f6e657 - Fix: Webhook QR usa datos directos del payload para orders
+
+### Estado actual:
+
+| Funcionalidad | Estado |
+|---------------|--------|
+| Pagos con Link | ✅ Funcionando |
+| Pagos con QR | ✅ Funcionando |
+| Webhook soporta order y payment | ✅ |
+| Persistencia QR en DB | ✅ |
+| Credenciales separadas | ✅ |
+| Email con ticket | ⚠️ Verificar en pruebas |
+| Verificar Pago en frontend | ⚠️ No hace nada - pendiente fix |
+
+---
+
+*Última sesión: Lunes 11 de Mayo 2026 (tarde)*
