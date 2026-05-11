@@ -1994,7 +1994,37 @@ async def webhook_mercadopago(request: Request, db = Depends(get_db)):
                     
                     print(f">>> Payment ID: {payment_id}, Status: {status_mp}, Ref: {external_ref}")
                     
-                    if external_ref and status_mp == "approved":
+if external_ref and status_mp == "approved":
+                    # DETECTAR TIPO DE PAGO: QR o Link
+                    if str(external_ref).startswith("QR-"):
+                        # PAGO QR: buscar entradas por preference_id
+                        print(f">>> PROCESANDO PAGO QR: {external_ref}")
+                        cursor_qr = db.execute("SELECT id FROM entradas WHERE preference_id = ? AND estado = 'pendiente'", (external_ref,))
+                        entradas_qr = cursor_qr.fetchall()
+                        
+                        for ent_row in entradas_qr:
+                            entrada_id = ent_row[0]
+                            db.execute("UPDATE entradas SET estado = 'pagada' WHERE id = ?", (entrada_id,))
+                            db.commit()
+                            
+                            codigo = f"GA-{''.join(random.choices(string.ascii_uppercase + string.digits, k=10))}"
+                            db.execute("UPDATE entradas SET preference_id = ? WHERE id = ?", (codigo, entrada_id))
+                            db.commit()
+                            print(f">>> Entrada QR {entrada_id} marcada como pagada, codigo: {codigo}")
+                            
+                            cursor_info = db.execute("""
+                                SELECT u.email, u.nombre, u.apellido, ev.nombre, ev.fecha, ev.lugar, e.cantidad, e.total
+                                FROM entradas e
+                                JOIN usuarios u ON e.usuario_id = u.id
+                                JOIN eventos ev ON e.evento_id = ev.id
+                                WHERE e.id = ?
+                            """, (entrada_id,))
+                            row = cursor_info.fetchone()
+                            if row:
+                                enviar_ticket_email(row[0], row[1], row[2], row[3], row[4], row[5], row[6], row[7], entrada_id, codigo)
+                    else:
+                        # PAGO LINK: buscar por ids de entrada (lógica existente)
+                        print(f">>> PROCESANDO PAGO LINK: {external_ref}")
                         entrada_ids = [int(x.strip()) for x in str(external_ref).split(',') if x.strip().isdigit()]
                         for ext_id in entrada_ids:
                             cursor_check = db.execute("SELECT id, estado, preference_id FROM entradas WHERE id = ?", (ext_id,))
@@ -2003,7 +2033,7 @@ async def webhook_mercadopago(request: Request, db = Depends(get_db)):
                                 db.execute("UPDATE entradas SET estado = 'pagada', usada = 0 WHERE id = ?", (ext_id,))
                                 db.commit()
                                 print(f">>> Entrada {ext_id} marcada como pagada")
-                                
+
                                 cursor = db.execute("""
                                     SELECT u.email, u.nombre, u.apellido, ev.nombre, ev.fecha, ev.lugar, e.cantidad, e.total, e.preference_id
                                     FROM entradas e
@@ -2013,7 +2043,6 @@ async def webhook_mercadopago(request: Request, db = Depends(get_db)):
                                 """, (ext_id,))
                                 row = cursor.fetchone()
                                 if row:
-                                    import string
                                     if not row[8]:
                                         codigo = f"GA-{''.join(random.choices(string.ascii_uppercase + string.digits, k=10))}"
                                         db.execute("UPDATE entradas SET preference_id = ? WHERE id = ?", (codigo, ext_id))
@@ -2023,8 +2052,8 @@ async def webhook_mercadopago(request: Request, db = Depends(get_db)):
                                     enviar_ticket_email(
                                         row[0], row[1], row[2], row[3], row[4], row[5], row[6], row[7], ext_id, codigo
                                     )
-                        
-        return {"status": "ok"}
+
+                return {"status": "ok"}
     except Exception as e:
         print(f">>> ERROR WEBHOOK: {e}")
         return {"status": "error", "detail": str(e)}
@@ -2276,76 +2305,10 @@ async def crear_pago_qr(datos: dict, credentials: HTTPAuthorizationCredentials =
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/api/pagos/webhook-qr")
-async def webhook_qr(request: Request, db = Depends(get_db)):
-    try:
-        body = await request.json()
-        print(f">>> WEBHOOK QR RECIBIDO: {body}")
-        
-        topic = body.get("type", "")
-        if topic == "payment":
-            payment = body.get("data", {})
-            payment_id = payment.get("id")
-            
-            if payment_id:
-                response = requests.get(
-                    f"{MERCADOPAGO_API_URL}/v1/payments/{payment_id}",
-                    headers={"Authorization": f"Bearer {MERCADO_PAGO_ACCESS_TOKEN}"},
-                    timeout=30
-                )
-                
-                if response.status_code == 200:
-                    pay_data = response.json()
-                    external_ref = pay_data.get("external_reference")
-                    status = pay_data.get("status")
-                    
-                    print(f">>> QR PAYMENT: {payment_id}, status={status}, ref={external_ref}")
-                    
-                    if status == "approved":
-                        # Buscar entrada por qr_order_id (guardado en preference_id)
-                        cursor = db.execute("SELECT id FROM entradas WHERE preference_id = ? AND estado = 'pendiente'", (external_ref,))
-                        entrada_ids_db = [row[0] for row in cursor.fetchall()]
-                        
-                        if entrada_ids_db:
-                            # Marcar entradas como pagadas
-                            for entrada_id in entrada_ids_db:
-                                db.execute("UPDATE entradas SET estado = 'pagada' WHERE id = ?", (entrada_id,))
-                                db.commit()
-                                
-                                # Generar código de entrada
-                                codigo = f"GA-{''.join(random.choices(string.ascii_uppercase + string.digits, k=10))}"
-                                db.execute("UPDATE entradas SET preference_id = ? WHERE id = ?", (codigo, entrada_id))
-                                db.commit()
-                                
-                                print(f">>> Entrada {entrada_id} marcada como pagada")
-                            
-                            # Actualizar QR_PEDIDOS si existe
-                            if external_ref in QR_PEDIDOS:
-                                QR_PEDIDOS[external_ref]["estado"] = "pagado"
-                        
-                        # Si no se encontró en DB, intentar con QR_PEDIDOS (compatibilidad hacia atrás)
-                        elif external_ref in QR_PEDIDOS:
-                            pedido = QR_PEDIDOS[external_ref]
-                            pedido["estado"] = "pagado"
-                            pedido["payment_id"] = payment_id
-                            
-                            for entrada_id in pedido["entrada_ids"]:
-                                cursor = db.execute("SELECT id, estado FROM entradas WHERE id = ?", (entrada_id,))
-                                ent = cursor.fetchone()
-                                if ent and ent[1] == "pendiente":
-                                    db.execute("UPDATE entradas SET estado = 'pagada' WHERE id = ?", (entrada_id,))
-                                    db.commit()
-                                    
-                                    codigo = f"GA-{''.join(random.choices(string.ascii_uppercase + string.digits, k=10))}"
-                                    db.execute("UPDATE entradas SET preference_id = ? WHERE id = ?", (codigo, entrada_id))
-                                    db.commit()
-                                    
-                                    print(f">>> Entrada {entrada_id} marcada como pagada")
-                        
-                        return {"status": "ok"}
-        return {"status": "received"}
-    except Exception as e:
-        print(f">>> ERROR WEBHOOK QR: {e}")
-        return {"status": "error", "detail": str(e)}
+async def webhook_qr_legacy(request: Request, db = Depends(get_db)):
+    """Endpoint legacy - redirige al webhook principal unificado para compatibilidad."""
+    print(">> WEBHOOK QR LEGACY: Redirigiendo a webhook principal")
+    return await webhook_mercadopago(request, db)
 
 @app.get("/api/pagos/qr/{qr_order_id}/status")
 async def verificar_estado_qr(qr_order_id: str, db = Depends(get_db)):
