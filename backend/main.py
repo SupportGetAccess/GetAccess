@@ -1980,81 +1980,90 @@ async def webhook_mercadopago(request: Request, db = Depends(get_db)):
 
         topic = body_json.get("type")
         if topic == "payment" or topic == "order":
-            payment_id = body_json.get("data", {}).get("id")
+            webhook_data = body_json.get("data", {})
 
-            if payment_id:
-                response = requests.get(
-                    f"{MERCADOPAGO_API_URL}/v1/payments/{payment_id}",
-                    headers={"Authorization": f"Bearer {MERCADO_PAGO_ACCESS_TOKEN}"},
-                    timeout=30
-                )
+            if topic == "order":
+                external_ref = webhook_data.get("external_reference")
+                status_mp = webhook_data.get("status")
+                print(f">>> WEBHOOK ORDER - Ref: {external_ref}, Status: {status_mp}")
+            else:
+                payment_id = webhook_data.get("id")
+                if payment_id:
+                    response = requests.get(
+                        f"{MERCADOPAGO_API_URL}/v1/payments/{payment_id}",
+                        headers={"Authorization": f"Bearer {MERCADO_PAGO_ACCESS_TOKEN}"},
+                        timeout=30
+                    )
+                    if response.status_code == 200:
+                        payment_data = response.json()
+                        status_mp = payment_data.get("status")
+                        external_ref = payment_data.get("external_reference")
+                        print(f">>> Payment ID: {payment_id}, Status: {status_mp}, Ref: {external_ref}")
+                    else:
+                        external_ref = None
+                        status_mp = None
+                else:
+                    external_ref = None
+                    status_mp = None
 
-                if response.status_code == 200:
-                    payment_data = response.json()
-                    status_mp = payment_data.get("status")
-                    external_ref = payment_data.get("external_reference")
+            if external_ref and status_mp in ("approved", "processed"):
+                if str(external_ref).startswith("QR-"):
+                    print(f">>> PROCESANDO PAGO QR: {external_ref}")
+                    cursor_qr = db.execute("SELECT id FROM entradas WHERE preference_id = ? AND estado = 'pendiente'", (external_ref,))
+                    entradas_qr = cursor_qr.fetchall()
 
-                    print(f">>> Payment ID: {payment_id}, Status: {status_mp}, Ref: {external_ref}")
+                    for ent_row in entradas_qr:
+                        entrada_id = ent_row[0]
+                        db.execute("UPDATE entradas SET estado = 'pagada' WHERE id = ?", (entrada_id,))
+                        db.commit()
 
-                    if external_ref and status_mp == "approved":
-                        if str(external_ref).startswith("QR-"):
-                            print(f">>> PROCESANDO PAGO QR: {external_ref}")
-                            cursor_qr = db.execute("SELECT id FROM entradas WHERE preference_id = ? AND estado = 'pendiente'", (external_ref,))
-                            entradas_qr = cursor_qr.fetchall()
+                        codigo = f"GA-{''.join(random.choices(string.ascii_uppercase + string.digits, k=10))}"
+                        db.execute("UPDATE entradas SET preference_id = ? WHERE id = ?", (codigo, entrada_id))
+                        db.commit()
+                        print(f">>> Entrada QR {entrada_id} marcada como pagada, codigo: {codigo}")
 
-                            for ent_row in entradas_qr:
-                                entrada_id = ent_row[0]
-                                db.execute("UPDATE entradas SET estado = 'pagada' WHERE id = ?", (entrada_id,))
-                                db.commit()
+                        cursor_info = db.execute("""
+                            SELECT u.email, u.nombre, u.apellido, ev.nombre, ev.fecha, ev.lugar, e.cantidad, e.total
+                            FROM entradas e
+                            JOIN usuarios u ON e.usuario_id = u.id
+                            JOIN eventos ev ON e.evento_id = ev.id
+                            WHERE e.id = ?
+                        """, (entrada_id,))
+                        row = cursor_info.fetchone()
+                        if row:
+                            enviar_ticket_email(row[0], row[1], row[2], row[3], row[4], row[5], row[6], row[7], entrada_id, codigo)
+                else:
+                    print(f">>> PROCESANDO PAGO LINK: {external_ref}")
+                    entrada_ids = [int(x.strip()) for x in str(external_ref).split(',') if x.strip().isdigit()]
+                    for ext_id in entrada_ids:
+                        cursor_check = db.execute("SELECT id, estado, preference_id FROM entradas WHERE id = ?", (ext_id,))
+                        entrada = cursor_check.fetchone()
+                        if entrada and entrada[1] != "pagada":
+                            db.execute("UPDATE entradas SET estado = 'pagada', usada = 0 WHERE id = ?", (ext_id,))
+                            db.commit()
+                            print(f">>> Entrada {ext_id} marcada como pagada")
 
-                                codigo = f"GA-{''.join(random.choices(string.ascii_uppercase + string.digits, k=10))}"
-                                db.execute("UPDATE entradas SET preference_id = ? WHERE id = ?", (codigo, entrada_id))
-                                db.commit()
-                                print(f">>> Entrada QR {entrada_id} marcada como pagada, codigo: {codigo}")
-
-                                cursor_info = db.execute("""
-                                    SELECT u.email, u.nombre, u.apellido, ev.nombre, ev.fecha, ev.lugar, e.cantidad, e.total
-                                    FROM entradas e
-                                    JOIN usuarios u ON e.usuario_id = u.id
-                                    JOIN eventos ev ON e.evento_id = ev.id
-                                    WHERE e.id = ?
-                                """, (entrada_id,))
-                                row = cursor_info.fetchone()
-                                if row:
-                                    enviar_ticket_email(row[0], row[1], row[2], row[3], row[4], row[5], row[6], row[7], entrada_id, codigo)
-                        else:
-                            print(f">>> PROCESANDO PAGO LINK: {external_ref}")
-                            entrada_ids = [int(x.strip()) for x in str(external_ref).split(',') if x.strip().isdigit()]
-                            for ext_id in entrada_ids:
-                                cursor_check = db.execute("SELECT id, estado, preference_id FROM entradas WHERE id = ?", (ext_id,))
-                                entrada = cursor_check.fetchone()
-                                if entrada and entrada[1] != "pagada":
-                                    db.execute("UPDATE entradas SET estado = 'pagada', usada = 0 WHERE id = ?", (ext_id,))
+                            cursor = db.execute("""
+                                SELECT u.email, u.nombre, u.apellido, ev.nombre, ev.fecha, ev.lugar, e.cantidad, e.total, e.preference_id
+                                FROM entradas e
+                                JOIN usuarios u ON e.usuario_id = u.id
+                                JOIN eventos ev ON e.evento_id = ev.id
+                                WHERE e.id = ?
+                            """, (ext_id,))
+                            row = cursor.fetchone()
+                            if row:
+                                if not row[8]:
+                                    codigo = f"GA-{''.join(random.choices(string.ascii_uppercase + string.digits, k=10))}"
+                                    db.execute("UPDATE entradas SET preference_id = ? WHERE id = ?", (codigo, ext_id))
                                     db.commit()
-                                    print(f">>> Entrada {ext_id} marcada como pagada")
+                                else:
+                                    codigo = row[8]
+                                enviar_ticket_email(
+                                    row[0], row[1], row[2], row[3], row[4], row[5], row[6], row[7], ext_id, codigo
+                                )
 
-                                    cursor = db.execute("""
-                                        SELECT u.email, u.nombre, u.apellido, ev.nombre, ev.fecha, ev.lugar, e.cantidad, e.total, e.preference_id
-                                        FROM entradas e
-                                        JOIN usuarios u ON e.usuario_id = u.id
-                                        JOIN eventos ev ON e.evento_id = ev.id
-                                        WHERE e.id = ?
-                                    """, (ext_id,))
-                                    row = cursor.fetchone()
-                                    if row:
-                                        if not row[8]:
-                                            codigo = f"GA-{''.join(random.choices(string.ascii_uppercase + string.digits, k=10))}"
-                                            db.execute("UPDATE entradas SET preference_id = ? WHERE id = ?", (codigo, ext_id))
-                                            db.commit()
-                                        else:
-                                            codigo = row[8]
-                                        enviar_ticket_email(
-                                            row[0], row[1], row[2], row[3], row[4], row[5], row[6], row[7], ext_id, codigo
-                                        )
+        return {"status": "ok"}
 
-                    return {"status": "ok"}
-
-        return {"status": "received"}
     except Exception as e:
         print(f">>> ERROR WEBHOOK: {e}")
         return {"status": "error", "detail": str(e)}
