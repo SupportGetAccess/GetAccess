@@ -52,11 +52,12 @@ try:
     RENDER_URL = config.RENDER_URL
     DEV_URLS = config.DEV_URLS
     BREVO_API_URL = config.BREVO_API_URL
-    MERCADOPAGO_API_URL = config.MERCADOPAGO_API_URL
-    MERCADOPAGO_ACCESS_TOKEN = config.MERCADOPAGO_ACCESS_TOKEN
-    MERCADOPAGO_QR_EXTERNAL_POS_ID = config.MERCADOPAGO_QR_EXTERNAL_POS_ID
-    MERCADOPAGO_QR_USER_ID = config.MERCADOPAGO_QR_USER_ID
-    QUICKCHART_URL = config.QUICKCHART_URL
+MERCADOPAGO_API_URL = config.MERCADOPAGO_API_URL
+MERCADOPAGO_ACCESS_TOKEN = config.MERCADOPAGO_ACCESS_TOKEN
+MERCADOPAGO_QR_EXTERNAL_POS_ID = config.MERCADOPAGO_QR_EXTERNAL_POS_ID
+MERCADOPAGO_QR_USER_ID = config.MERCADOPAGO_QR_USER_ID
+MERCADOPAGO_QR_ACCESS_TOKEN = config.MERCADOPAGO_QR_ACCESS_TOKEN
+QUICKCHART_URL = config.QUICKCHART_URL
     EMAIL_LOGO_URL = config.EMAIL_LOGO_URL
     DEFAULT_EVENT_IMAGES = config.DEFAULT_EVENT_IMAGES
     ADMIN_SECRET = config.ADMIN_SECRET
@@ -78,8 +79,9 @@ except ImportError:
     BREVO_API_URL = "https://api.brevo.com/v3/smtp/email"
     MERCADOPAGO_API_URL = "https://api.mercadopago.com"
     MERCADOPAGO_ACCESS_TOKEN = "APP_USR-2888302331727804-031609-eb4c51fc6c1654d701d4a5f3b24fbcd7-1921694"
-    MERCADOPAGO_QR_EXTERNAL_POS_ID = "GETACCESSQRD01"
-    MERCADOPAGO_QR_USER_ID = "1921694"
+MERCADOPAGO_QR_EXTERNAL_POS_ID = "GETACCESSQRD01"
+MERCADOPAGO_QR_USER_ID = "1921694"
+MERCADOPAGO_QR_ACCESS_TOKEN = "APP_USR-8630460408704267-051114-265c7321f63af4a028d5d2d7e37e3f3f-1921694"
     QUICKCHART_URL = "https://quickchart.io/qr"
     EMAIL_LOGO_URL = "https://getaccess.now.sh/logo.png"
     DEFAULT_EVENT_IMAGES = [
@@ -2259,7 +2261,6 @@ async def crear_pago_qr(datos: dict, credentials: HTTPAuthorizationCredentials =
                 "total_amount": str(total),
                 "description": f"GetAccess - {len(entradas)} entrada(s)",
                 "external_reference": qr_order_id,
-                "notification_url": f"{RENDER_URL}/api/pagos/webhook",
                 "expiration_time": "PT5M",
                 "config": {
                     "qr": {
@@ -2274,7 +2275,7 @@ async def crear_pago_qr(datos: dict, credentials: HTTPAuthorizationCredentials =
                 }
             },
             headers={
-                "Authorization": f"Bearer {MERCADO_PAGO_ACCESS_TOKEN}",
+                "Authorization": f"Bearer {MERCADOPAGO_QR_ACCESS_TOKEN}",
                 "Content-Type": "application/json",
                 "X-Idempotency-Key": str(uuid.uuid4())
             },
