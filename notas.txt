@@ -338,4 +338,27 @@ Cuando lean este archivo:
 
 ---
 
-*Última sesión: Viernes 8 de Mayo 2026 (tarde)*
+---
+
+## SESIÓN LUNES 11 DE MAYO 2026
+
+### Fix: Pago de $15 recuperado - 3 entradas procesadas
+
+**Problema**: Entradas pendientes del usuario guilles10@yahoo.com.ar (evento "Día del animal", ID 13) no se procesaron por problema con QR (servidor se reinició).
+
+**Fix implementado**:
+- Bug en `/api/debug/entradas-pendientes`: columna `creado_en` no existe, debía ser `creada_en`
+- Deploy en Render tomó ~2 minutos
+
+**Entradas procesadas**:
+| Entrada | Código |
+|---------|--------|
+| 72 | GA-H0F13VTBIE |
+| 73 | GA-R36Y694NZQ |
+| 74 | GA-BGPMK9PW0L |
+
+**Commit**: afb99d8
+
+---
+
+*Última sesión: Lunes 11 de Mayo 2026 (mañana)*
