@@ -2386,7 +2386,7 @@ async def debug_entradas_pendientes(email: str, db = Depends(get_db)):
     """Endpoint de debug para buscar entradas pendientes de un usuario"""
     try:
         cursor = db.execute("""
-            SELECT e.id, e.evento_id, e.estado, e.preference_id, e.creado_en, ev.nombre
+            SELECT e.id, e.evento_id, e.estado, e.preference_id, e.creada_en, ev.nombre
             FROM entradas e
             JOIN usuarios u ON e.usuario_id = u.id
             JOIN eventos ev ON e.evento_id = ev.id
