@@ -2259,6 +2259,7 @@ async def crear_pago_qr(datos: dict, credentials: HTTPAuthorizationCredentials =
                 "total_amount": str(total),
                 "description": f"GetAccess - {len(entradas)} entrada(s)",
                 "external_reference": qr_order_id,
+                "notification_url": f"{RENDER_URL}/api/pagos/webhook",
                 "expiration_time": "PT5M",
                 "config": {
                     "qr": {
