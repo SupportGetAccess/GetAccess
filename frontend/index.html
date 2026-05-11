@@ -2391,6 +2391,8 @@
             const [qrData, setQrData] = useState(null);
             const [qrTimer, setQrTimer] = useState(null);
             const [qrCountdown, setQrCountdown] = useState(300);
+            const [verificarPagoTimer, setVerificarPagoTimer] = useState(null);
+            const [pagoExitoso, setPagoExitoso] = useState(false);
             
             const formatCountdown = (seconds) => {
                 const mins = Math.floor(seconds / 60);
@@ -2439,6 +2441,7 @@
                                 });
                             }, 1000);
                             setQrTimer(interval);
+                            iniciarVerificacionPago();
                             return;
                         } else {
                             showToast(qr.detail || 'Error al generar QR', 'error');
@@ -2465,12 +2468,31 @@
             
             const cerrarQrModal = () => {
                 if (qrTimer) clearInterval(qrTimer);
+                if (verificarPagoTimer) clearInterval(verificarPagoTimer);
                 setQrData(null);
                 setProcesando(false);
+                setPagoExitoso(false);
+            };
+            
+            const iniciarVerificacionPago = () => {
+                if (verificarPagoTimer) clearInterval(verificarPagoTimer);
+                const interval = setInterval(async () => {
+                    if (!qrData?.qr_order_id) return;
+                    try {
+                        const res = await fetch(API_URL + '/api/pagos/qr/' + qrData.qr_order_id + '/status');
+                        const status = await res.json();
+                        if (status.estado === 'pagado') {
+                            clearInterval(interval);
+                            setPagoExitoso(true);
+                        }
+                    } catch (err) { console.error(err); }
+                }, 3000);
+                setVerificarPagoTimer(interval);
             };
             
             const cancelarQr = async () => {
                 if (qrTimer) clearInterval(qrTimer);
+                if (verificarPagoTimer) clearInterval(verificarPagoTimer);
                 if (qrData?.qr_order_id) {
                     try {
                         await fetch(API_URL + '/api/pagos/qr/' + qrData.qr_order_id + '/cancelar', {
@@ -2484,6 +2506,13 @@
                 cerrarQrModal();
                 showToast('Compra cancelada', 'error');
                 setVista('eventos');
+            };
+            
+            const redirigirAMisEntradas = () => {
+                localStorage.removeItem('carrito');
+                setCarrito([]);
+                cerrarQrModal();
+                setVista('mis-entradas');
             };
             
             const verificarPagoQr = async () => {
@@ -2570,6 +2599,18 @@
                                     </button>
                                     <button className="btn btn-secondary" style={{width: '100%', marginTop: '0.5rem'}} onClick={cancelarQr}>
                                         Cancelar
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+                        {pagoExitoso && (
+                            <div className="modal-overlay">
+                                <div className="modal" style={{maxWidth: '400px', textAlign: 'center'}}>
+                                    <div style={{fontSize: '64px', marginBottom: '1rem'}}>🎉</div>
+                                    <h3>¡Compra exitosa!</h3>
+                                    <p style={{margin: '1rem 0', color: '#666'}}>Tu entrada ha sido procesada correctamente. Te hemos enviado un email con el ticket.</p>
+                                    <button className="btn" style={{width: '100%'}} onClick={redirigirAMisEntradas}>
+                                        🎟️ Ver mis entradas
                                     </button>
                                 </div>
                             </div>
