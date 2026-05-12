@@ -2380,16 +2380,16 @@ async def webhook_qr_legacy(request: Request, db = Depends(get_db)):
 
 @app.get("/api/pagos/qr/{qr_order_id}/status")
 async def verificar_estado_qr(qr_order_id: str, db = Depends(get_db)):
-    # Primero buscar en memoria
-    if qr_order_id in QR_PEDIDOS:
-        return QR_PEDIDOS[qr_order_id]
-    
-    # Si no está en memoria, buscar en DB por payment_order_id
+    # Primero buscar en la DB (fuente de verdad)
     cursor = db.execute("SELECT estado FROM entradas WHERE payment_order_id = ?", (qr_order_id,))
     entrada = cursor.fetchone()
     
     if entrada:
         return {"estado": entrada[0], "qr_order_id": qr_order_id}
+    
+    # Fallback: buscar en memoria si no está en DB
+    if qr_order_id in QR_PEDIDOS:
+        return QR_PEDIDOS[qr_order_id]
     
     return {"estado": "no encontrado"}
 
