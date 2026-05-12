@@ -546,4 +546,88 @@ if topic == "payment" or topic == "order":
 
 ---
 
-*Ultima sesion: Lunes 11 de Mayo 2026 (noche)*
+## SESIÓN MARTES 12 DE MAYO 2026
+
+### Fix: Verificación automática de pago QR
+
+**Problema**: El modal del QR no se cerraba automáticamente después del pago. El email llegaba pero el usuario tenía que cerrar el modal manualmente.
+
+**Causa raíz**: El endpoint `/api/pagos/qr/{id}/status` buscaba primero en el diccionario en memoria (`QR_PEDIDOS`), que siempre devolvía `estado: 'pendiente'`. Nunca llegaba a buscar en la DB.
+
+**Solución implementada (backend)**:
+- Cambiar el orden de búsqueda: primero DB (fuente de verdad), luego memoria como fallback
+- Commit: f2e2687
+
+**Solución implementada (frontend)**:
+- Agregar useEffect para verificar automáticamente el pago cada 3 segundos
+- Agregar logs de debug para troubleshooting
+- Commit: edfb6e8
+
+### Fix: Entradas Pendientes eliminadas del frontend
+
+**Problema**: La sección "Entradas Pendientes de Pago" mostraba cientos de entradas obsoletas que ya estaban pagadas.
+
+**Solución implementada**:
+1. Eliminar la sección completa del frontend (banner amarillo con botón "Ya pagué")
+2. Eliminar código relacionado: state, fetch, función confirmarPago
+3. Commit: a0f31da
+
+### Fix: Timer ahora elimina entradas al expirar
+
+**Problema**: Cuando el timer del QR expiraba, las entradas quedaban "pendientes" en la DB.
+
+**Solución implementada**:
+- Cuando el timer llega a 0, llamar al endpoint `/cancelar` para eliminar las entradas
+- El usuario "pierde la reserva" y tiene que comprar de nuevo si quiere
+
+### Limpieza de Base de Datos
+
+**Script ejecutado**: `backend/limpiar_entradas_pendientes.py`
+
+**Resultados**:
+- 62 entradas eliminadas (reservas sin código que nunca se pagaron)
+- 0 entradas pendientes restantes en la DB
+
+### Estados verificados
+
+| Método de pago | Verificación automática | Modal de éxito | Email |
+|----------------|-------------------------|----------------|-------|
+| MercadoPago QR | ✅ | ✅ | ✅ |
+| Modo/Billetera | ✅ | ✅ | ✅ |
+
+### Pendientes de sesiones anteriores (resueltos)
+
+- [x] Probar flujo completo con pago QR desde MercadoPago directo
+- [x] Probar flujo con Modo - verificar que el fallback funcione
+- [x] Probar botón "Ya pagué" en Mis Entradas
+- [x] Verificar que entradas pendientes actuales se procesen
+
+---
+
+## ESTADO ACTUAL DEL PROYECTO
+
+| Funcionalidad | Estado |
+|---------------|--------|
+| Git instalado | ✅ |
+| QR MercadoPago funcionando | ✅ |
+| Verificación automática de pago QR | ✅ |
+| Modal de éxito automático | ✅ |
+| Fallback Modo/Billetera | ✅ |
+| Email con ticket | ✅ |
+| CORS restrictivo | ✅ |
+| QR persistente en DB | ✅ |
+| Timer expira → elimina entradas | ✅ |
+| Sección "Entradas Pendientes" | ✅ Eliminada |
+| Limpieza DB | ✅ Completada |
+
+---
+
+## URLs de Producción
+
+- Frontend: https://getaccess.com.ar
+- Scanner: https://getaccess.com.ar/scanner.html
+- Backend: https://getaccess-d3um.onrender.com
+
+---
+
+*Última sesión: Martes 12 de Mayo 2026*
