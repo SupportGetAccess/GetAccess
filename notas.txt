@@ -450,9 +450,100 @@ if topic == "payment" or topic == "order":
 | Webhook soporta order y payment | ✅ |
 | Persistencia QR en DB | ✅ |
 | Credenciales separadas | ✅ |
-| Email con ticket | ⚠️ Verificar en pruebas |
-| Verificar Pago en frontend | ⚠️ No hace nada - pendiente fix |
+| Email con ticket | ✅ Verificado funciona |
+| Verificar Pago en frontend | ✅ Corregido - muestra modal exito |
+| Fallback Modo/Wallet | ✅ |
+| Boton "Ya pagué" en Mis Entradas | ✅ |
 
 ---
 
-*Última sesión: Lunes 11 de Mayo 2026 (tarde)*
+## SESION LUNES 11 DE MAYO 2026 (NOCHE)
+
+### Fix: Verificacion automatica de pago QR
+
+**Problema**: El QR quedaba en pantalla aunque el pago se realizara correctamente.
+
+**Solucion implementada**:
+1. Verificacion automatica cada 3 segundos del estado del pago
+2. Modal de exito "¡Compra exitosa!" al detectar pago
+3. Carrito se limpia automaticamente al confirmar
+4. Boton "Verificar Pago" ahora muestra el modal de exito
+
+### Fix: Campo payment_order_id separado
+
+**Problema**: El codigo GA-XXXXX y el QR-xxxxx competian por el mismo campo `preference_id`.
+
+**Solucion**:
+- Nueva columna `payment_order_id TEXT` en tabla `entradas`
+- QR se guarda en `payment_order_id`
+- Codigo GA-XXXXX sigue en `preference_id`
+- Endpoint `/api/pagos/qr/{id}/status` ahora busca por `payment_order_id`
+
+### Fix: Pagos con Modo/Billetera Digital
+
+**Problema**: Modo no propaga `external_reference` al pagar con QR de MercadoPago.
+
+**Solucion implementada**:
+1. **Fallback en webhook** (`backend/main.py`):
+   - Si llega webhook sin `external_reference` pero con `status: processed`
+   - Busca entrada pendiente por **monto exacto**
+   - Proceso automatico si hay una sola coincidencia
+
+2. **Boton "Ya pagué" en Mis Entradas** (`frontend/index.html`):
+   - Nuevo endpoint `/api/entradas/pendientes`
+   - Nuevo endpoint `/api/entradas/{id}/confirmar-pago`
+   - Si hay entradas pendientes, muestra cartel amarillo
+   - Boton para confirmar pago manualmente
+
+### Fix: Timer de 10 minutos
+
+**Problema**: Timer del QR mostraba 5 minutos en vez de 10.
+
+**Solucion**: Cambiado `qrCountdown` de 300 a 600 segundos.
+
+### Commits de esta sesion:
+
+- 0d368b9 - Fix: verificacion automatica de pago QR con modal de exito
+- c768625 - Fix: payment_order_id separado para QR y timer 10 min
+- db69bc8 - Fix: verificarPagoQr muestra modal de exito
+- 7331457 - Fix: fallback Modo/wallet + boton Ya pague en Mis Entradas
+
+### Base de datos - Cambios:
+
+- Columna `payment_order_id TEXT` agregada a tabla `entradas`
+- 4 entradas pendientes con QR en `preference_id` fueron copiadas a `payment_order_id`
+- 62 entradas pendientes permanecen (pagos Modo que no se procesaron - se manejan con boton "Ya pagué")
+
+### Archivos modificados:
+
+- `backend/main.py`:
+  - Funcion `procesar_entrada_pagada()` separada para reutilizar
+  - Webhook con fallback para Modo/Wallet
+  - Nuevo endpoint `/api/entradas/pendientes`
+  - Nuevo endpoint `/api/entradas/{id}/confirmar-pago`
+  - Timer QR cambiado a 600 segundos
+
+- `frontend/index.html`:
+  - Verificacion automatica cada 3 segundos
+  - Modal de exito con redirect a Mis Entradas
+  - Cartel amarillo de entradas pendientes
+  - Boton "Ya pagué" en Mis Entradas
+
+- `backend/setup_supabase.py`:
+  - Columna `payment_order_id TEXT` agregada al schema
+
+- `backend/add_payment_order_id.py` - Script utilitario para agregar columna
+- `backend/fix_pending_qr.py` - Script para corregir entradas pendientes
+
+---
+
+## PENDIENTES
+
+1. [ ] Probar flujo completo con pago QR desde MercadoPago directo
+2. [ ] Probar flujo con Modo - verificar que el fallback funcione
+3. [ ] Probar boton "Ya pagué" en Mis Entradas
+4. [ ] Verificar que entradas pendientes actuales se procesen con el boton
+
+---
+
+*Ultima sesion: Lunes 11 de Mayo 2026 (noche)*
