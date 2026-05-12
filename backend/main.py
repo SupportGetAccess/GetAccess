@@ -1713,6 +1713,61 @@ def listar_entradas(credentials: HTTPAuthorizationCredentials = Depends(security
         print(f">>> [{request_id}] Error listar_entradas: {e}")
         return []
 
+@app.get("/api/entradas/pendientes")
+def listar_entradas_pendientes(credentials: HTTPAuthorizationCredentials = Depends(security), db = Depends(get_db)):
+    token = credentials.credentials
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        user_id = int(payload.get("sub"))
+    except:
+        raise HTTPException(status_code=401, detail="Token inválido")
+    
+    cursor = db.execute("""
+        SELECT e.id, e.evento_id, e.usuario_id, e.cantidad, e.total, e.estado, e.payment_order_id,
+               ev.nombre, ev.fecha, ev.lugar
+        FROM entradas e
+        JOIN eventos ev ON e.evento_id = ev.id
+        WHERE e.usuario_id = ? AND e.estado = 'pendiente'
+        ORDER BY e.id DESC
+    """, (user_id,))
+    rows = cursor.fetchall()
+    return [
+        {
+            "id": r[0], "evento_id": r[1], "usuario_id": r[2], "cantidad": r[3],
+            "total": r[4], "estado": r[5], "payment_order_id": r[6],
+            "evento": {"nombre": r[7], "fecha": r[8], "lugar": r[9]}
+        }
+        for r in rows
+    ]
+
+@app.post("/api/entradas/{entrada_id}/confirmar-pago")
+def confirmar_pago_entrada(entrada_id: int, credentials: HTTPAuthorizationCredentials = Depends(security), db = Depends(get_db)):
+    token = credentials.credentials
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        user_id = int(payload.get("sub"))
+    except:
+        raise HTTPException(status_code=401, detail="Token inválido")
+    
+    cursor = db.execute("SELECT id, usuario_id, estado FROM entradas WHERE id = ?", (entrada_id,))
+    entrada = cursor.fetchone()
+    
+    if not entrada:
+        raise HTTPException(status_code=404, detail="Entrada no encontrada")
+    
+    if entrada[0] != user_id:
+        raise HTTPException(status_code=403, detail="No tienes permiso")
+    
+    if entrada[2] == "pagada":
+        return {"success": True, "mensaje": "La entrada ya está pagada"}
+    
+    try:
+        procesar_entrada_pagada(entrada_id, db)
+        return {"success": True, "mensaje": "Pago confirmado correctamente"}
+    except Exception as e:
+        print(f">>> Error confirmar_pago: {e}")
+        raise HTTPException(status_code=500, detail="Error al confirmar pago")
+
 @app.get("/api/entradas/buscar")
 def buscar_entradas(q: str, db = Depends(get_db)):
     cursor = db.execute("""
@@ -1971,6 +2026,28 @@ def get_transferencias(entrada_id: int, credentials: HTTPAuthorizationCredential
 
 MERCADO_PAGO_ACCESS_TOKEN = os.environ.get("MERCADO_PAGO_ACCESS_TOKEN", "APP_USR-2888302331727804-031609-eb4c51fc6c1654d701d4a5f3b24fbcd7-1921694")
 
+def procesar_entrada_pagada(entrada_id, db):
+    """Procesa una entrada como pagada: genera código GA y envía email"""
+    db.execute("UPDATE entradas SET estado = 'pagada' WHERE id = ?", (entrada_id,))
+    db.commit()
+    
+    codigo = f"GA-{''.join(random.choices(string.ascii_uppercase + string.digits, k=10))}"
+    db.execute("UPDATE entradas SET preference_id = ? WHERE id = ?", (codigo, entrada_id))
+    db.commit()
+    print(f">>> Entrada {entrada_id} marcada como pagada, codigo: {codigo}")
+    
+    cursor_info = db.execute("""
+        SELECT u.email, u.nombre, u.apellido, ev.nombre, ev.fecha, ev.lugar, e.cantidad, e.total
+        FROM entradas e
+        JOIN usuarios u ON e.usuario_id = u.id
+        JOIN eventos ev ON e.evento_id = ev.id
+        WHERE e.id = ?
+    """, (entrada_id,))
+    row = cursor_info.fetchone()
+    if row:
+        enviar_ticket_email(row[0], row[1], row[2], row[3], row[4], row[5], row[6], row[7], entrada_id, codigo)
+    return codigo
+
 @app.post("/api/pagos/webhook")
 async def webhook_mercadopago(request: Request, db = Depends(get_db)):
     try:
@@ -1979,13 +2056,19 @@ async def webhook_mercadopago(request: Request, db = Depends(get_db)):
         print(f">>> WEBHOOK RECIBIDO desde {client_ip}: {body_json}")
 
         topic = body_json.get("type")
+        payment_id = None
+        status_mp = None
+        external_ref = None
+        monto_pago = None
+        
         if topic == "payment" or topic == "order":
             webhook_data = body_json.get("data", {})
 
             if topic == "order":
                 external_ref = webhook_data.get("external_reference")
                 status_mp = webhook_data.get("status")
-                print(f">>> WEBHOOK ORDER - Ref: {external_ref}, Status: {status_mp}")
+                monto_pago = webhook_data.get("transaction_amount")
+                print(f">>> WEBHOOK ORDER - Ref: {external_ref}, Status: {status_mp}, Monto: {monto_pago}")
             else:
                 payment_id = webhook_data.get("id")
                 if payment_id:
@@ -1998,69 +2081,44 @@ async def webhook_mercadopago(request: Request, db = Depends(get_db)):
                         payment_data = response.json()
                         status_mp = payment_data.get("status")
                         external_ref = payment_data.get("external_reference")
-                        print(f">>> Payment ID: {payment_id}, Status: {status_mp}, Ref: {external_ref}")
+                        monto_pago = payment_data.get("transaction_amount")
+                        print(f">>> Payment ID: {payment_id}, Status: {status_mp}, Ref: {external_ref}, Monto: {monto_pago}")
                     else:
-                        external_ref = None
                         status_mp = None
                 else:
-                    external_ref = None
                     status_mp = None
 
-            if external_ref and status_mp in ("approved", "processed"):
-                if str(external_ref).startswith("QR-"):
+            if status_mp in ("approved", "processed"):
+                if external_ref and str(external_ref).startswith("QR-"):
                     print(f">>> PROCESANDO PAGO QR: {external_ref}")
-                    cursor_qr = db.execute("SELECT id FROM entradas WHERE payment_order_id = ? AND estado = 'pendiente'", (external_ref,))
+                    cursor_qr = db.execute("SELECT id, usuario_id FROM entradas WHERE payment_order_id = ? AND estado = 'pendiente'", (external_ref,))
                     entradas_qr = cursor_qr.fetchall()
-
                     for ent_row in entradas_qr:
-                        entrada_id = ent_row[0]
-                        db.execute("UPDATE entradas SET estado = 'pagada' WHERE id = ?", (entrada_id,))
-                        db.commit()
-
-                        codigo = f"GA-{''.join(random.choices(string.ascii_uppercase + string.digits, k=10))}"
-                        db.execute("UPDATE entradas SET preference_id = ? WHERE id = ?", (codigo, entrada_id))
-                        db.commit()
-                        print(f">>> Entrada QR {entrada_id} marcada como pagada, codigo: {codigo}")
-
-                        cursor_info = db.execute("""
-                            SELECT u.email, u.nombre, u.apellido, ev.nombre, ev.fecha, ev.lugar, e.cantidad, e.total
-                            FROM entradas e
-                            JOIN usuarios u ON e.usuario_id = u.id
-                            JOIN eventos ev ON e.evento_id = ev.id
-                            WHERE e.id = ?
-                        """, (entrada_id,))
-                        row = cursor_info.fetchone()
-                        if row:
-                            enviar_ticket_email(row[0], row[1], row[2], row[3], row[4], row[5], row[6], row[7], entrada_id, codigo)
-                else:
+                        procesar_entrada_pagada(ent_row[0], db)
+                elif external_ref:
                     print(f">>> PROCESANDO PAGO LINK: {external_ref}")
                     entrada_ids = [int(x.strip()) for x in str(external_ref).split(',') if x.strip().isdigit()]
                     for ext_id in entrada_ids:
                         cursor_check = db.execute("SELECT id, estado, preference_id FROM entradas WHERE id = ?", (ext_id,))
                         entrada = cursor_check.fetchone()
                         if entrada and entrada[1] != "pagada":
-                            db.execute("UPDATE entradas SET estado = 'pagada', usada = 0 WHERE id = ?", (ext_id,))
-                            db.commit()
-                            print(f">>> Entrada {ext_id} marcada como pagada")
-
-                            cursor = db.execute("""
-                                SELECT u.email, u.nombre, u.apellido, ev.nombre, ev.fecha, ev.lugar, e.cantidad, e.total, e.preference_id
-                                FROM entradas e
-                                JOIN usuarios u ON e.usuario_id = u.id
-                                JOIN eventos ev ON e.evento_id = ev.id
-                                WHERE e.id = ?
-                            """, (ext_id,))
-                            row = cursor.fetchone()
-                            if row:
-                                if not row[8]:
-                                    codigo = f"GA-{''.join(random.choices(string.ascii_uppercase + string.digits, k=10))}"
-                                    db.execute("UPDATE entradas SET preference_id = ? WHERE id = ?", (codigo, ext_id))
-                                    db.commit()
-                                else:
-                                    codigo = row[8]
-                                enviar_ticket_email(
-                                    row[0], row[1], row[2], row[3], row[4], row[5], row[6], row[7], ext_id, codigo
-                                )
+                            procesar_entrada_pagada(ext_id, db)
+                else:
+                    print(f">>> FALLBACK MODO/WALLET - Sin external_ref, Monto: {monto_pago}")
+                    if monto_pago:
+                        cursor_modo = db.execute("""
+                            SELECT id, usuario_id FROM entradas 
+                            WHERE estado = 'pendiente' AND total = ?
+                            ORDER BY creada_en DESC LIMIT 1
+                        """, (monto_pago,))
+                        entrada_modo = cursor_modo.fetchone()
+                        if entrada_modo:
+                            print(f">>> ENCONTRADO por monto: entrada {entrada_modo[0]}, monto {monto_pago}")
+                            procesar_entrada_pagada(entrada_modo[0], db)
+                        else:
+                            print(f">>> NO se encontró entrada para monto {monto_pago}")
+                    else:
+                        print(f">>> NO se puede procesar: sin external_ref y sin monto")
 
         return {"status": "ok"}
 

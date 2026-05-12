@@ -2728,6 +2728,7 @@
 
         function MisEntradas() {
             const [entradas, setEntradas] = useState([]);
+            const [entradasPendientes, setEntradasPendientes] = useState([]);
             const [loading, setLoading] = useState(true);
             const { showToast } = useContext(AuthContext);
             const [transferenciasPendientes, setTransferenciasPendientes] = useState([]);
@@ -2748,6 +2749,11 @@
                     .then(data => setEntradas(Array.isArray(data) ? data : []))
                     .catch(() => setEntradas([]))
                     .finally(() => setLoading(false));
+                    
+                    fetch(API_URL + '/api/entradas/pendientes', { headers: { Authorization: 'Bearer ' + savedToken } })
+                    .then(res => res.ok ? res.json() : [])
+                    .then(data => setEntradasPendientes(Array.isArray(data) ? data : []))
+                    .catch(() => setEntradasPendientes([]));
                     
                     const tr1 = savedToken + 't1';
                     fetch(API_URL + '/api/transferencias/pendientes', { headers: { Authorization: 'Bearer ' + savedToken } })
@@ -2774,6 +2780,28 @@
                 const data = await res.json();
                 if (res.ok) showToast('Ticket enviado a ' + data.email, 'success');
                 else showToast(data.detail || 'Error', 'error');
+            };
+            
+            const confirmarPago = async (entradaId) => {
+                const savedToken = sessionStorage.getItem('token');
+                try {
+                    const res = await fetch(API_URL + '/api/entradas/' + entradaId + '/confirmar-pago', {
+                        method: 'POST',
+                        headers: { Authorization: 'Bearer ' + savedToken }
+                    });
+                    const data = await res.json();
+                    if (res.ok) {
+                        showToast('Pago confirmado!', 'success');
+                        fetch(API_URL + '/api/entradas/', { headers: { Authorization: 'Bearer ' + savedToken } })
+                            .then(res => res.json())
+                            .then(data => setEntradas(data));
+                        setEntradasPendientes(entradasPendientes.filter(e => e.id !== entradaId));
+                    } else {
+                        showToast(data.detail || 'Error al confirmar', 'error');
+                    }
+                } catch (e) {
+                    showToast('Error de conexión', 'error');
+                }
             };
             const [transferModal, setTransferModal] = useState(null);
             const [transferEmail, setTransferEmail] = useState('');
@@ -2851,7 +2879,26 @@
                             </div>
                         </div>
                     )}
-                    {entradas.length === 0 ? (
+                    {entradasPendientes.length > 0 && (
+                        <div style={{background: 'rgba(251, 191, 36, 0.1)', border: '2px solid #fbbf24', padding: '1.5rem', borderRadius: '12px', marginBottom: '1.5rem'}}>
+                            <h3 style={{margin: '0 0 1rem 0', color: '#b45309'}}>⏳ Entradas Pendientes de Pago</h3>
+                            <p style={{color: '#92400e', marginBottom: '1rem'}}>Si ya pagaste con billetera digital (Modo, Mercado Pago u otra), hacé click en "Ya pagué":</p>
+                            {entradasPendientes.map(ent => (
+                                <div key={ent.id} style={{background: 'white', padding: '1rem', borderRadius: '8px', marginBottom: '0.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
+                                    <div>
+                                        <strong>🎪 {ent.evento?.nombre}</strong>
+                                        <p style={{margin: '0.25rem 0 0 0', color: '#666', fontSize: '14px'}}>
+                                            💵 ${ent.total?.toLocaleString('es-AR')} - {ent.cantidad} entrada(s)
+                                        </p>
+                                    </div>
+                                    <button className="btn" style={{background: '#f59e0b', color: 'white'}} onClick={() => confirmarPago(ent.id)}>
+                                        ✅ Ya pagué
+                                    </button>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                    {entradas.length === 0 && entradasPendientes.length === 0 ? (
                         <div className="empty-state">
                             <span>🎫</span>
                             <p>No tienes entradas compradas</p>
@@ -2866,19 +2913,16 @@
                                         <p>📅 {ent.evento ? parseFecha(ent.evento.fecha).toLocaleDateString('es-AR') : ''}</p>
                                         <p>📍 {ent.evento?.lugar || ''}</p>
                                         <p>🎟️ Cantidad: {ent.cantidad} - 💵 Total: ${ent.total?.toLocaleString('es-AR')}</p>
-                                        <span className={ent.estado === 'pagada' ? 'entrada-pagada' : 'entrada-pendiente'}>{ent.estado === 'pagada' ? '✅ Pagada' : '⏳ Pendiente'}</span>
                                     </div>
                                     <div>
                                         <div className="entrada-qr" style={{fontSize: '14px', fontFamily: 'monospace'}}>
                                             <div style={{marginBottom: '8px'}}>🎫 Código de Acceso</div>
                                             <div style={{fontSize: '16px', fontWeight: 'bold', color: '#6366f1', wordBreak: 'break-all'}}>{ent.codigo}</div>
                                         </div>
-                                        {ent.estado === 'pagada' && (
-                                            <div style={{display: 'flex', flexDirection: 'column', gap: '0.5rem'}}>
-                                                <button className="btn" style={{marginTop: '0.5rem'}} onClick={() => enviarTicket(ent.id)}>📧 Enviar por email</button>
-                                                <button className="btn btn-secondary" style={{marginTop: '0.25rem'}} onClick={() => setTransferModal(ent)} disabled>🔄 Transferir</button>
-                                            </div>
-                                        )}
+                                        <div style={{display: 'flex', flexDirection: 'column', gap: '0.5rem'}}>
+                                            <button className="btn" style={{marginTop: '0.5rem'}} onClick={() => enviarTicket(ent.id)}>📧 Enviar por email</button>
+                                            <button className="btn btn-secondary" style={{marginTop: '0.25rem'}} onClick={() => setTransferModal(ent)} disabled>🔄 Transferir</button>
+                                        </div>
                                     </div>
                                 </div>
                             ))}
