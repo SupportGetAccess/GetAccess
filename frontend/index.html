@@ -2426,7 +2426,7 @@
                         const qr = await qrRes.json();
                         if (qrRes.ok && qr.qr_code) {
                             setQrData(qr);
-                            setQrCountdown(300);
+                            setQrCountdown(600);
                             setProcesando(false);
                             const interval = setInterval(() => {
                                 setQrCountdown(prev => {

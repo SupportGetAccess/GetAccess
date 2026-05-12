@@ -2009,7 +2009,7 @@ async def webhook_mercadopago(request: Request, db = Depends(get_db)):
             if external_ref and status_mp in ("approved", "processed"):
                 if str(external_ref).startswith("QR-"):
                     print(f">>> PROCESANDO PAGO QR: {external_ref}")
-                    cursor_qr = db.execute("SELECT id FROM entradas WHERE preference_id = ? AND estado = 'pendiente'", (external_ref,))
+                    cursor_qr = db.execute("SELECT id FROM entradas WHERE payment_order_id = ? AND estado = 'pendiente'", (external_ref,))
                     entradas_qr = cursor_qr.fetchall()
 
                     for ent_row in entradas_qr:
@@ -2255,9 +2255,9 @@ async def crear_pago_qr(datos: dict, credentials: HTTPAuthorizationCredentials =
         "estado": "pendiente"
     }
     
-    # Guardar qr_order_id en cada entrada para persistencia (sobrevive reinicios)
+    # Guardar qr_order_id en payment_order_id para persistencia (sobrevive reinicios)
     for entrada_id in [e[0] for e in entradas]:
-        db.execute("UPDATE entradas SET preference_id = ? WHERE id = ?", (qr_order_id, entrada_id))
+        db.execute("UPDATE entradas SET payment_order_id = ? WHERE id = ?", (qr_order_id, entrada_id))
         db.commit()
     
     try:
@@ -2326,8 +2326,8 @@ async def verificar_estado_qr(qr_order_id: str, db = Depends(get_db)):
     if qr_order_id in QR_PEDIDOS:
         return QR_PEDIDOS[qr_order_id]
     
-    # Si no está en memoria, buscar en DB por preference_id
-    cursor = db.execute("SELECT estado FROM entradas WHERE preference_id = ?", (qr_order_id,))
+    # Si no está en memoria, buscar en DB por payment_order_id
+    cursor = db.execute("SELECT estado FROM entradas WHERE payment_order_id = ?", (qr_order_id,))
     entrada = cursor.fetchone()
     
     if entrada:
@@ -2342,7 +2342,7 @@ async def cancelar_qr_pago(qr_order_id: str, db = Depends(get_db)):
     if qr_order_id in QR_PEDIDOS:
         entrada_ids = QR_PEDIDOS[qr_order_id].get("entrada_ids", [])
     else:
-        cursor = db.execute("SELECT id FROM entradas WHERE preference_id = ? AND estado = 'pendiente'", (qr_order_id,))
+        cursor = db.execute("SELECT id FROM entradas WHERE payment_order_id = ? AND estado = 'pendiente'", (qr_order_id,))
         entrada_ids = [row[0] for row in cursor.fetchall()]
     
     if entrada_ids:
@@ -3626,6 +3626,7 @@ if __name__ == "__main__":
                 estado TEXT DEFAULT 'comprada',
                 preference_id TEXT UNIQUE,
                 payment_id TEXT,
+                payment_order_id TEXT,
                 creada_en TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 usada INTEGER DEFAULT 0,
                 transferida INTEGER DEFAULT 0,

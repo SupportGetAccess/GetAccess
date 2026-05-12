@@ -44,6 +44,7 @@ CREATE TABLE IF NOT EXISTS entradas (
     estado TEXT DEFAULT 'comprada',
     preference_id TEXT,
     payment_id TEXT,
+    payment_order_id TEXT,
     creada_en TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     usada INTEGER DEFAULT 0,
     transferida INTEGER DEFAULT 0
