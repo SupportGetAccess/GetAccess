@@ -2394,6 +2394,35 @@
             const [verificarPagoTimer, setVerificarPagoTimer] = useState(null);
             const [pagoExitoso, setPagoExitoso] = useState(false);
             
+            // useEffect para verificar automáticamente el estado del pago QR
+            useEffect(() => {
+                if (!qrData?.qr_order_id || pagoExitoso) return;
+                
+                console.log('>>> [DEBUG] Iniciando verificación automática de pago QR:', qrData.qr_order_id);
+                
+                const interval = setInterval(async () => {
+                    try {
+                        const res = await fetch(API_URL + '/api/pagos/qr/' + qrData.qr_order_id + '/status');
+                        const status = await res.json();
+                        console.log('>>> [DEBUG] Estado del QR:', status);
+                        
+                        if (status.estado === 'pagada') {
+                            console.log('>>> [DEBUG] ¡Pago detectado! Mostrando modal de éxito');
+                            clearInterval(interval);
+                            setPagoExitoso(true);
+                            if (verificarPagoTimer) clearInterval(verificarPagoTimer);
+                        }
+                    } catch (err) {
+                        console.error('>>> [DEBUG] Error al verificar pago:', err);
+                    }
+                }, 3000);
+                
+                return () => {
+                    console.log('>>> [DEBUG] Limpiando intervalo de verificación');
+                    clearInterval(interval);
+                };
+            }, [qrData?.qr_order_id, pagoExitoso]);
+            
             const formatCountdown = (seconds) => {
                 const mins = Math.floor(seconds / 60);
                 const secs = seconds % 60;
