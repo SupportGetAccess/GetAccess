@@ -622,6 +622,29 @@ if topic == "payment" or topic == "order":
 
 ---
 
+## SESIÓN MARTES 12 DE MAYO 2026 (CONTINUACIÓN)
+
+### Feature: ID Público Único para Eventos
+
+**Problema**: Las URLs exponían el ID interno de la base de datos (ej: `?evento=13`), lo cual es una vulnerabilidad de seguridad.
+
+**Solución implementada**:
+1. Agregar columna `public_id` (8 caracteres alfanuméricos) a la tabla eventos
+2. Generar `public_id` automáticamente al crear eventos
+3. Generar `public_id` para eventos existentes (11 eventos)
+4. Nuevo endpoint: `GET /api/eventos/public/{public_id}`
+5. Modificar frontend para usar nuevo formato `?e=PUBLIC_ID`
+6. Backwards compatibility con `?evento=ID`
+
+**URLs resultantes**:
+- Antes (inseguro): `https://getaccess.com.ar/?evento=13`
+- Después (seguro): `https://getaccess.com.ar/?e=A3K9M2X7`
+
+**Commits**:
+- d217ea6 - Feat: agregar public_id para eventos y nueva URL
+
+---
+
 ## URLs de Producción
 
 - Frontend: https://getaccess.com.ar
