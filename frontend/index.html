@@ -2481,7 +2481,7 @@
                     try {
                         const res = await fetch(API_URL + '/api/pagos/qr/' + qrData.qr_order_id + '/status');
                         const status = await res.json();
-                        if (status.estado === 'pagado') {
+                        if (status.estado === 'pagada') {
                             clearInterval(interval);
                             setPagoExitoso(true);
                         }
@@ -2520,7 +2520,7 @@
                 try {
                     const res = await fetch(API_URL + '/api/pagos/qr/' + qrData.qr_order_id + '/status');
                     const status = await res.json();
-                    if (status.estado === 'pagado') {
+                    if (status.estado === 'pagada') {
                         if (verificarPagoTimer) clearInterval(verificarPagoTimer);
                         setPagoExitoso(true);
                     }
