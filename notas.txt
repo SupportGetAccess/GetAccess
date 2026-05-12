@@ -653,4 +653,61 @@ if topic == "payment" or topic == "order":
 
 ---
 
+## PROYECTO PENDIENTE: Compra de Entradas sin Registro
+
+### Descripción
+Permitir que usuarios compren entradas SIN necesidad de crear una cuenta o iniciar sesión.
+
+### Datos del Comprador (campos obligatorios)
+| Campo | Validación |
+|-------|-------------|
+| Nombre | Obligatorio, mínimo 2 caracteres |
+| Apellido | Obligatorio, mínimo 2 caracteres |
+| Email | Obligatorio, formato válido |
+| Repetir Email | Obligatorio, debe ser igual al email |
+| Teléfono | Obligatorio, solo números, 8-15 dígitos |
+
+### Plan de Implementación
+
+#### 1. Base de Datos
+```sql
+ALTER TABLE entradas ADD COLUMN email_comprador TEXT;
+ALTER TABLE entradas ADD COLUMN nombre_comprador TEXT;
+ALTER TABLE entradas ADD COLUMN apellido_comprador TEXT;
+ALTER TABLE entradas ADD COLUMN telefono_comprador TEXT;
+ALTER TABLE entradas ALTER COLUMN usuario_id DROP NOT NULL;
+```
+
+#### 2. Backend - Endpoints a crear/modificar
+- Nuevo endpoint: `POST /api/entradas/invitado` (sin auth)
+- Nuevo endpoint: `POST /api/pagos/qr/invitado` (sin auth)
+- Nuevo endpoint: `POST /api/pagos/carrito/invitado` (sin auth)
+- Modificar `procesar_entrada_pagada()` para buscar email en `email_comprador` si `usuario_id` es NULL
+- Modificar `validar_entrada()` para buscar datos del comprador
+- Modificar `/api/entradas/buscar` para buscar en `email_comprador` también
+
+#### 3. Frontend
+- Nuevo componente "Datos del Comprador" con los 5 campos
+- Modificar flujo Carrito: si no hay token, mostrar formulario de datos del comprador
+- Mantener backwards compatibility con usuarios registrados
+
+#### 4. Funcionalidades a mantener sin cambios
+- Login/Registro actual
+- Mis Entradas (usuarios registrados)
+- Transferencia de entradas
+- QR de acceso
+- Validación (scanner)
+- Email con ticket
+- Panel admin
+- Panel organizador
+
+### Riesgos identificados
+- `procesar_entrada_pagada` hace JOIN con tabla usuarios → debe buscar en `email_comprador` si `usuario_id` es NULL
+- `validar_entrada` hace JOIN con tabla usuarios → debe buscar datos del comprador
+
+### URL resultado
+Los usuarios podrán comprar sin registro y luego buscar sus entradas en "Buscar Mis Entradas" ingresando su email.
+
+---
+
 *Última sesión: Martes 12 de Mayo 2026*
