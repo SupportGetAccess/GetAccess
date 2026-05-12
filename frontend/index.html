@@ -2521,11 +2521,8 @@
                     const res = await fetch(API_URL + '/api/pagos/qr/' + qrData.qr_order_id + '/status');
                     const status = await res.json();
                     if (status.estado === 'pagado') {
-                        showToast('Pago confirmado!', 'success');
-                        localStorage.removeItem('carrito');
-                        setCarrito([]);
-                        setVista('mis-entradas');
-                        cerrarQrModal();
+                        if (verificarPagoTimer) clearInterval(verificarPagoTimer);
+                        setPagoExitoso(true);
                     }
                 } catch (err) { console.error(err); }
             };
