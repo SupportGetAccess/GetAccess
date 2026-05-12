@@ -990,7 +990,25 @@
                 else if (pago === 'pendiente') { setPagoEstado('warning'); }
                 
                 if (reset) { setResetToken(reset); setVista('reset-password'); }
-                if (evento) { setEventoId(parseInt(evento)); setVista('detalle-evento'); }
+                
+                // Soporte para URLs con public_id (?e=PUBLIC_ID) y backwards compatibility (?evento=ID)
+                const publicId = params.get('e');
+                const eventoIdParam = params.get('evento');
+                
+                if (publicId) {
+                    // Nueva URL con public_id: ?e=A3K9M2X7
+                    fetch(API_URL + '/api/eventos/public/' + publicId)
+                    .then(res => res.ok ? res.json() : Promise.reject())
+                    .then(data => {
+                        setEventoId(data.id);
+                        setVista('detalle-evento');
+                    })
+                    .catch(() => { console.log('Evento no encontrado'); });
+                } else if (eventoIdParam) {
+                    // Formato antiguo: ?evento=13 (backwards compatibility)
+                    setEventoId(parseInt(eventoIdParam));
+                    setVista('detalle-evento');
+                }
                 
                 const savedToken = sessionStorage.getItem('token');
                 if (savedToken) {

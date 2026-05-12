@@ -1267,7 +1267,7 @@ def listar_eventos(categoria: str = None, busqueda: str = None, mis_eventos: boo
             except:
                 raise HTTPException(status_code=401, detail="Token inválido")
         
-        query = "SELECT id, nombre, descripcion, fecha, lugar, precio, capacidad, vendidos, COALESCE(imagen, '') as imagen, COALESCE(categoria, '') as categoria, COALESCE(comision, 0) as comision FROM eventos WHERE 1=1"
+        query = "SELECT id, nombre, descripcion, fecha, lugar, precio, capacidad, vendidos, COALESCE(imagen, '') as imagen, COALESCE(categoria, '') as categoria, COALESCE(comision, 0) as comision, COALESCE(public_id, '') as public_id FROM eventos WHERE 1=1"
         params = []
         
         # Ocultar evento ID=3 del frontend público
@@ -1303,7 +1303,8 @@ def listar_eventos(categoria: str = None, busqueda: str = None, mis_eventos: boo
                 "categoria": r["categoria"] if isinstance(r, dict) else r[9],
                 "comision": r["comision"] if isinstance(r, dict) else r[10],
                 "capacidad": r["capacidad"] if isinstance(r, dict) else r[6],
-                "vendidos": r["vendidos"] if isinstance(r, dict) else r[7]
+                "vendidos": r["vendidos"] if isinstance(r, dict) else r[7],
+                "public_id": r["public_id"] if isinstance(r, dict) else r[11]
             }
             for r in rows
         ]
@@ -1348,6 +1349,17 @@ def buscar_eventos(q: str = None, limite: int = 10, db = Depends(get_db)):
         print(traceback.format_exc())
         return {"eventos": [], "recintos": []}
 
+@app.get("/api/eventos/public/{public_id}")
+def obtener_evento_por_public_id(public_id: str, db = Depends(get_db)):
+    cursor = db.execute("SELECT id FROM eventos WHERE public_id = ?", (public_id,))
+    row = cursor.fetchone()
+    
+    if not row:
+        raise HTTPException(status_code=404, detail="Evento no encontrado")
+    
+    evento_id = row[0]
+    return {"id": evento_id, "public_id": public_id}
+
 @app.get("/api/eventos/{evento_id}")
 def obtener_evento(evento_id: int, db = Depends(get_db)):
     # Cache para detalle de evento
@@ -1357,7 +1369,7 @@ def obtener_evento(evento_id: int, db = Depends(get_db)):
         if time.time() - cached_time < CACHE_TTL:
             return cached_data
     
-    cursor = db.execute("SELECT id, nombre, descripcion, fecha, lugar, precio, capacidad, vendidos, COALESCE(imagen, '') as imagen, COALESCE(categoria, '') as categoria, COALESCE(comision, 0) as comision FROM eventos WHERE id = ?", (evento_id,))
+    cursor = db.execute("SELECT id, nombre, descripcion, fecha, lugar, precio, capacidad, vendidos, COALESCE(imagen, '') as imagen, COALESCE(categoria, '') as categoria, COALESCE(comision, 0) as comision, COALESCE(public_id, '') as public_id FROM eventos WHERE id = ?", (evento_id,))
     row = cursor.fetchone()
     
     if not row:
@@ -1369,11 +1381,8 @@ def obtener_evento(evento_id: int, db = Depends(get_db)):
     return {
         "id": row[0], "nombre": row[1], "descripcion": row[2], "fecha": row[3], "lugar": row[4],
         "precio": row[5], "capacidad": row[6], "vendidos": row[7], "imagen": row[8], "categoria": row[9],
-        "disponibles": row[6] - row[7], "imagenes": imagenes, "comision": row[10]
+        "disponibles": row[6] - row[7], "imagenes": imagenes, "comision": row[10], "public_id": row[11]
     }
-    # Guardar en cache
-    cache[cache_key] = (result, time.time())
-    return result
 
 class ImagenCreate(BaseModel):
     url: str
@@ -1483,14 +1492,22 @@ async def crear_evento(
     # Guardar la primera imagen como imagen principal y el resto como galería
     imagen_a_guardar = json.dumps(imagenes_guardadas) if imagenes_guardadas else None
     
+    # Generar public_id único de 8 caracteres
+    import random, string
+    public_id = ''.join(random.choices(string.ascii_uppercase + string.digits, k=8))
+    cursor = db.execute("SELECT COUNT(*) FROM eventos WHERE public_id = ?", (public_id,))
+    while cursor.fetchone()[0] > 0:
+        public_id = ''.join(random.choices(string.ascii_uppercase + string.digits, k=8))
+        cursor = db.execute("SELECT COUNT(*) FROM eventos WHERE public_id = ?", (public_id,))
+    
     cursor = db.execute(
-        "INSERT INTO eventos (nombre, descripcion, fecha, lugar, precio, capacidad, vendidos, imagen, categoria, creado_por, comision) VALUES (?, ?, ?, ?, ?, ?, 0, ?, ?, ?, ?, ?)",
-        (nombre, fecha + " 20:00:00", lugar, precio, capacidad, imagen_a_guardar, categoria, user_id, comision)
+        "INSERT INTO eventos (nombre, descripcion, fecha, lugar, precio, capacidad, vendidos, imagen, categoria, creado_por, comision, public_id) VALUES (?, ?, ?, ?, ?, ?, 0, ?, ?, ?, ?, ?, ?)",
+        (nombre, fecha + " 20:00:00", lugar, precio, capacidad, imagen_a_guardar, categoria, user_id, comision, public_id)
     )
     db.commit()
-    print(f">>> EVENTO CREADO: {nombre}, ID: {cursor.lastrowid}, Fecha: {fecha}")
+    print(f">>> EVENTO CREADO: {nombre}, ID: {cursor.lastrowid}, public_id: {public_id}, Fecha: {fecha}")
     fecha_formateada = fecha + " 20:00:00"
-    return {"id": cursor.lastrowid, "nombre": nombre, "descripcion": descripcion, "fecha": fecha_formateada, "lugar": lugar, "precio": precio, "capacidad": capacidad, "imagen": imagen_a_guardar, "categoria": categoria}
+    return {"id": cursor.lastrowid, "nombre": nombre, "descripcion": descripcion, "fecha": fecha_formateada, "lugar": lugar, "precio": precio, "capacidad": capacidad, "imagen": imagen_a_guardar, "categoria": categoria, "public_id": public_id}
 
 class EventoUpdate(BaseModel):
     nombre: Optional[str] = None
