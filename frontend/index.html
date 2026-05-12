@@ -1047,9 +1047,14 @@
             const login = (userData, token) => { setUser(userData); setToken(token); sessionStorage.setItem('token', token); const savedCarrito = JSON.parse(localStorage.getItem('carrito') || '[]'); setCarrito(savedCarrito); showToast('Bienvenido!'); };
             const logout = () => { setUser(null); setToken(null); sessionStorage.removeItem('token'); localStorage.removeItem('carrito'); setCarrito([]); setVista('eventos'); showToast('Sesion cerrada'); };
             
-            const irADetalle = (id) => {
+            const irADetalle = (id, publicId = null) => {
                 setEventoId(id);
                 setVista('detalle-evento');
+                if (publicId) {
+                    const url = new URL(window.location.href);
+                    url.searchParams.set('e', publicId);
+                    window.history.pushState({}, '', url);
+                }
             };
             
             return (
@@ -1294,7 +1299,7 @@
                                         <div>
                                             <div style={{padding:'0.5rem 1rem', fontSize:'0.75rem', color:'var(--text-dim)', fontWeight:'bold', borderBottom:'1px solid rgba(255,255,255,0.1)'}}>EVENTOS</div>
                                             {sugerencias.map(sug => (
-                                                <div key={sug.id} onMouseDown={(e) => { e.preventDefault(); irADetalle(sug.id); setBusqueda(''); setSugerencias([]); setRecintos([]); setMostrarSugerencias(false); }} style={{padding:'0.75rem 1rem', cursor:'pointer', borderBottom:'1px solid rgba(255,255,255,0.05)', display:'flex', alignItems:'center', gap:'0.75rem', background:'transparent'}}>
+                                                <div key={sug.id} onMouseDown={(e) => { e.preventDefault(); irADetalle(sug.id, sug.public_id); setBusqueda(''); setSugerencias([]); setRecintos([]); setMostrarSugerencias(false); }} style={{padding:'0.75rem 1rem', cursor:'pointer', borderBottom:'1px solid rgba(255,255,255,0.05)', display:'flex', alignItems:'center', gap:'0.75rem', background:'transparent'}}>
                                                     {sug.imagen ? <img src={getImagenUrl(sug.imagen)} alt="" style={{width:40, height:40, objectFit:'cover', borderRadius:'8px'}} /> : <span style={{fontSize:'1.5rem'}}>🎫</span>}
                                                     <div style={{flex:1}}>
                                                         <div style={{fontWeight:'bold', color:'white'}}>{sug.nombre}</div>
@@ -1343,7 +1348,7 @@
                                 const esPasado = parseFecha(evento.fecha) < new Date();
                                 return (
                                 <div key={evento.id} className="evento-card" style={{opacity: esPasado ? 0.6 : 1}}>
-                                    <div className="evento-img" onClick={() => !esPasado && irADetalle(evento.id)} style={{cursor: esPasado ? 'default' : 'pointer'}}>
+                                    <div className="evento-img" onClick={() => !esPasado && irADetalle(evento.id, evento.public_id)} style={{cursor: esPasado ? 'default' : 'pointer'}}>
                                         {evento.imagen ? (
                                             <img src={getImagenUrl(evento.imagen)} alt={evento.nombre} style={{width:'100%',height:'100%',objectFit:'cover'}} onError={e => { e.target.style.display='none'; e.target.nextSibling.style.display='flex'; }} />
                                         ) : null}
@@ -1352,7 +1357,7 @@
                                     </div>
                                     <div className="evento-info">
                                         {evento.categoria && <span style={{fontSize:'0.75rem', background:'rgba(99,102,241,0.2)', padding:'0.25rem 0.75rem', borderRadius:'20px', color:'var(--primary-light)', display:'inline-block', marginBottom:'0.5rem'}}>{evento.categoria.toUpperCase()}</span>}
-                                        <h3 onClick={() => !esPasado && irADetalle(evento.id)} style={{cursor: esPasado ? 'default' : 'pointer'}}>{evento.nombre}</h3>
+                                        <h3 onClick={() => !esPasado && irADetalle(evento.id, evento.public_id)} style={{cursor: esPasado ? 'default' : 'pointer'}}>{evento.nombre}</h3>
                                         <div className="evento-meta"><span>📅 {parseFecha(evento.fecha).toLocaleDateString('es-AR', { weekday: 'short', day: 'numeric', month: 'short' })}</span><span>📍 {evento.lugar}</span></div>
                                         <p className="evento-desc">{evento.descripcion}</p>
                                         <div className="evento-footer">
