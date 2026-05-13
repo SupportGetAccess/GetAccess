@@ -2417,6 +2417,33 @@
             const [verificarPagoTimer, setVerificarPagoTimer] = useState(null);
             const [pagoExitoso, setPagoExitoso] = useState(false);
             
+            // Datos del comprador (para compra sin registro)
+            const [datosComprador, setDatosComprador] = useState({
+                nombre: '', apellido: '', email: '', email_confirm: '', telefono: ''
+            });
+            const [erroresComprador, setErroresComprador] = useState({});
+            
+            const validarDatosComprador = () => {
+                const errores = {};
+                if (!datosComprador.nombre || datosComprador.nombre.length < 2) {
+                    errores.nombre = 'El nombre debe tener al menos 2 caracteres';
+                }
+                if (!datosComprador.apellido || datosComprador.apellido.length < 2) {
+                    errores.apellido = 'El apellido debe tener al menos 2 caracteres';
+                }
+                if (!datosComprador.email || !datosComprador.email.includes('@')) {
+                    errores.email = 'Ingresa un email válido';
+                }
+                if (datosComprador.email !== datosComprador.email_confirm) {
+                    errores.email_confirm = 'Los emails no coinciden';
+                }
+                if (!datosComprador.telefono || !/^\d{8,15}$/.test(datosComprador.telefono)) {
+                    errores.telefono = 'El teléfono debe tener entre 8 y 15 dígitos';
+                }
+                setErroresComprador(errores);
+                return Object.keys(errores).length === 0;
+            };
+            
             // useEffect para verificar automáticamente el estado del pago QR
             useEffect(() => {
                 if (!qrData?.qr_order_id || pagoExitoso) return;
@@ -2453,70 +2480,135 @@
             };
             
             const pagarTodo = async () => {
-                if (!token) { showToast('Inicia sesión para pagar', 'error'); setVista('login'); return; }
                 if (carrito.length === 0) return;
                 setProcesando(true);
+                setErroresComprador({});
                 try {
-                    const entradaIds = [];
-                    for (const item of carrito) {
-                        const res = await fetch(API_URL + '/api/entradas/', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
-                            body: JSON.stringify({ evento_id: item.id, cantidad: item.cantidad || 1 })
-                        });
-                        if (!res.ok) throw new Error('Error al comprar ' + item.nombre);
-                        const entrada = await res.json();
-                        entradaIds.push(entrada.id);
-                    }
-                    
-                    if (metodoPago === 'qr') {
-                        const qrRes = await fetch(API_URL + '/api/pagos/qr', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
-                            body: JSON.stringify({ entrada_ids: entradaIds })
-                        });
-                        const qr = await qrRes.json();
-                        if (qrRes.ok && qr.qr_code) {
-                            setQrData(qr);
-                            setQrCountdown(600);
+                    // Si no hay token, usar endpoints de invitado
+                    if (!token) {
+                        if (!validarDatosComprador()) {
                             setProcesando(false);
-                            const interval = setInterval(() => {
-                                setQrCountdown(prev => {
-                                    if (prev <= 1) {
-                                        clearInterval(interval);
-                                        if (qr.qr_order_id) {
-                                            fetch(API_URL + '/api/pagos/qr/' + qr.qr_order_id + '/cancelar', {
-                                                method: 'POST',
-                                                headers: { 'Authorization': 'Bearer ' + token }
-                                            }).catch(e => console.error('Error al eliminar entradas:', e));
-                                        }
-                                        cerrarQrModal();
-                                        showToast('Tu tiempo de espera ha finalizado. Las entradas fueron liberadas.', 'error');
-                                        setVista('eventos');
-                                        return 0;
-                                    }
-                                    return prev - 1;
-                                });
-                            }, 1000);
-                            setQrTimer(interval);
                             return;
+                        }
+                        // Usar endpoints /invitado
+                        const entradas = carrito.map(item => ({
+                            evento_id: item.id,
+                            cantidad: item.cantidad || 1
+                        }));
+                        const endpoint = metodoPago === 'qr' 
+                            ? '/api/pagos/qr/invitado' 
+                            : '/api/pagos/carrito/invitado';
+                        
+                        const res = await fetch(API_URL + endpoint, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                entradas: entradas,
+                                comprador: datosComprador
+                            })
+                        });
+                        const data = await res.json();
+                        if (!res.ok) throw new Error(data.detail || 'Error al procesar');
+                        
+                        if (metodoPago === 'qr') {
+                            if (data.qr_code) {
+                                setQrData(data);
+                                setQrCountdown(600);
+                                setProcesando(false);
+                                const interval = setInterval(() => {
+                                    setQrCountdown(prev => {
+                                        if (prev <= 1) {
+                                            clearInterval(interval);
+                                            if (data.qr_order_id) {
+                                                fetch(API_URL + '/api/pagos/qr/' + data.qr_order_id + '/cancelar', {
+                                                    method: 'POST'
+                                                }).catch(e => console.error('Error al eliminar entradas:', e));
+                                            }
+                                            cerrarQrModal();
+                                            showToast('Tu tiempo de espera ha finalizado. Las entradas fueron liberadas.', 'error');
+                                            setVista('eventos');
+                                            return 0;
+                                        }
+                                        return prev - 1;
+                                    });
+                                }, 1000);
+                                setQrTimer(interval);
+                                return;
+                            } else {
+                                showToast(data.detail || 'Error al generar QR', 'error');
+                            }
                         } else {
-                            showToast(qr.detail || 'Error al generar QR', 'error');
+                            if (data.init_point) {
+                                localStorage.removeItem('carrito');
+                                showToast('Redirigiendo a MercadoPago...', 'success');
+                                window.location.href = data.init_point;
+                            } else {
+                                showToast(data.detail || 'Error al procesar pago', 'error');
+                            }
                         }
                     } else {
-                        const pagoRes = await fetch(API_URL + '/api/pagos/carrito', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
-                            body: JSON.stringify({ entrada_ids: entradaIds })
-                        });
-                        const pago = await pagoRes.json();
+                        // Usuario logueado - usar endpoints con auth
+                        const entradaIds = [];
+                        for (const item of carrito) {
+                            const res = await fetch(API_URL + '/api/entradas/', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+                                body: JSON.stringify({ evento_id: item.id, cantidad: item.cantidad || 1 })
+                            });
+                            if (!res.ok) throw new Error('Error al comprar ' + item.nombre);
+                            const entrada = await res.json();
+                            entradaIds.push(entrada.id);
+                        }
                         
-                        if (pagoRes.ok && pago.init_point) {
-                            localStorage.removeItem('carrito');
-                            showToast('Redirigiendo a MercadoPago...', 'success');
-                            window.location.href = pago.init_point;
+                        if (metodoPago === 'qr') {
+                            const qrRes = await fetch(API_URL + '/api/pagos/qr', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+                                body: JSON.stringify({ entrada_ids: entradaIds })
+                            });
+                            const qr = await qrRes.json();
+                            if (qrRes.ok && qr.qr_code) {
+                                setQrData(qr);
+                                setQrCountdown(600);
+                                setProcesando(false);
+                                const interval = setInterval(() => {
+                                    setQrCountdown(prev => {
+                                        if (prev <= 1) {
+                                            clearInterval(interval);
+                                            if (qr.qr_order_id) {
+                                                fetch(API_URL + '/api/pagos/qr/' + qr.qr_order_id + '/cancelar', {
+                                                    method: 'POST',
+                                                    headers: { 'Authorization': 'Bearer ' + token }
+                                                }).catch(e => console.error('Error al eliminar entradas:', e));
+                                            }
+                                            cerrarQrModal();
+                                            showToast('Tu tiempo de espera ha finalizado. Las entradas fueron liberadas.', 'error');
+                                            setVista('eventos');
+                                            return 0;
+                                        }
+                                        return prev - 1;
+                                    });
+                                }, 1000);
+                                setQrTimer(interval);
+                                return;
+                            } else {
+                                showToast(qr.detail || 'Error al generar QR', 'error');
+                            }
                         } else {
-                            showToast(pago.detail || 'Error al procesar pago', 'error');
+                            const pagoRes = await fetch(API_URL + '/api/pagos/carrito', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+                                body: JSON.stringify({ entrada_ids: entradaIds })
+                            });
+                            const pago = await pagoRes.json();
+                            
+                            if (pagoRes.ok && pago.init_point) {
+                                localStorage.removeItem('carrito');
+                                showToast('Redirigiendo a MercadoPago...', 'success');
+                                window.location.href = pago.init_point;
+                            } else {
+                                showToast(pago.detail || 'Error al procesar pago', 'error');
+                            }
                         }
                     }
                 } catch (err) { showToast(err.message, 'error'); }
@@ -2601,6 +2693,43 @@
                         <div className="modal-total" style={{marginTop: '1rem', padding: '1rem', background: 'linear-gradient(135deg, #6366f1, #ec4899)', borderRadius: '12px', color: 'white'}}>
                             💵 Total: ${total.toLocaleString('es-AR')}
                         </div>
+                        {!token && (
+                        <div style={{marginTop: '1rem', padding: '1rem', background: '#f8fafc', borderRadius: '12px', border: '2px solid #6366f1'}}>
+                            <h4 style={{marginBottom: '1rem', color: '#1f2937'}}>📝 Datos del Comprador</h4>
+                            <div style={{display: 'grid', gap: '0.75rem'}}>
+                                <div>
+                                    <input type="text" placeholder="Nombre" value={datosComprador.nombre} 
+                                        onChange={e => setDatosComprador({...datosComprador, nombre: e.target.value})} 
+                                        style={{width: '100%', padding: '0.75rem', borderRadius: '8px', border: erroresComprador.nombre ? '2px solid #ef4444' : '1px solid #ddd'}} />
+                                    {erroresComprador.nombre && <span style={{color: '#ef4444', fontSize: '12px'}}>{erroresComprador.nombre}</span>}
+                                </div>
+                                <div>
+                                    <input type="text" placeholder="Apellido" value={datosComprador.apellido} 
+                                        onChange={e => setDatosComprador({...datosComprador, apellido: e.target.value})} 
+                                        style={{width: '100%', padding: '0.75rem', borderRadius: '8px', border: erroresComprador.apellido ? '2px solid #ef4444' : '1px solid #ddd'}} />
+                                    {erroresComprador.apellido && <span style={{color: '#ef4444', fontSize: '12px'}}>{erroresComprador.apellido}</span>}
+                                </div>
+                                <div>
+                                    <input type="email" placeholder="Email" value={datosComprador.email} 
+                                        onChange={e => setDatosComprador({...datosComprador, email: e.target.value})} 
+                                        style={{width: '100%', padding: '0.75rem', borderRadius: '8px', border: erroresComprador.email ? '2px solid #ef4444' : '1px solid #ddd'}} />
+                                    {erroresComprador.email && <span style={{color: '#ef4444', fontSize: '12px'}}>{erroresComprador.email}</span>}
+                                </div>
+                                <div>
+                                    <input type="email" placeholder="Repetir Email" value={datosComprador.email_confirm} 
+                                        onChange={e => setDatosComprador({...datosComprador, email_confirm: e.target.value})} 
+                                        style={{width: '100%', padding: '0.75rem', borderRadius: '8px', border: erroresComprador.email_confirm ? '2px solid #ef4444' : '1px solid #ddd'}} />
+                                    {erroresComprador.email_confirm && <span style={{color: '#ef4444', fontSize: '12px'}}>{erroresComprador.email_confirm}</span>}
+                                </div>
+                                <div>
+                                    <input type="tel" placeholder="Telefono (8-15 digitos)" value={datosComprador.telefono} 
+                                        onChange={e => setDatosComprador({...datosComprador, telefono: e.target.value})} 
+                                        style={{width: '100%', padding: '0.75rem', borderRadius: '8px', border: erroresComprador.telefono ? '2px solid #ef4444' : '1px solid #ddd'}} />
+                                    {erroresComprador.telefono && <span style={{color: '#ef4444', fontSize: '12px'}}>{erroresComprador.telefono}</span>}
+                                </div>
+                            </div>
+                        </div>
+                        )}
                         <div style={{marginTop: '1rem', display: 'flex', gap: '0.5rem'}}>
                             <button 
                                 className={metodoPago === 'qr' ? 'btn' : 'btn btn-secondary'} 

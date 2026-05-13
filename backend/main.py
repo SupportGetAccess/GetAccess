@@ -814,6 +814,21 @@ class TokenResponse(BaseModel):
     token_type: str
     user: UsuarioResponse
 
+class DatosComprador(BaseModel):
+    nombre: str
+    apellido: str
+    email: EmailStr
+    email_confirm: str
+    telefono: str
+
+class EntradaInvitadoItem(BaseModel):
+    evento_id: int
+    cantidad: int
+
+class EntradaInvitadoRequest(BaseModel):
+    entradas: List[EntradaInvitadoItem]
+    comprador: DatosComprador
+
 def crear_token(user_id: int, db=None) -> str:
     expire = datetime.datetime.utcnow() + datetime.timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     cursor = db.execute("SELECT rol FROM usuarios WHERE id = ?", (user_id,)) if db else None
@@ -1789,13 +1804,18 @@ def confirmar_pago_entrada(entrada_id: int, credentials: HTTPAuthorizationCreden
 def buscar_entradas(q: str, db = Depends(get_db)):
     cursor = db.execute("""
         SELECT e.id, e.evento_id, e.usuario_id, e.cantidad, e.total, e.estado, e.preference_id,
-               ev.nombre, ev.fecha, ev.lugar, u.email, u.nombre, u.apellido
+               ev.nombre, ev.fecha, ev.lugar, 
+               COALESCE(u.email, e.email_comprador) as email,
+               COALESCE(u.nombre, e.nombre_comprador) as nombre,
+               COALESCE(u.apellido, e.apellido_comprador) as apellido
         FROM entradas e
         JOIN eventos ev ON e.evento_id = ev.id
-        JOIN usuarios u ON e.usuario_id = u.id
-        WHERE u.email = ? AND (e.transferida IS NULL OR e.transferida = 0)
+        LEFT JOIN usuarios u ON e.usuario_id = u.id
+        WHERE (u.email = ? OR e.email_comprador = ?) 
+          AND (e.transferida IS NULL OR e.transferida = 0)
+          AND e.estado = 'pagada'
         ORDER BY e.id DESC
-    """, (q,))
+    """, (q, q))
     rows = cursor.fetchall()
     
     if not rows:
@@ -1855,6 +1875,220 @@ def crear_entrada(entrada: EntradaCreate, credentials: HTTPAuthorizationCredenti
     db.commit()
     
     return {"id": entrada_id, "evento_id": entrada.evento_id, "usuario_id": user_id, "cantidad": entrada.cantidad, "total": total, "estado": "pendiente", "codigo": None}
+
+# === COMPRA SIN REGISTRO (INVITADO) ===
+
+@app.post("/api/entradas/invitado")
+def crear_entrada_invitado(req: EntradaInvitadoRequest, request: Request, db = Depends(get_db)):
+    """Crear entradas sin autenticación (para compradores sin registro)"""
+    client_id = get_client_ip(request)
+    if not check_rate_limit(client_id, db):
+        raise HTTPException(status_code=429, detail="Demasiadas solicitudes. Intenta más tarde.")
+    
+    if req.comprador.email != req.comprador.email_confirm:
+        raise HTTPException(status_code=400, detail="Los emails no coinciden")
+    
+    if not req.comprador.telefono.isdigit():
+        raise HTTPException(status_code=400, detail="El telefono debe contener solo numeros")
+    if len(req.comprador.telefono) < 8 or len(req.comprador.telefono) > 15:
+        raise HTTPException(status_code=400, detail="El telefono debe tener entre 8 y 15 digitos")
+    if len(req.comprador.nombre) < 2:
+        raise HTTPException(status_code=400, detail="El nombre debe tener al menos 2 caracteres")
+    if len(req.comprador.apellido) < 2:
+        raise HTTPException(status_code=400, detail="El apellido debe tener al menos 2 caracteres")
+    
+    entrada_ids = []
+    total = 0
+    
+    for item in req.entradas:
+        cursor = db.execute("SELECT id, precio, capacidad, vendidos, COALESCE(comision, 0) FROM eventos WHERE id = ?", (item.evento_id,))
+        evento = cursor.fetchone()
+        if not evento:
+            raise HTTPException(status_code=404, detail=f"Evento {item.evento_id} no encontrado")
+        
+        disponibles = evento[2] - evento[3]
+        if disponibles < item.cantidad:
+            raise HTTPException(status_code=400, detail=f"No hay suficientes entradas para el evento {evento[0]}")
+        
+        precio_base = evento[1]
+        comision = evento[4] if len(evento) > 4 else 0
+        precio_con_comision = precio_base * (1 + comision / 100)
+        subtotal = precio_con_comision * item.cantidad
+        
+        cursor = db.execute("""
+            INSERT INTO entradas (evento_id, cantidad, total, estado, preference_id, usada, transferida,
+            email_comprador, nombre_comprador, apellido_comprador, telefono_comprador)
+            VALUES (?, ?, ?, 'pendiente', NULL, 0, 0, ?, ?, ?, ?)
+        """, (item.evento_id, item.cantidad, subtotal, req.comprador.email,
+              req.comprador.nombre, req.comprador.apellido, req.comprador.telefono))
+        db.commit()
+        entrada_id = cursor.lastrowid
+        entrada_ids.append(entrada_id)
+        total += subtotal
+        
+        db.execute("UPDATE eventos SET vendidos = vendidos + ? WHERE id = ?", (item.cantidad, item.evento_id))
+        db.commit()
+    
+    return {"entrada_ids": entrada_ids, "total": total, "estado": "pendiente", "email": req.comprador.email}
+
+@app.post("/api/pagos/qr/invitado")
+async def crear_qr_invitado(req: EntradaInvitadoRequest, request: Request, db = Depends(get_db)):
+    """Crear QR de pago sin autenticación"""
+    client_id = get_client_ip(request)
+    if not check_rate_limit(client_id, db):
+        raise HTTPException(status_code=429, detail="Demasiadas solicitudes. Intenta más tarde.")
+    
+    if req.comprador.email != req.comprador.email_confirm:
+        raise HTTPException(status_code=400, detail="Los emails no coinciden")
+    if not req.comprador.telefono.isdigit():
+        raise HTTPException(status_code=400, detail="El telefono debe contener solo numeros")
+    if len(req.comprador.telefono) < 8 or len(req.comprador.telefono) > 15:
+        raise HTTPException(status_code=400, detail="El telefono debe tener entre 8 y 15 digitos")
+    if len(req.comprador.nombre) < 2 or len(req.comprador.apellido) < 2:
+        raise HTTPException(status_code=400, detail="Nombre y apellido deben tener al menos 2 caracteres")
+    
+    entrada_ids = []
+    total = 0
+    
+    for item in req.entradas:
+        cursor = db.execute("SELECT id, precio, capacidad, vendidos, COALESCE(comision, 0) FROM eventos WHERE id = ?", (item.evento_id,))
+        evento = cursor.fetchone()
+        if not evento:
+            raise HTTPException(status_code=404, detail=f"Evento {item.evento_id} no encontrado")
+        
+        disponibles = evento[2] - evento[3]
+        if disponibles < item.cantidad:
+            raise HTTPException(status_code=400, detail=f"No hay suficientes entradas para el evento {evento[0]}")
+        
+        precio_base = evento[1]
+        comision = evento[4] if len(evento) > 4 else 0
+        precio_con_comision = precio_base * (1 + comision / 100)
+        subtotal = precio_con_comision * item.cantidad
+        
+        cursor = db.execute("""
+            INSERT INTO entradas (evento_id, cantidad, total, estado, preference_id, usada, transferida,
+            email_comprador, nombre_comprador, apellido_comprador, telefono_comprador)
+            VALUES (?, ?, ?, 'pendiente', NULL, 0, 0, ?, ?, ?, ?)
+        """, (item.evento_id, item.cantidad, subtotal, req.comprador.email,
+              req.comprador.nombre, req.comprador.apellido, req.comprador.telefono))
+        db.commit()
+        entrada_id = cursor.lastrowid
+        entrada_ids.append(entrada_id)
+        total += subtotal
+        
+        db.execute("UPDATE eventos SET vendidos = vendidos + ? WHERE id = ?", (item.cantidad, item.evento_id))
+        db.commit()
+    
+    qr_order_id = f"QR-INV-{int(time.time())}-{random.randint(1000, 9999)}"
+    external_reference = qr_order_id
+    
+    QR_PEDIDOS[qr_order_id] = {
+        "estado": "pendiente",
+        "total": total,
+        "entrada_ids": entrada_ids,
+        "email_comprador": req.comprador.email
+    }
+    
+    for ent_id in entrada_ids:
+        db.execute("UPDATE entradas SET payment_order_id = ? WHERE id = ?", (external_reference, ent_id))
+    db.commit()
+    
+    qr_data = {
+        "qr_order_id": qr_order_id,
+        "external_reference": external_reference,
+        "total": total,
+        "entrada_ids": entrada_ids
+    }
+    
+    try:
+        qr = qrcode.QRCode(version=1, box_size=10, border=5)
+        qr.add_data(f"{PRODUCTION_URL}/?pago={qr_order_id}")
+        qr.make(fit=True)
+        img = qr.make_image(fill_color="black", back_color="white")
+        buffer = io.BytesIO()
+        img.save(buffer, format="PNG")
+        buffer.seek(0)
+        qr_base64 = base64.b64encode(buffer.getvalue()).decode()
+        qr_data["qr_code"] = f"data:image/png;base64,{qr_base64}"
+    except Exception as e:
+        print(f">>> Error generando QR: {e}")
+        qr_data["qr_code"] = None
+    
+    return qr_data
+
+@app.post("/api/pagos/carrito/invitado")
+def crear_link_invitado(req: EntradaInvitadoRequest, request: Request, db = Depends(get_db)):
+    """Crear link de pago sin autenticación"""
+    client_id = get_client_ip(request)
+    if not check_rate_limit(client_id, db):
+        raise HTTPException(status_code=429, detail="Demasiadas solicitudes. Intenta más tarde.")
+    
+    if req.comprador.email != req.comprador.email_confirm:
+        raise HTTPException(status_code=400, detail="Los emails no coinciden")
+    if not req.comprador.telefono.isdigit():
+        raise HTTPException(status_code=400, detail="El telefono debe contener solo numeros")
+    if len(req.comprador.telefono) < 8 or len(req.comprador.telefono) > 15:
+        raise HTTPException(status_code=400, detail="El telefono debe tener entre 8 y 15 digitos")
+    if len(req.comprador.nombre) < 2 or len(req.comprador.apellido) < 2:
+        raise HTTPException(status_code=400, detail="Nombre y apellido deben tener al menos 2 caracteres")
+    
+    entrada_ids = []
+    total = 0
+    
+    for item in req.entradas:
+        cursor = db.execute("SELECT id, precio, capacidad, vendidos, COALESCE(comision, 0) FROM eventos WHERE id = ?", (item.evento_id,))
+        evento = cursor.fetchone()
+        if not evento:
+            raise HTTPException(status_code=404, detail=f"Evento {item.evento_id} no encontrado")
+        
+        disponibles = evento[2] - evento[3]
+        if disponibles < item.cantidad:
+            raise HTTPException(status_code=400, detail=f"No hay suficientes entradas para el evento {evento[0]}")
+        
+        precio_base = evento[1]
+        comision = evento[4] if len(evento) > 4 else 0
+        precio_con_comision = precio_base * (1 + comision / 100)
+        subtotal = precio_con_comision * item.cantidad
+        
+        cursor = db.execute("""
+            INSERT INTO entradas (evento_id, cantidad, total, estado, preference_id, usada, transferida,
+            email_comprador, nombre_comprador, apellido_comprador, telefono_comprador)
+            VALUES (?, ?, ?, 'pendiente', NULL, 0, 0, ?, ?, ?, ?)
+        """, (item.evento_id, item.cantidad, subtotal, req.comprador.email,
+              req.comprador.nombre, req.comprador.apellido, req.comprador.telefono))
+        db.commit()
+        entrada_id = cursor.lastrowid
+        entrada_ids.append(entrada_id)
+        total += subtotal
+        
+        db.execute("UPDATE eventos SET vendidos = vendidos + ? WHERE id = ?", (item.cantidad, item.evento_id))
+        db.commit()
+    
+    external_reference = ",".join(str(eid) for eid in entrada_ids)
+    
+    preference_data = {
+        "items": [{"title": f"Entrada GetAccess", "quantity": 1, "currency_id": "ARS", "unit_price": total}],
+        "external_reference": external_reference,
+        "notification_url": f"{RENDER_URL}/api/pagos/webhook"
+    }
+    
+    try:
+        response = requests.post(
+            f"{MERCADOPAGO_API_URL}/checkout/preferences",
+            headers={"Authorization": f"Bearer {MERCADO_PAGO_ACCESS_TOKEN}", "Content-Type": "application/json"},
+            json=preference_data,
+            timeout=30
+        )
+        if response.status_code in [200, 201]:
+            pref = response.json()
+            for ent_id in entrada_ids:
+                db.execute("UPDATE entradas SET preference_id = ? WHERE id = ?", (pref.get("id"), ent_id))
+            db.commit()
+            return {"init_point": pref.get("init_point"), "preference_id": pref.get("id"), "entrada_ids": entrada_ids, "total": total}
+        else:
+            raise HTTPException(status_code=400, detail=f"Error MercadoPago: {response.text}")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error al crear pago: {str(e)}")
 
 # === TRANSFERENCIA DE ENTRADAS ===
 import secrets
@@ -2054,9 +2288,12 @@ def procesar_entrada_pagada(entrada_id, db):
     print(f">>> Entrada {entrada_id} marcada como pagada, codigo: {codigo}")
     
     cursor_info = db.execute("""
-        SELECT u.email, u.nombre, u.apellido, ev.nombre, ev.fecha, ev.lugar, e.cantidad, e.total
+        SELECT COALESCE(u.email, e.email_comprador) as email, 
+               COALESCE(u.nombre, e.nombre_comprador) as nombre,
+               COALESCE(u.apellido, e.apellido_comprador) as apellido,
+               ev.nombre, ev.fecha, ev.lugar, e.cantidad, e.total
         FROM entradas e
-        JOIN usuarios u ON e.usuario_id = u.id
+        LEFT JOIN usuarios u ON e.usuario_id = u.id
         JOIN eventos ev ON e.evento_id = ev.id
         WHERE e.id = ?
     """, (entrada_id,))
@@ -2710,10 +2947,12 @@ def validar_entrada(datos: ValidarEntradaRequest, credentials: HTTPAuthorization
     
     cursor = db.execute("""
         SELECT e.id, e.cantidad, e.estado, e.evento_id, ev.nombre, ev.fecha, 
-               u.nombre, u.apellido, e.usada
+               COALESCE(u.nombre, e.nombre_comprador) as nombre, 
+               COALESCE(u.apellido, e.apellido_comprador) as apellido, 
+               e.usada
         FROM entradas e
         JOIN eventos ev ON e.evento_id = ev.id
-        JOIN usuarios u ON e.usuario_id = u.id
+        LEFT JOIN usuarios u ON e.usuario_id = u.id
         WHERE e.preference_id = ?
     """, (codigo_buscar,))
     entrada = cursor.fetchone()
@@ -2788,10 +3027,12 @@ def consultar_entrada(codigo: str, db = Depends(get_db)):
     
     cursor = db.execute("""
         SELECT e.id, e.cantidad, e.estado, e.evento_id, ev.nombre, ev.fecha, ev.lugar,
-               u.nombre, u.apellido, e.usada
+               COALESCE(u.nombre, e.nombre_comprador) as nombre, 
+               COALESCE(u.apellido, e.apellido_comprador) as apellido, 
+               e.usada
         FROM entradas e
         JOIN eventos ev ON e.evento_id = ev.id
-        JOIN usuarios u ON e.usuario_id = u.id
+        LEFT JOIN usuarios u ON e.usuario_id = u.id
         WHERE e.preference_id = ?
     """, (codigo,))
     entrada = cursor.fetchone()
@@ -2801,7 +3042,7 @@ def consultar_entrada(codigo: str, db = Depends(get_db)):
     
     cursor_validaciones = db.execute("""
         SELECT COUNT(*) FROM validaciones WHERE entrada_id = ?
-    """, (entrada_id,))
+    """, (entrada[0],))
     veces_validada = cursor_validaciones.fetchone()[0]
     
     return {
