@@ -710,4 +710,76 @@ Los usuarios podrán comprar sin registro y luego buscar sus entradas en "Buscar
 
 ---
 
-*Última sesión: Martes 12 de Mayo 2026*
+## SESIÓN MIÉRCOLES 13 DE MAYO 2026
+
+### Completado: Compra sin Registro (Invitado)
+
+**Objetivo**: Permitir que usuarios compren entradas SIN crear cuenta ni iniciar sesión.
+
+### Base de Datos
+
+**Columnas agregadas a tabla `entradas`:**
+```sql
+ALTER TABLE entradas ADD COLUMN email_comprador TEXT;
+ALTER TABLE entradas ADD COLUMN nombre_comprador TEXT;
+ALTER TABLE entradas ADD COLUMN apellido_comprador TEXT;
+ALTER TABLE entradas ADD COLUMN telefono_comprador TEXT;
+ALTER TABLE entradas ALTER COLUMN usuario_id DROP NOT NULL;
+```
+
+**Script ejecutado**: `backend/add_columns_invitado.py`
+
+### Backend - Funciones modificadas con LEFT JOIN
+
+| Función | Cambio |
+|---------|--------|
+| `procesar_entrada_pagada()` | LEFT JOIN con usuarios. Si `usuario_id=NULL`, usa `email_comprador` |
+| `validar_entrada()` | LEFT JOIN con usuarios |
+| `consultar_entrada()` | LEFT JOIN con usuarios |
+| `GET /api/entradas/buscar` | Busca en `usuarios.email` Y `entradas.email_comprador` |
+
+### Backend - Endpoints nuevos (públicos - sin auth)
+
+| Endpoint | Método | Descripción |
+|----------|--------|-------------|
+| `/api/entradas/invitado` | POST | Crear entrada con datos del comprador |
+| `/api/pagos/qr/invitado` | POST | Generar QR de MercadoPago |
+| `/api/pagos/carrito/invitado` | POST | Generar link de pago |
+
+**Todos con rate limiting habilitado.**
+
+### Frontend - Cambios
+
+**1. Botón "Comprar" permite usuarios sin cuenta:**
+- Ya no redirige a login
+- Abre ModalCompra directamente (igual que usuarios logueados)
+
+**2. Auto-redirect al carrito para usuarios sin cuenta:**
+- Al agregar entrada al carrito, si no hay token → redirige automáticamente al carrito
+- Muestra toast: "Completa los datos del comprador para continuar"
+
+**3. Formulario "Datos del Comprador" en el carrito:**
+- Campos: nombre, apellido, email, repetir email, teléfono
+- Validaciones:
+  - Nombre: min 2 caracteres
+  - Apellido: min 2 caracteres
+  - Email: formato válido
+  - Repetir Email: debe ser igual al email, validacion en tiempo real, no copiar/pegar
+  - Teléfono: solo números, 8-15 dígitos, no copiar/pegar
+
+### Commits de esta sesión
+
+- 3064946 - Feat: Compra sin registro (invitado) - campos comprador en entradas, endpoints /invitado, formulario datos comprador
+- a6f0c6c - Fix: Permitir compra sin registro - usuarios no logueados ahora pueden agregar al carrito
+- 9ba291a - Fix: Redirigir a carrito automaticamente al agregar entrada (usuarios sin cuenta)
+- e1c1b96 - Fix: Validaciones de campos - telefono solo numeros sin copiar/pegar, email_confirm con validacion en tiempo real
+
+### URLs de Producción
+
+- Frontend: https://getaccess.com.ar
+- Scanner: https://getaccess.com.ar/scanner.html
+- Backend: https://getaccess-d3um.onrender.com
+
+---
+
+*Última sesión: Miércoles 13 de Mayo 2026*
