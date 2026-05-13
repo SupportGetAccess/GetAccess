@@ -1257,6 +1257,10 @@
                 localStorage.setItem('carrito', JSON.stringify(storedCarrito));
                 showToast('Entrada agregada al carrito', 'success');
                 setModal(null);
+                if (!savedToken) {
+                    showToast('Completa los datos del comprador para continuar', 'info');
+                    setVista('carrito');
+                }
             };
             
             if (loading) return <div className="loading">Cargando eventos...</div>;
@@ -1416,6 +1420,7 @@
             };
             
             const comprar = async (cantidad) => {
+                const savedToken = sessionStorage.getItem('token');
                 const storedCarrito = JSON.parse(localStorage.getItem('carrito') || '[]');
                 
                 // Verificar si ya existe el evento en el carrito
@@ -1433,6 +1438,10 @@
                 localStorage.setItem('carrito', JSON.stringify(storedCarrito));
                 showToast('Entrada agregada al carrito', 'success');
                 setModal(null);
+                if (!savedToken) {
+                    showToast('Completa los datos del comprador para continuar', 'info');
+                    setVista('carrito');
+                }
             };
             
             const agregarImagen = async () => {
