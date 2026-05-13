@@ -1362,7 +1362,7 @@
                                         <p className="evento-desc">{evento.descripcion}</p>
                                         <div className="evento-footer">
                                             <div><div className="precio">${evento.precio.toLocaleString('es-AR')}</div><div className={'disponibles ' + (evento.disponibles < 50 ? 'low' : '')}>{evento.disponibles} disponibles</div></div>
-                                            <button className="btn" disabled={evento.disponibles === 0 || esPasado} onClick={() => { if(esPasado) return; if(!user) { showToast('Inicia sesión para comprar', 'error'); setVista('login'); } else { setModal(evento); } }}>{evento.disponibles === 0 ? 'Agotado' : esPasado ? '🏁 Finalizado' : '🎫 Comprar'}</button>
+                                            <button className="btn" disabled={evento.disponibles === 0 || esPasado} onClick={() => { if(esPasado) return; setModal(evento); }}>{evento.disponibles === 0 ? 'Agotado' : esPasado ? '🏁 Finalizado' : '🎫 Comprar'}</button>
                                         </div>
                                     </div>
                                 </div>
@@ -1549,7 +1549,7 @@
                                 <p style={{marginBottom:'1rem'}}>Disponibles: <strong style={{color:'var(--success)'}}>{evento.disponibles}</strong> de {evento.capacidad}</p>
                                 {evento.disponibles < 50 && <p style={{color:'var(--error)', fontSize:'0.85rem'}}>⚠️ ¡Quedan pocas entradas!</p>}
                                 <div className="detalle-precio" style={{marginBottom:'1rem'}}>${evento.precio.toLocaleString('es-AR')}</div>
-                                <button className="btn btn-block" disabled={evento.disponibles === 0} onClick={() => { if(!user) { showToast('Inicia sesión para comprar', 'error'); setVista('login'); } else { setModal(evento); } }}>{evento.disponibles === 0 ? 'Agotado' : '🎫 Comprar Entrada'}</button>
+                                <button className="btn btn-block" disabled={evento.disponibles === 0} onClick={() => { setModal(evento); }}>{evento.disponibles === 0 ? 'Agotado' : '🎫 Comprar Entrada'}</button>
                             </div>
                         </div>
                     </div>
