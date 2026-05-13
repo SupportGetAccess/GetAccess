@@ -2720,19 +2720,52 @@
                                 </div>
                                 <div>
                                     <input type="email" placeholder="Email" value={datosComprador.email} 
-                                        onChange={e => setDatosComprador({...datosComprador, email: e.target.value})} 
+                                        onChange={e => {
+                                            const value = e.target.value;
+                                            setDatosComprador({...datosComprador, email: value});
+                                            if (datosComprador.email_confirm && value && value !== datosComprador.email_confirm) {
+                                                setErroresComprador(prev => ({...prev, email: 'Los emails no coinciden'}));
+                                            } else {
+                                                setErroresComprador(prev => {
+                                                    const newErrors = {...prev};
+                                                    delete newErrors.email;
+                                                    delete newErrors.email_confirm;
+                                                    return newErrors;
+                                                });
+                                            }
+                                        }}
                                         style={{width: '100%', padding: '0.75rem', borderRadius: '8px', border: erroresComprador.email ? '2px solid #ef4444' : '1px solid #ddd'}} />
                                     {erroresComprador.email && <span style={{color: '#ef4444', fontSize: '12px'}}>{erroresComprador.email}</span>}
                                 </div>
                                 <div>
                                     <input type="email" placeholder="Repetir Email" value={datosComprador.email_confirm} 
-                                        onChange={e => setDatosComprador({...datosComprador, email_confirm: e.target.value})} 
+                                        onPaste={e => e.preventDefault()}
+                                        onCopy={e => e.preventDefault()}
+                                        onChange={e => {
+                                            const value = e.target.value;
+                                            setDatosComprador({...datosComprador, email_confirm: value});
+                                            if (datosComprador.email && value && value !== datosComprador.email) {
+                                                setErroresComprador(prev => ({...prev, email_confirm: 'Los emails no coinciden'}));
+                                            } else {
+                                                setErroresComprador(prev => {
+                                                    const newErrors = {...prev};
+                                                    delete newErrors.email_confirm;
+                                                    return newErrors;
+                                                });
+                                            }
+                                        }}
                                         style={{width: '100%', padding: '0.75rem', borderRadius: '8px', border: erroresComprador.email_confirm ? '2px solid #ef4444' : '1px solid #ddd'}} />
                                     {erroresComprador.email_confirm && <span style={{color: '#ef4444', fontSize: '12px'}}>{erroresComprador.email_confirm}</span>}
                                 </div>
                                 <div>
-                                    <input type="tel" placeholder="Telefono (8-15 digitos)" value={datosComprador.telefono} 
-                                        onChange={e => setDatosComprador({...datosComprador, telefono: e.target.value})} 
+                                    <input type="tel" placeholder="Telefono (solo numeros, 8-15 digitos)" value={datosComprador.telefono} 
+                                        maxLength={15}
+                                        onPaste={e => e.preventDefault()}
+                                        onCopy={e => e.preventDefault()}
+                                        onChange={e => {
+                                            const soloNumeros = e.target.value.replace(/\D/g, '').slice(0, 15);
+                                            setDatosComprador({...datosComprador, telefono: soloNumeros});
+                                        }}
                                         style={{width: '100%', padding: '0.75rem', borderRadius: '8px', border: erroresComprador.telefono ? '2px solid #ef4444' : '1px solid #ddd'}} />
                                     {erroresComprador.telefono && <span style={{color: '#ef4444', fontSize: '12px'}}>{erroresComprador.telefono}</span>}
                                 </div>
