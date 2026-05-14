@@ -46,6 +46,7 @@ CREATE TABLE IF NOT EXISTS entradas (
     payment_id TEXT,
     payment_order_id TEXT,
     creada_en TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    expira_en TIMESTAMP,
     usada INTEGER DEFAULT 0,
     transferida INTEGER DEFAULT 0
 )

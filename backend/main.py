@@ -1843,6 +1843,9 @@ def crear_entrada(entrada: EntradaCreate, credentials: HTTPAuthorizationCredenti
         print(f">>> ERROR TOKEN: {e}")
         raise HTTPException(status_code=401, detail="Token inválido")
     
+    # Cleanup de entradas expiradas
+    limpiar_entradas_pendientes_expiradas(db)
+    
     cursor = db.execute("SELECT id, precio, capacidad, vendidos, COALESCE(comision, 0) FROM eventos WHERE id = ?", (entrada.evento_id,))
     evento = cursor.fetchone()
     if not evento:
@@ -1859,9 +1862,10 @@ def crear_entrada(entrada: EntradaCreate, credentials: HTTPAuthorizationCredenti
     total = precio_con_comision * entrada.cantidad
     print(f">>> TOTAL: {total} (precio={precio_base}, comision={comision}%)")
     
+    expira_en = datetime.datetime.now() + datetime.timedelta(minutes=20)
     cursor = db.execute(
-        "INSERT INTO entradas (evento_id, usuario_id, cantidad, total, estado, preference_id, usada, transferida) VALUES (?, ?, ?, ?, ?, NULL, 0, 0)",
-        (entrada.evento_id, user_id, entrada.cantidad, total, "pendiente")
+        "INSERT INTO entradas (evento_id, usuario_id, cantidad, total, estado, preference_id, expira_en, usada, transferida) VALUES (?, ?, ?, ?, ?, NULL, ?, 0, 0)",
+        (entrada.evento_id, user_id, entrada.cantidad, total, "pendiente", expira_en)
     )
     db.commit()
     try:
@@ -1897,6 +1901,10 @@ def crear_entrada_invitado(req: EntradaInvitadoRequest, request: Request, db = D
     if len(req.comprador.apellido) < 2:
         raise HTTPException(status_code=400, detail="El apellido debe tener al menos 2 caracteres")
     
+    # Cleanup de entradas expiradas
+    limpiar_entradas_pendientes_expiradas(db)
+    
+    expira_en = datetime.datetime.now() + datetime.timedelta(minutes=20)
     entrada_ids = []
     total = 0
     
@@ -1916,10 +1924,10 @@ def crear_entrada_invitado(req: EntradaInvitadoRequest, request: Request, db = D
         subtotal = precio_con_comision * item.cantidad
         
         cursor = db.execute("""
-            INSERT INTO entradas (evento_id, cantidad, total, estado, preference_id, usada, transferida,
+            INSERT INTO entradas (evento_id, cantidad, total, estado, preference_id, expira_en, usada, transferida,
             email_comprador, nombre_comprador, apellido_comprador, telefono_comprador)
-            VALUES (?, ?, ?, 'pendiente', NULL, 0, 0, ?, ?, ?, ?)
-        """, (item.evento_id, item.cantidad, subtotal, req.comprador.email,
+            VALUES (?, ?, ?, 'pendiente', NULL, ?, 0, 0, ?, ?, ?, ?)
+        """, (item.evento_id, item.cantidad, subtotal, expira_en, req.comprador.email,
               req.comprador.nombre, req.comprador.apellido, req.comprador.telefono))
         db.commit()
         entrada_id = cursor.lastrowid
@@ -1947,6 +1955,10 @@ async def crear_qr_invitado(req: EntradaInvitadoRequest, request: Request, db = 
     if len(req.comprador.nombre) < 2 or len(req.comprador.apellido) < 2:
         raise HTTPException(status_code=400, detail="Nombre y apellido deben tener al menos 2 caracteres")
     
+    # Cleanup de entradas expiradas
+    limpiar_entradas_pendientes_expiradas(db)
+    
+    expira_en = datetime.datetime.now() + datetime.timedelta(minutes=20)
     entrada_ids = []
     total = 0
     
@@ -1966,10 +1978,10 @@ async def crear_qr_invitado(req: EntradaInvitadoRequest, request: Request, db = 
         subtotal = precio_con_comision * item.cantidad
         
         cursor = db.execute("""
-            INSERT INTO entradas (evento_id, cantidad, total, estado, preference_id, usada, transferida,
+            INSERT INTO entradas (evento_id, cantidad, total, estado, preference_id, expira_en, usada, transferida,
             email_comprador, nombre_comprador, apellido_comprador, telefono_comprador)
-            VALUES (?, ?, ?, 'pendiente', NULL, 0, 0, ?, ?, ?, ?)
-        """, (item.evento_id, item.cantidad, subtotal, req.comprador.email,
+            VALUES (?, ?, ?, 'pendiente', NULL, ?, 0, 0, ?, ?, ?, ?)
+        """, (item.evento_id, item.cantidad, subtotal, expira_en, req.comprador.email,
               req.comprador.nombre, req.comprador.apellido, req.comprador.telefono))
         db.commit()
         entrada_id = cursor.lastrowid
@@ -2061,6 +2073,10 @@ def crear_link_invitado(req: EntradaInvitadoRequest, request: Request, db = Depe
     if len(req.comprador.nombre) < 2 or len(req.comprador.apellido) < 2:
         raise HTTPException(status_code=400, detail="Nombre y apellido deben tener al menos 2 caracteres")
     
+    # Cleanup de entradas expiradas
+    limpiar_entradas_pendientes_expiradas(db)
+    
+    expira_en = datetime.datetime.now() + datetime.timedelta(minutes=20)
     entrada_ids = []
     total = 0
     
@@ -2080,10 +2096,10 @@ def crear_link_invitado(req: EntradaInvitadoRequest, request: Request, db = Depe
         subtotal = precio_con_comision * item.cantidad
         
         cursor = db.execute("""
-            INSERT INTO entradas (evento_id, cantidad, total, estado, preference_id, usada, transferida,
+            INSERT INTO entradas (evento_id, cantidad, total, estado, preference_id, expira_en, usada, transferida,
             email_comprador, nombre_comprador, apellido_comprador, telefono_comprador)
-            VALUES (?, ?, ?, 'pendiente', NULL, 0, 0, ?, ?, ?, ?)
-        """, (item.evento_id, item.cantidad, subtotal, req.comprador.email,
+            VALUES (?, ?, ?, 'pendiente', NULL, ?, 0, 0, ?, ?, ?, ?)
+        """, (item.evento_id, item.cantidad, subtotal, expira_en, req.comprador.email,
               req.comprador.nombre, req.comprador.apellido, req.comprador.telefono))
         db.commit()
         entrada_id = cursor.lastrowid
@@ -2306,6 +2322,30 @@ def get_transferencias(entrada_id: int, credentials: HTTPAuthorizationCredential
 
 MERCADO_PAGO_ACCESS_TOKEN = os.environ.get("MERCADO_PAGO_ACCESS_TOKEN", "APP_USR-2888302331727804-031609-eb4c51fc6c1654d701d4a5f3b24fbcd7-1921694")
 
+def limpiar_entradas_pendientes_expiradas(db, minutos=20):
+    """Limpia entradas pendientes expiradas: marca como expirada y restaura stock del evento"""
+    try:
+        cursor = db.execute("""
+            SELECT id, evento_id, cantidad FROM entradas
+            WHERE estado = 'pendiente' AND expira_en IS NOT NULL AND expira_en < datetime('now')
+        """)
+        entradas = cursor.fetchall()
+        
+        eliminadas = 0
+        for ent in entradas:
+            # Restaurar stock del evento
+            db.execute("UPDATE eventos SET vendidos = vendidos - ? WHERE id = ?", (ent[2], ent[1]))
+            # Marcar como expirada (no eliminar)
+            db.execute("UPDATE entradas SET estado = 'expirada' WHERE id = ?", (ent[0],))
+            eliminadas += 1
+            print(f">>> Entrada {ent[0]} marcada como expirada, stock restaurado")
+        
+        db.commit()
+        return eliminadas
+    except Exception as e:
+        print(f">>> Error en cleanup: {e}")
+        return 0
+
 def procesar_entrada_pagada(entrada_id, db):
     """Procesa una entrada como pagada: genera código GA y envía email"""
     db.execute("UPDATE entradas SET estado = 'pagada' WHERE id = ?", (entrada_id,))
@@ -2374,8 +2414,20 @@ async def webhook_mercadopago(request: Request, db = Depends(get_db)):
             if status_mp in ("approved", "processed"):
                 if external_ref and str(external_ref).startswith("QR-"):
                     print(f">>> PROCESANDO PAGO QR: {external_ref}")
+                    # Buscar entradas pendientes
                     cursor_qr = db.execute("SELECT id, usuario_id FROM entradas WHERE payment_order_id = ? AND estado = 'pendiente'", (external_ref,))
                     entradas_qr = cursor_qr.fetchall()
+                    
+                    if not entradas_qr:
+                        # Si no hay pendientes, buscar expiradas y reactivar
+                        cursor_qr = db.execute("SELECT id, usuario_id FROM entradas WHERE payment_order_id = ? AND estado = 'expirada'", (external_ref,))
+                        entradas_qr = cursor_qr.fetchall()
+                        if entradas_qr:
+                            print(f">>> REACTIVANDO entradas expiradas: {[e[0] for e in entradas_qr]}")
+                            for ent_row in entradas_qr:
+                                db.execute("UPDATE entradas SET estado = 'pendiente' WHERE id = ?", (ent_row[0],))
+                            db.commit()
+                    
                     for ent_row in entradas_qr:
                         procesar_entrada_pagada(ent_row[0], db)
                 elif external_ref:
@@ -2704,8 +2756,17 @@ async def cancelar_qr_pago(qr_order_id: str, db = Depends(get_db)):
         entrada_ids = [row[0] for row in cursor.fetchall()]
     
     if entrada_ids:
-        placeholders = ','.join(['?'] * len(entrada_ids))
-        db.execute(f"DELETE FROM entradas WHERE id IN ({placeholders})", entrada_ids)
+        # Marcar como expirada y restaurar stock en vez de eliminar
+        for ent_id in entrada_ids:
+            # Obtener datos de la entrada para restaurar stock
+            cursor = db.execute("SELECT evento_id, cantidad FROM entradas WHERE id = ?", (ent_id,))
+            datos = cursor.fetchone()
+            if datos:
+                # Restaurar stock del evento
+                db.execute("UPDATE eventos SET vendidos = vendidos - ? WHERE id = ?", (datos[1], datos[0]))
+            # Marcar como expirada
+            db.execute("UPDATE entradas SET estado = 'expirada' WHERE id = ?", (ent_id,))
+        db.commit()
     
     if qr_order_id in QR_PEDIDOS:
         del QR_PEDIDOS[qr_order_id]
