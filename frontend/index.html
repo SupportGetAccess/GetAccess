@@ -1015,7 +1015,7 @@
                         setEventoId(data.id);
                         setVista('detalle-evento');
                     })
-                    .catch(() => { console.log('Evento no encontrado'); });
+                    .catch(() => { });
                 } else if (eventoIdParam) {
                     // Formato antiguo: ?evento=13 (backwards compatibility)
                     setEventoId(parseInt(eventoIdParam));
@@ -1027,8 +1027,8 @@
                     setToken(savedToken);
                     fetch(API_URL + '/api/auth/me', { headers: { Authorization: 'Bearer ' + savedToken } })
                     .then(res => res.ok ? res.json() : Promise.reject())
-                    .then(data => { setUser(data); console.log('Usuario cargado:', data); })
-                    .catch(() => { sessionStorage.removeItem('token'); setToken(null); console.log('Token inválido'); });
+                    .then(data => { setUser(data); })
+                    .catch(() => { sessionStorage.removeItem('token'); setToken(null); });
                 }
             }, []);
             
@@ -1878,18 +1878,11 @@
                         ? `${API_URL}/api/analytics/todos`
                         : `${API_URL}/api/analytics/evento/${eventoSeleccionado}`;
                     const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
-                    console.log('Analytics response:', res.status, res.statusText);
                     if (res.ok) {
                         const data = await res.json();
-                        console.log('Analytics data:', data);
                         setAnalytics(data);
-                    } else {
-                        const err = await res.text();
-                        console.log('Analytics error:', err);
                     }
-                } catch (err) {
-                    console.error('Analytics catch:', err);
-                }
+                } catch (err) { }
                 setLoading(false);
             };
             
@@ -2250,16 +2243,12 @@
                 }
 
                 try {
-                    console.log('Enviando perfil:', dataToSend);
-                    console.log('Token:', token);
                     const res = await fetch(API_URL + '/api/auth/perfil', {
                         method: 'PUT',
                         headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
                         body: JSON.stringify(dataToSend)
                     });
-                    console.log('Response:', res.status);
                     const data = await res.json();
-                    console.log('Data:', data);
                     
                     if (res.ok) {
                         showToast('Perfil actualizado correctamente', 'success');
@@ -2474,60 +2463,45 @@
             useEffect(() => {
                 if (!qrData?.qr_order_id || pagoExitoso) return;
                 
-                console.log('>>> [DEBUG] Iniciando verificación automática de pago QR:', qrData.qr_order_id);
-                
                 const interval = setInterval(async () => {
                     try {
                         const res = await fetch(API_URL + '/api/pagos/qr/' + qrData.qr_order_id + '/status');
                         const status = await res.json();
-                        console.log('>>> [DEBUG] Estado del QR:', status);
                         
                         if (status.estado === 'pagada') {
-                            console.log('>>> [DEBUG] ¡Pago detectado! Mostrando modal de éxito');
                             clearInterval(interval);
                             setPagoExitoso(true);
                             if (verificarPagoTimer) clearInterval(verificarPagoTimer);
                         }
-                    } catch (err) {
-                        console.error('>>> [DEBUG] Error al verificar pago:', err);
-                    }
+                    } catch (err) { }
                 }, 3000);
                 
-                return () => {
-                    console.log('>>> [DEBUG] Limpiando intervalo de verificación');
-                    clearInterval(interval);
-                };
+                return () => { clearInterval(interval); };
             }, [qrData?.qr_order_id, pagoExitoso]);
             
             // useEffect para verificar pago desde URL (?pago=QR-xxx) para invitados
             useEffect(() => {
                 if (!verificarPagoUrl) return;
                 
-                // Fetch datos iniciales del pedido
                 fetch(API_URL + '/api/pagos/qr/' + verificarPagoUrl + '/status')
                 .then(res => res.json())
                 .then(data => setVerificarPagoData(data))
-                .catch(err => console.error('Error fetching pago data:', err));
+                .catch(() => {});
                 
-                // Verificación automática cada 3 segundos
                 const interval = setInterval(async () => {
                     try {
                         const res = await fetch(API_URL + '/api/pagos/qr/' + verificarPagoUrl + '/status');
                         const status = await res.json();
                         
                         if (status.estado === 'pagada') {
-                            console.log('>>> [DEBUG] ¡Pago detectado desde URL!');
                             clearInterval(interval);
                             localStorage.removeItem('verificarPagoUrl');
                             setPagoExitoso(true);
                             setVerificarPagoUrl(null);
                         }
-                    } catch (err) {
-                        console.error('Error verificando pago:', err);
-                    }
+                    } catch (err) { }
                 }, 3000);
                 
-                // Countdown
                 const countdown = setInterval(() => {
                     setVerificarPagoCountdown(prev => {
                         if (prev <= 1) {
@@ -3087,11 +3061,9 @@
                         return res.json(); 
                     })
                     .then(data => {
-                        console.log('Transferencias data:', data);
                         setTransferenciasPendientes(Array.isArray(data) ? data : []);
                     })
-                    .catch(err => {
-                        console.log('Transferencias error (ignorado):', err);
+                    .catch(() => {
                         setTransferenciasPendientes([]);
                     });
                 } else {
