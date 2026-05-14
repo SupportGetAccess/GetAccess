@@ -988,8 +988,20 @@
                 if (pago === 'exito') { setPagoEstado('success'); setVista('mis-entradas'); }
                 else if (pago === 'fallo') { setPagoEstado('error'); }
                 else if (pago === 'pendiente') { setPagoEstado('warning'); }
+                else if (pago && pago.startsWith('QR-')) {
+                    // Verificación de pago QR para invitados
+                    setVerificarPagoUrl(pago);
+                    localStorage.setItem('verificarPagoUrl', pago);
+                    window.history.replaceState({}, '', window.location.pathname);
+                }
                 
                 if (reset) { setResetToken(reset); setVista('reset-password'); }
+                
+                // Restaurar verificación de pago desde localStorage
+                const savedPago = localStorage.getItem('verificarPagoUrl');
+                if (savedPago && !verificarPagoUrl) {
+                    setVerificarPagoUrl(savedPago);
+                }
                 
                 // Soporte para URLs con public_id (?e=PUBLIC_ID) y backwards compatibility (?evento=ID)
                 const publicId = params.get('e');
@@ -2426,6 +2438,11 @@
             const [verificarPagoTimer, setVerificarPagoTimer] = useState(null);
             const [pagoExitoso, setPagoExitoso] = useState(false);
             
+            // Estado para verificar pago desde URL (invitados)
+            const [verificarPagoUrl, setVerificarPagoUrl] = useState(null);
+            const [verificarPagoData, setVerificarPagoData] = useState(null);
+            const [verificarPagoCountdown, setVerificarPagoCountdown] = useState(600);
+            
             // Datos del comprador (para compra sin registro)
             const [datosComprador, setDatosComprador] = useState({
                 nombre: '', apellido: '', email: '', email_confirm: '', telefono: ''
@@ -2481,6 +2498,55 @@
                     clearInterval(interval);
                 };
             }, [qrData?.qr_order_id, pagoExitoso]);
+            
+            // useEffect para verificar pago desde URL (?pago=QR-xxx) para invitados
+            useEffect(() => {
+                if (!verificarPagoUrl) return;
+                
+                // Fetch datos iniciales del pedido
+                fetch(API_URL + '/api/pagos/qr/' + verificarPagoUrl + '/status')
+                .then(res => res.json())
+                .then(data => setVerificarPagoData(data))
+                .catch(err => console.error('Error fetching pago data:', err));
+                
+                // Verificación automática cada 3 segundos
+                const interval = setInterval(async () => {
+                    try {
+                        const res = await fetch(API_URL + '/api/pagos/qr/' + verificarPagoUrl + '/status');
+                        const status = await res.json();
+                        
+                        if (status.estado === 'pagada') {
+                            console.log('>>> [DEBUG] ¡Pago detectado desde URL!');
+                            clearInterval(interval);
+                            localStorage.removeItem('verificarPagoUrl');
+                            setPagoExitoso(true);
+                            setVerificarPagoUrl(null);
+                        }
+                    } catch (err) {
+                        console.error('Error verificando pago:', err);
+                    }
+                }, 3000);
+                
+                // Countdown
+                const countdown = setInterval(() => {
+                    setVerificarPagoCountdown(prev => {
+                        if (prev <= 1) {
+                            clearInterval(countdown);
+                            localStorage.removeItem('verificarPagoUrl');
+                            setVerificarPagoUrl(null);
+                            setVista('eventos');
+                            showToast('Tiempo de verificación expirado', 'error');
+                            return 0;
+                        }
+                        return prev - 1;
+                    });
+                }, 1000);
+                
+                return () => {
+                    clearInterval(interval);
+                    clearInterval(countdown);
+                };
+            }, [verificarPagoUrl]);
             
             const formatCountdown = (seconds) => {
                 const mins = Math.floor(seconds / 60);
@@ -2652,9 +2718,23 @@
             
             const redirigirAMisEntradas = () => {
                 localStorage.removeItem('carrito');
+                localStorage.removeItem('verificarPagoUrl');
                 setCarrito([]);
                 cerrarQrModal();
-                setVista('mis-entradas');
+                setPagoExitoso(false);
+                // Si vino de verificación URL, redirigir a buscar con email
+                if (verificarPagoData?.email_comprador) {
+                    setVista('buscar-entradas');
+                    setTimeout(() => {
+                        const searchInput = document.querySelector('input[placeholder="Tu email o DNI"]');
+                        if (searchInput) {
+                            searchInput.value = verificarPagoData.email_comprador;
+                            searchInput.dispatchEvent(new Event('change', { bubbles: true }));
+                        }
+                    }, 100);
+                } else {
+                    setVista('mis-entradas');
+                }
             };
             
             const verificarPagoQr = async () => {
@@ -2823,6 +2903,31 @@
                                     <p style={{margin: '1rem 0', color: '#666'}}>Tu entrada ha sido procesada correctamente. Te hemos enviado un email con el ticket.</p>
                                     <button className="btn" style={{width: '100%'}} onClick={redirigirAMisEntradas}>
                                         🎟️ Ver mis entradas
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+                        {verificarPagoUrl && verificarPagoData && !pagoExitoso && (
+                            <div className="modal-overlay">
+                                <div className="modal" style={{maxWidth: '400px', textAlign: 'center'}}>
+                                    <div style={{fontSize: '48px', marginBottom: '1rem'}}>📱</div>
+                                    <h3>Verificando pago...</h3>
+                                    <p style={{color: '#666', margin: '1rem 0'}}>
+                                        Estado: <strong>{verificarPagoData.estado === 'pagada' ? '✅ Pagado' : '⏳ Pendiente'}</strong>
+                                    </p>
+                                    {verificarPagoData.total && (
+                                        <p>Total: ${verificarPagoData.total.toLocaleString('es-AR')}</p>
+                                    )}
+                                    <p style={{marginTop: '1rem', fontSize: '14px', color: '#666'}}>
+                                        Tiempo restante: {formatCountdown(verificarPagoCountdown)}
+                                    </p>
+                                    <button className="btn btn-secondary" style={{width: '100%', marginTop: '1rem'}}
+                                        onClick={() => {
+                                            fetch(API_URL + '/api/pagos/qr/' + verificarPagoUrl + '/status')
+                                            .then(res => res.json())
+                                            .then(data => setVerificarPagoData(data));
+                                        }}>
+                                        🔄 Verificar Ahora
                                     </button>
                                 </div>
                             </div>

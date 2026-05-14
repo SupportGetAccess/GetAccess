@@ -2001,17 +2001,46 @@ async def crear_qr_invitado(req: EntradaInvitadoRequest, request: Request, db = 
     }
     
     try:
-        qr = qrcode.QRCode(version=1, box_size=10, border=5)
-        qr.add_data(f"{PRODUCTION_URL}/?pago={qr_order_id}")
-        qr.make(fit=True)
-        img = qr.make_image(fill_color="black", back_color="white")
-        buffer = io.BytesIO()
-        img.save(buffer, format="PNG")
-        buffer.seek(0)
-        qr_base64 = base64.b64encode(buffer.getvalue()).decode()
-        qr_data["qr_code"] = f"data:image/png;base64,{qr_base64}"
+        import uuid
+        response = requests.post(
+            f"{MERCADOPAGO_API_URL}/v1/orders",
+            json={
+                "type": "qr",
+                "total_amount": str(total),
+                "description": f"GetAccess - {len(entrada_ids)} entrada(s)",
+                "external_reference": qr_order_id,
+                "expiration_time": "PT10M",
+                "config": {
+                    "qr": {
+                        "external_pos_id": MERCADOPAGO_QR_EXTERNAL_POS_ID,
+                        "mode": "dynamic"
+                    }
+                },
+                "transactions": {
+                    "payments": [{"amount": str(total)}]
+                }
+            },
+            headers={
+                "Authorization": f"Bearer {MERCADOPAGO_QR_ACCESS_TOKEN}",
+                "Content-Type": "application/json",
+                "X-Idempotency-Key": str(uuid.uuid4())
+            },
+            timeout=30
+        )
+        
+        print(f">>> QR INVITADO RESPONSE: {response.status_code} - {response.text[:500]}")
+        
+        if response.status_code in [200, 201]:
+            data = response.json()
+            qr_data_str = data.get("type_response", {}).get("qr_data", "")
+            qr_image_url = f"{QUICKCHART_URL}?size=300x300&text={qr_data_str}" if qr_data_str else None
+            qr_data["qr_code"] = qr_image_url
+            qr_data["expires_in"] = 600
+        else:
+            print(f">>> QR INVITADO ERROR: {response.text[:200]}")
+            qr_data["qr_code"] = None
     except Exception as e:
-        print(f">>> Error generando QR: {e}")
+        print(f">>> Error generando QR MP para invitado: {e}")
         qr_data["qr_code"] = None
     
     return qr_data
@@ -2635,15 +2664,32 @@ async def webhook_qr_legacy(request: Request, db = Depends(get_db)):
 @app.get("/api/pagos/qr/{qr_order_id}/status")
 async def verificar_estado_qr(qr_order_id: str, db = Depends(get_db)):
     # Primero buscar en la DB (fuente de verdad)
-    cursor = db.execute("SELECT estado FROM entradas WHERE payment_order_id = ?", (qr_order_id,))
+    cursor = db.execute("""
+        SELECT e.estado, COALESCE(u.email, e.email_comprador) as email_comprador, e.total
+        FROM entradas e
+        LEFT JOIN usuarios u ON e.usuario_id = u.id
+        WHERE e.payment_order_id = ?
+        LIMIT 1
+    """, (qr_order_id,))
     entrada = cursor.fetchone()
     
     if entrada:
-        return {"estado": entrada[0], "qr_order_id": qr_order_id}
+        return {
+            "estado": entrada[0], 
+            "qr_order_id": qr_order_id,
+            "email_comprador": entrada[1],
+            "total": entrada[2]
+        }
     
     # Fallback: buscar en memoria si no está en DB
     if qr_order_id in QR_PEDIDOS:
-        return QR_PEDIDOS[qr_order_id]
+        data = QR_PEDIDOS[qr_order_id]
+        return {
+            "estado": data.get("estado", "pendiente"),
+            "qr_order_id": qr_order_id,
+            "email_comprador": data.get("email_comprador"),
+            "total": data.get("total")
+        }
     
     return {"estado": "no encontrado"}
 
