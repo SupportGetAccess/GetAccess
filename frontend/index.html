@@ -2878,8 +2878,8 @@
                                     <p style={{fontSize: '14px', color: '#f59e0b', fontWeight: '600', marginTop: '0.5rem'}}>
                                         📬 Enviamos la entrada a su email. Revise la carpeta de "Correo no deseado"
                                     </p>
-                                    <button className="btn" style={{width: '100%'}} onClick={redirigirAMisEntradas}>
-                                        🎟️ Ver mis entradas
+                                    <button className="btn" style={{width: '100%'}} onClick={() => { setPagoExitoso(false); localStorage.removeItem('carrito'); localStorage.removeItem('verificarPagoUrl'); setCarrito([]); cerrarQrModal(); setVista('eventos'); }}>
+                                        Aceptar
                                     </button>
                                 </div>
                             </div>
