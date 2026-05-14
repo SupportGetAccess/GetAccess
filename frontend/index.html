@@ -2703,23 +2703,25 @@
                             💵 Total: ${total.toLocaleString('es-AR')}
                         </div>
                         {!token && (
-                        <div style={{marginTop: '1rem', padding: '1rem', background: '#f8fafc', borderRadius: '12px', border: '2px solid #6366f1'}}>
-                            <h4 style={{marginBottom: '1rem', color: '#1f2937'}}>📝 Datos del Comprador</h4>
-                            <div style={{display: 'grid', gap: '0.75rem'}}>
-                                <div>
-                                    <input type="text" placeholder="Nombre" value={datosComprador.nombre} 
-                                        onChange={e => setDatosComprador({...datosComprador, nombre: e.target.value})} 
-                                        style={{width: '100%', padding: '0.75rem', borderRadius: '8px', border: erroresComprador.nombre ? '2px solid #ef4444' : '1px solid #ddd'}} />
+                            <div style={{marginTop: '1rem', padding: '1rem', background: '#f8fafc', borderRadius: '12px', border: '2px solid #6366f1'}}>
+                                <h2 style={{marginBottom: '1rem', color: '#1f2937', textAlign: 'center'}}>📝 Datos del Comprador</h2>
+                                <div className="form-group">
+                                    <label>👤 Nombre</label>
+                                    <input type="text" value={datosComprador.nombre}
+                                        onChange={e => setDatosComprador({...datosComprador, nombre: e.target.value})}
+                                        style={{border: erroresComprador.nombre ? '2px solid #ef4444' : '1px solid #ddd'}} />
                                     {erroresComprador.nombre && <span style={{color: '#ef4444', fontSize: '12px'}}>{erroresComprador.nombre}</span>}
                                 </div>
-                                <div>
-                                    <input type="text" placeholder="Apellido" value={datosComprador.apellido} 
-                                        onChange={e => setDatosComprador({...datosComprador, apellido: e.target.value})} 
-                                        style={{width: '100%', padding: '0.75rem', borderRadius: '8px', border: erroresComprador.apellido ? '2px solid #ef4444' : '1px solid #ddd'}} />
+                                <div className="form-group">
+                                    <label>👤 Apellido</label>
+                                    <input type="text" value={datosComprador.apellido}
+                                        onChange={e => setDatosComprador({...datosComprador, apellido: e.target.value})}
+                                        style={{border: erroresComprador.apellido ? '2px solid #ef4444' : '1px solid #ddd'}} />
                                     {erroresComprador.apellido && <span style={{color: '#ef4444', fontSize: '12px'}}>{erroresComprador.apellido}</span>}
                                 </div>
-                                <div>
-                                    <input type="email" placeholder="Email" value={datosComprador.email} 
+                                <div className="form-group">
+                                    <label>📧 Email</label>
+                                    <input type="email" value={datosComprador.email}
                                         onChange={e => {
                                             const value = e.target.value;
                                             setDatosComprador({...datosComprador, email: value});
@@ -2734,11 +2736,12 @@
                                                 });
                                             }
                                         }}
-                                        style={{width: '100%', padding: '0.75rem', borderRadius: '8px', border: erroresComprador.email ? '2px solid #ef4444' : '1px solid #ddd'}} />
+                                        style={{border: erroresComprador.email ? '2px solid #ef4444' : '1px solid #ddd'}} />
                                     {erroresComprador.email && <span style={{color: '#ef4444', fontSize: '12px'}}>{erroresComprador.email}</span>}
                                 </div>
-                                <div>
-                                    <input type="email" placeholder="Repetir Email" value={datosComprador.email_confirm} 
+                                <div className="form-group">
+                                    <label>📧 Repetir Email</label>
+                                    <input type="email" value={datosComprador.email_confirm}
                                         onPaste={e => e.preventDefault()}
                                         onCopy={e => e.preventDefault()}
                                         onChange={e => {
@@ -2754,11 +2757,12 @@
                                                 });
                                             }
                                         }}
-                                        style={{width: '100%', padding: '0.75rem', borderRadius: '8px', border: erroresComprador.email_confirm ? '2px solid #ef4444' : '1px solid #ddd'}} />
+                                        style={{border: erroresComprador.email_confirm ? '2px solid #ef4444' : '1px solid #ddd'}} />
                                     {erroresComprador.email_confirm && <span style={{color: '#ef4444', fontSize: '12px'}}>{erroresComprador.email_confirm}</span>}
                                 </div>
-                                <div>
-                                    <input type="tel" placeholder="Telefono (solo numeros, 8-15 digitos)" value={datosComprador.telefono} 
+                                <div className="form-group">
+                                    <label>📱 Teléfono</label>
+                                    <input type="tel" value={datosComprador.telefono}
                                         maxLength={15}
                                         onPaste={e => e.preventDefault()}
                                         onCopy={e => e.preventDefault()}
@@ -2766,11 +2770,10 @@
                                             const soloNumeros = e.target.value.replace(/\D/g, '').slice(0, 15);
                                             setDatosComprador({...datosComprador, telefono: soloNumeros});
                                         }}
-                                        style={{width: '100%', padding: '0.75rem', borderRadius: '8px', border: erroresComprador.telefono ? '2px solid #ef4444' : '1px solid #ddd'}} />
+                                        style={{border: erroresComprador.telefono ? '2px solid #ef4444' : '1px solid #ddd'}} />
                                     {erroresComprador.telefono && <span style={{color: '#ef4444', fontSize: '12px'}}>{erroresComprador.telefono}</span>}
                                 </div>
                             </div>
-                        </div>
                         )}
                         <div style={{marginTop: '1rem', display: 'flex', gap: '0.5rem'}}>
                             <button 
