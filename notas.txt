@@ -782,4 +782,131 @@ ALTER TABLE entradas ALTER COLUMN usuario_id DROP NOT NULL;
 
 ---
 
-*Última sesión: Miércoles 13 de Mayo 2026*
+## SESIÓN JUEVES 14 DE MAYO 2026
+
+### Fix: Estilo "Datos del Comprador" igual a Registro
+
+**Problema**: El formulario de datos del comprador usaba placeholders y estilos inline diferentes al resto.
+
+**Solución**:
+- Cambiado a usar `.form-group` wrapper
+- Labels con emojis (👤 👤 📧 📧 📱)
+- Mismo estilo que formulario de Registro
+
+**Commit**: 58f3b38
+
+---
+
+### Feature: QR MercadoPago para Invitados (Fix completo)
+
+**Problema**: El endpoint `/api/pagos/qr/invitado` generaba un QR del sistema (que redirigía a URL), no un QR real de MercadoPago.
+
+**Solución implementada**:
+- Modificado `/api/pagos/qr/invitado` para usar API MP `/v1/orders`
+- Genera QR real de MP con QuickChart
+- Funciona igual que usuarios registrados
+
+**Backend**:
+- `/api/pagos/qr/invitado`: Ahora llama a API de MP
+- `/api/pagos/qr/{id}/status`: Retorna `email_comprador` y `total`
+
+**Frontend**:
+- Detecta `?pago=QR-xxx` en URL
+- Verificación automática cada 3 segundos
+- Modal "¡Compra exitosa!" con nota sobre email
+- Redirige a Eventos con botón "Aceptar"
+
+**Commits**:
+- 976b270 - Fix: QR MercadoPago para invitados con verificación automática
+
+---
+
+### Fix: parseFecha en BuscarEntradas
+
+**Problema**: Error `parseFecha is not defined` al consultar "Buscar Mis Entradas"
+
+**Solución**: Agregada función `parseFecha` dentro del componente `BuscarEntradas`
+
+**Commit**: 021aab0
+
+---
+
+### Fix: Remover logs de debug de consola
+
+**Problema**: Logs de debug visibles en consola del navegador
+
+**Solución**: Eliminados todos los `console.log` de debug, manteniendo solo `console.error` para errores reales
+
+**Commit**: f04144c
+
+---
+
+### Feature: Sistema de Cleanup Automático de Entradas Pendientes
+
+**Objetivo**: Liberar entradas pendientes después de 20 minutos
+
+**Parámetros**:
+| Parámetro | Valor |
+|-----------|-------|
+| Tiempo de expiración | 20 min |
+| Margen para webhook | 5 min |
+| Estado al expirar | `expirada` |
+| Restaurar stock | Sí |
+
+**Base de datos**:
+- Columna `expira_en TIMESTAMP` agregada a tabla entradas
+
+**Backend - Nueva función**:
+```python
+def limpiar_entradas_pendientes_expiradas(db, minutos=20):
+    # Busca: estado='pendiente' AND expira_en < now
+    # Marca como 'expirada' + restaura stock del evento
+```
+
+**Endpoints modificados**:
+| Endpoint | Cambio |
+|----------|--------|
+| `crear_entrada` | Agrega expira_en (now + 20 min) + cleanup |
+| `crear_entrada_invitado` | Agrega expira_en + cleanup |
+| `crear_qr_invitado` | Agrega expira_en + cleanup |
+| `crear_link_invitado` | Agrega expira_en + cleanup |
+| `/cancelar` | Marca 'expirada' + restaura stock (fix bug) |
+| `webhook_mercadopago` | Reactiva entradas expiradas si llegan pagos tardíos |
+
+**Bug arreglado**: El endpoint `/cancelar` no restauraba stock al eliminar entradas. Ahora marca como 'expirada' y restaura.
+
+**Migración**:
+- Entradas 96 y 97 marcadas como expiradas
+- Stock del evento 13 restaurado (vendidos: 52 → 51)
+
+**Commits**:
+- b9a3939 - Feat: Sistema de cleanup automático de entradas pendientes expiradas
+
+---
+
+## ESTADO ACTUAL DEL PROYECTO
+
+| Funcionalidad | Estado |
+|---------------|--------|
+| Compra sin registro (invitado) | ✅ |
+| QR MercadoPago para invitados | ✅ |
+| Verificación automática de pago | ✅ |
+| Modal "¡Compra exitosa!" con nota email | ✅ |
+| Botón "Aceptar" redirige a Eventos | ✅ |
+| parseFecha en BuscarEntradas | ✅ |
+| Cleanup automático de entradas (20 min) | ✅ |
+| Marcar expirada + restaurar stock | ✅ |
+| Webhook reactiva entradas expiradas | ✅ |
+| Logs de debug eliminados | ✅ |
+
+---
+
+## PENDIENTE
+
+1. [ ] Probar flujo completo de compra como invitado (verificado funciona)
+2. [ ] Verificar que el sistema de cleanup funciona después de 20 min
+3. [ ] Auditar seguridad (OWASP Top 10)
+
+---
+
+*Última sesión: Jueves 14 de Mayo 2026*
