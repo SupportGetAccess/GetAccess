@@ -2901,6 +2901,9 @@
                                     <div style={{fontSize: '64px', marginBottom: '1rem'}}>🎉</div>
                                     <h3>¡Compra exitosa!</h3>
                                     <p style={{margin: '1rem 0', color: '#666'}}>Tu entrada ha sido procesada correctamente. Te hemos enviado un email con el ticket.</p>
+                                    <p style={{fontSize: '14px', color: '#f59e0b', fontWeight: '600', marginTop: '0.5rem'}}>
+                                        📬 Enviamos la entrada a su email. Revise la carpeta de "Correo no deseado"
+                                    </p>
                                     <button className="btn" style={{width: '100%'}} onClick={redirigirAMisEntradas}>
                                         🎟️ Ver mis entradas
                                     </button>
@@ -2944,6 +2947,14 @@
             const [error, setError] = useState(null);
             const { showToast } = useContext(AuthContext);
             const [enviando, setEnviando] = useState(null);
+
+            const parseFecha = (fecha) => {
+                if (!fecha) return new Date(0);
+                if (fecha.includes(' ') && fecha.match(/\d{2}:\d{2}:\d{2}/)) {
+                    return new Date(fecha.replace(' ', 'T'));
+                }
+                return new Date(fecha + 'T12:00:00');
+            };
 
             const buscar = async () => {
                 if (!busqueda || busqueda.length < 3) {
