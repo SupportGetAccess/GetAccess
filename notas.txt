@@ -910,3 +910,119 @@ def limpiar_entradas_pendientes_expiradas(db, minutos=20):
 ---
 
 *Última sesión: Jueves 14 de Mayo 2026*
+
+---
+
+# SESIÓN VIERNES 15 DE MAYO 2026 - AUDITORÍA DE SEGURIDAD
+
+## VULNERABILIDADES CRÍTICAS IDENTIFICADAS
+
+### 1. Credenciales Hardcodeadas (CRÍTICO)
+**Problema**: Más de 30 archivos Python tienen credenciales de Supabase hardcodeadas.
+
+Archivos afectados:
+- setup_supabase.py
+- add_expira_en.py
+- _query_db.py
+- backup.py
+- limpiar_entradas_pendientes.py
+- verify_evento13.py
+- migrate_expiradas.py
+- Y muchos más (30+ archivos)
+
+**Riesgo**: Si alguien accede al repo GitHub, tiene tus credenciales de DB.
+
+### 2. Secrets en Código Fuente (CRÍTICO)
+Ubicaciones en main.py:
+- Línea 66: SECRET_KEY = "access_on_super_secret_key_2026_fallback"
+- Línea 70: BREVO_API_KEY = "xkeysib-40c1641b..."
+- Línea 3015: ADMIN_SECRET = "access_on_admin_secret_2026"
+
+**Riesgo**: Descompilar o acceder al código = tener tus secrets.
+
+### 3. Endpoints Admin con Secret en Body (ALTO)
+- /api/admin/hacer-admin (línea 3017) - secret en body
+- /api/admin/limpiar-tokens (línea 2957) - secret en body
+
+**Riesgo**: Request manipulable.
+
+### 4. Endpoints Debug Expuestos (ALTO)
+- /api/debug/entradas-pendientes/{email}
+- /api/debug/procesar-entrada/{entrada_id}
+
+**Riesgo**: Acceso a información sensible sin protección adecuada.
+
+---
+
+## CONFIGURACIÓN DE SEGURIDAD ACTUAL (OK)
+
+| Medida | Estado |
+|--------|--------|
+| Rate limiting | ✅ Implementado en endpoints públicos |
+| CORS restrictivo | ✅ Solo ALLOWED_ORIGINS |
+| Password hashing (bcrypt) | ✅ Implementado |
+| JWT con expiry | ✅ Implementado |
+| Validación fuerte passwords | ✅ 8+ chars, mayús, minús, número, símbolo |
+
+---
+
+## ESTADÍSTICAS AMENAZAS - ARGENTINA 2025
+
+- 5.700 millones de intentos de ataque en Argentina (Fortinet)
+- Ransomware en aumento
+- Phishing el ataque más frecuente
+- 70% de ataques dirigidos a PYMES
+
+---
+
+## PLAN DE REMEDIACIÓN
+
+### INMEDIATO (Esta semana) - PRIORIDAD MÁXIMA
+
+1. 🔴 ROTAR CREDENCIALES SUPABASE
+   - Ir a: supabase.com/dashboard → Settings → Database
+   - Resetear password del usuario postgres
+   - Actualizar en variables de entorno de Render
+   - Alternativa recomendada: Usar credenciales anon/service_role de Supabase
+
+2. 🔴 MOVER ADMIN_SECRET A VARIABLE DE ENTORNO
+   - Cambiar en main.py línea 3015
+   - Usar: os.environ.get("ADMIN_SECRET")
+
+3. 🔴 OCULTAR ENDPOINTS DEBUG EN PRODUCCIÓN
+   - Comentar o proteger /api/debug/*
+
+### CORTO PLAZO (Próximas 2 semanas)
+
+4. 🟠 MOVER SECRET_KEY A VARIABLE DE ENTORNO
+5. 🟠 MOVER BREVO_API_KEY A VARIABLE DE ENTORNO
+6. 🟠 AGREGAR HEADERS DE SEGURIDAD (CSP, X-Frame-Options, X-Content-Type-Options)
+7. 🟠 OCULTAR STACK TRACES EN ERRORES (production)
+
+### MEDIANO PLAZO (Próximo mes)
+
+8. 🟡 IMPLEMENTAR LOGGING DE SEGURIDAD
+9. 🟡 AGREGAR AUDITORÍA DE ACCESOS
+10. 🟡 TEST DE PENTESTING (OWASP ZAP)
+11. 🟡 REVISAR POLÍTICAS RLS EN SUPABASE
+
+---
+
+## PRÓXIMOS PASOS SUGERIDOS
+
+1. Rotar credenciales de Supabase (prioridad máxima)
+2. Mover secrets a variables de entorno
+3. Ocultar endpoints debug en producción
+4. Hacer pentesting básico
+5. Implementar fixes de seguridad
+
+---
+
+## CONTACTO DE EMERGENCIA
+
+- Panel Supabase: https://supabase.com/dashboard
+- Render: https://dashboard.render.com
+
+---
+
+*Plan de seguridad documentado: Viernes 15 de Mayo 2026*
