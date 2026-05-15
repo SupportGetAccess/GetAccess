@@ -458,6 +458,9 @@ class DbWrapper:
     
     def commit(self):
         self._conn.commit()
+    
+    def rollback(self):
+        self._conn.rollback()
 
 class CursorWrapper:
     """Wrapper para el cursor de PostgreSQL - devuelve tuplas como SQLite"""
@@ -2175,7 +2178,7 @@ def transferir_entrada(entrada_id: int, req: TransferenciaRequest, credentials: 
     db.execute("UPDATE entradas SET transferida = 1 WHERE id = ?", (entrada_id,))
     
     db.execute("""INSERT INTO transferencias (entrada_id, usuario_origen, usuario_destino, token, estado, created_at) 
-                  VALUES (?, ?, ?, ?, 'pendiente', datetime('now'))""",
+                  VALUES (?, ?, ?, ?, 'pendiente', CURRENT_TIMESTAMP)""",
                (entrada_id, user_id, req.email_destino, token_transferencia))
     db.commit()
     
@@ -2237,7 +2240,7 @@ def aceptar_transferencia(token: str, credentials: HTTPAuthorizationCredentials 
         raise HTTPException(status_code=403, detail="Esta transferencia no es para ti")
     
     db.execute("UPDATE entradas SET usuario_id = ?, transferida = 0 WHERE id = ?", (user_id, transfer[1]))
-    db.execute("UPDATE transferencias SET estado = 'completada', accepted_at = datetime('now') WHERE id = ?", (transfer[0],))
+    db.execute("UPDATE transferencias SET estado = 'completada', accepted_at = CURRENT_TIMESTAMP WHERE id = ?", (transfer[0],))
     db.commit()
     
     return {"mensaje": "¡Transferencia aceptada! La entrada ahora es tuya."}
@@ -2331,7 +2334,7 @@ def limpiar_entradas_pendientes_expiradas(db, minutos=20):
     try:
         cursor = db.execute("""
             SELECT id, evento_id, cantidad FROM entradas
-            WHERE estado = 'pendiente' AND expira_en IS NOT NULL AND expira_en < datetime('now')
+            WHERE estado = 'pendiente' AND expira_en IS NOT NULL AND expira_en < CURRENT_TIMESTAMP
         """)
         entradas = cursor.fetchall()
         
