@@ -1955,8 +1955,12 @@ async def crear_qr_invitado(req: EntradaInvitadoRequest, request: Request, db = 
     if len(req.comprador.nombre) < 2 or len(req.comprador.apellido) < 2:
         raise HTTPException(status_code=400, detail="Nombre y apellido deben tener al menos 2 caracteres")
     
-    # Cleanup de entradas expiradas
-    limpiar_entradas_pendientes_expiradas(db)
+    # Cleanup de entradas expiradas (con protección por si falla)
+    try:
+        limpiar_entradas_pendientes_expiradas(db)
+    except Exception as e:
+        print(f">>> Error en cleanup (no critico): {e}")
+        db.rollback()
     
     expira_en = datetime.datetime.now() + datetime.timedelta(minutes=20)
     entrada_ids = []
@@ -2344,6 +2348,7 @@ def limpiar_entradas_pendientes_expiradas(db, minutos=20):
         return eliminadas
     except Exception as e:
         print(f">>> Error en cleanup: {e}")
+        db.rollback()
         return 0
 
 def procesar_entrada_pagada(entrada_id, db):
