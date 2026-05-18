@@ -637,6 +637,41 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# === Security Headers Middleware ===
+@app.middleware("http")
+async def add_security_headers(request: Request, call_next):
+    response = await call_next(request)
+    
+    # Previene clickjacking - no permitir embebido en iframes
+    response.headers["X-Frame-Options"] = "DENY"
+    
+    # Previene MIME-type sniffing
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    
+    # Fuerza HTTPS por 1 año incluyendo subdominios
+    response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
+    
+    # Controla información de referer en peticiones cruzadas
+    response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+    
+    # Restringe APIs del navegador - NO bloquear cámara (scanner QR la necesita)
+    response.headers["Permissions-Policy"] = "microphone=(), geolocation=()"
+    
+    # Content Security Policy - permite solo recursos necesarios
+    response.headers["Content-Security-Policy"] = (
+        "default-src 'self'; "
+        "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://unpkg.com; "
+        "style-src 'self' 'unsafe-inline'; "
+        "img-src 'self' data: https://images.unsplash.com https://*.supabase.co https://quickchart.io https://getaccess.now.sh; "
+        "connect-src 'self' https://api.mercadopago.com https://api.brevo.com https://*.supabase.co; "
+        "font-src 'self'; "
+        "frame-ancestors 'none'; "
+        "base-uri 'self'; "
+        "form-action 'self';"
+    )
+    
+    return response
+
 # Get the directory where the main.py is located (backend folder)
 BACKEND_DIR = Path(__file__).parent
 FRONTEND_DIR = BACKEND_DIR.parent / "frontend"
