@@ -1046,6 +1046,13 @@
                 }
             }, [pagoEstado]);
             
+            // Limpiar URL al salir de detalle-evento
+            useEffect(() => {
+                if (vista !== 'detalle-evento') {
+                    window.history.replaceState({}, '', window.location.pathname);
+                }
+            }, [vista]);
+            
             useEffect(() => {
                 if (token) {
                     fetch(API_URL + '/api/transferencias/pendientes', { headers: { Authorization: 'Bearer ' + token } })
