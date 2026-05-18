@@ -1026,3 +1026,170 @@ Ubicaciones en main.py:
 ---
 
 *Plan de seguridad documentado: Viernes 15 de Mayo 2026*
+
+---
+
+## SESIÓN LUNES 18 DE MAYO 2026 - SEGURIDAD COMPLETA
+
+### Completado: Rotación de Credenciales de Supabase
+
+**Problema**: Password de Supabase hardcodeada en 51 archivos Python.
+
+**Solución**:
+1. Rotar password en Supabase Dashboard → Settings → Database
+2. Nueva password: `@PanchitoyPiccolino1982`
+3. Variable de entorno `SUPABASE_URI` configurada en Render
+4. Variable de entorno configurada en sistema local (Windows)
+5. Eliminados todos los fallbacks hardcodeados en 51 archivos
+
+**Commits**:
+- 620b7c7 - fix: rotar credenciales de Supabase - eliminar passwords hardcodeadas
+
+---
+
+### Completado: Mover Secrets a Variables de Entorno
+
+**Secrets movidos**:
+| Secret | Ubicación anterior | Estado |
+|--------|-------------------|--------|
+| `SECRET_KEY` | config.py:79, main.py:66 | ✅ Variable de entorno |
+| `ADMIN_SECRET` | config.py:55, main.py:3015 | ✅ Variable de entorno |
+| `BREVO_API_KEY` | config.py:39, main.py:70 | ✅ Variable de entorno |
+| `MERCADOPAGO_ACCESS_TOKEN` | config.py:45, main.py:81 | ✅ Variable de entorno |
+| `MERCADOPAGO_QR_ACCESS_TOKEN` | config.py:52, main.py:84 | ✅ Variable de entorno |
+| `SUPABASE_SERVICE_KEY` | config.py:106 | ✅ Variable de entorno |
+| `MERCADO_PAGO_WEBHOOK_SECRET` | main.py:387 | ✅ Variable de entorno |
+
+**Nuevas claves generadas**:
+- `SECRET_KEY`: `A59-2aMn8OdtqCUl5h0-1OQNhvhhvdbWIKo62zcl9gc`
+- `ADMIN_SECRET`: `9ALjQc3nmLUpLzAOsFt-Lw`
+- `MERCADO_PAGO_WEBHOOK_SECRET`: `rPiqqCNtPRjokevI4HFFDQ`
+
+**Archivos modificados**: 18 archivos (config.py, main.py, 3 scripts auxiliares, 13 scripts de test)
+
+**Commits**:
+- 3486cec - fix: eliminar secrets hardcodeados - mover a variables de entorno
+
+---
+
+### Completado: Proteger Endpoints Debug con JWT
+
+**Endpoints protegidos**:
+- `GET /api/debug/entradas-pendientes/{email}` → JWT + es_admin()
+- `POST /api/debug/procesar-entrada/{entrada_id}` → JWT + es_admin()
+
+**Commits**:
+- 3c35ca5 - fix: proteger endpoints debug con JWT + verificación de rol admin
+
+---
+
+### Completado: Proteger Endpoints Admin con JWT
+
+**Endpoints protegidos**:
+- `POST /api/admin/limpiar-tokens` → JWT + es_admin()
+- `POST /api/admin/hacer-admin` → JWT + es_admin()
+
+**Commits**:
+- 0785ca4 - fix: proteger endpoints admin con JWT + verificación de rol admin
+
+---
+
+### Completado: Headers de Seguridad HTTP
+
+**Headers agregados** (middleware en main.py):
+| Header | Valor |
+|--------|-------|
+| `X-Frame-Options` | `DENY` |
+| `X-Content-Type-Options` | `nosniff` |
+| `Strict-Transport-Security` | `max-age=31536000; includeSubDomains` |
+| `Referrer-Policy` | `strict-origin-when-cross-origin` |
+| `Permissions-Policy` | `microphone=(), geolocation=()` |
+| `Content-Security-Policy` | Política completa con dominios permitidos |
+
+**Fix CSP posterior**: Agregado `https://unpkg.com` a `connect-src` para source maps de Babel
+
+**Commits**:
+- 4e27823 - feat: agregar headers de seguridad HTTP (CSP, X-Frame, HSTS, etc.)
+- 10ea19b - fix: agregar unpkg.com a CSP connect-src para source maps de Babel
+
+---
+
+### Completado: Fix Endpoint historial_validaciones
+
+**Problema**: `AttributeError: module 'datetime' has no attribute 'now'`
+
+**Causa**: Conflicto de imports - `import datetime` sobrescribe `from datetime import datetime`
+
+**Fix**: Revertir `datetime.now()` a `datetime.datetime.now()` (consistente con resto del código)
+
+**Commits**:
+- a9e7e16 - fix: revertir datetime.now() a datetime.datetime.now() en historial_validaciones
+
+---
+
+### Completado: Limpiar URL al Cambiar de Vista
+
+**Problema**: Al salir de detalle de evento, la URL mantenía `?e=PUBLIC_ID`
+
+**Solución**: Agregado useEffect que limpia URL cuando `vista !== 'detalle-evento'`
+
+**Commits**:
+- f9eb2ce - fix: limpiar URL al cambiar de vista - elimina parametro ?e= al salir de detalle-evento
+
+---
+
+### Completado: Ocultar Stack Traces en Producción
+
+**Cambios**:
+1. Global exception handler: Mensaje genérico en producción, completo en desarrollo
+2. debug_entradas_pendientes: Sin traceback en producción
+
+**Commits**:
+- 55c3ed7 - fix: ocultar stack traces en producción - mensajes genéricos de error
+
+---
+
+### Completado: Rate Limiting en Endpoints Públicos
+
+**Endpoints protegidos**:
+- `GET /api/entradas/buscar` → Rate limit por IP
+- `POST /api/contacto/enviar` → Rate limit por IP
+
+**Commits**:
+- de707df - fix: agregar rate limiting a endpoints públicos críticos
+
+---
+
+## ESTADO ACTUAL DEL PROYECTO
+
+### Seguridad - COMPLETADO (9/10)
+
+| # | Vulnerabilidad | Estado |
+|---|----------------|--------|
+| 1 | Rotar credenciales de Supabase | ✅ |
+| 2 | Eliminar passwords hardcodeadas (51 archivos) | ✅ |
+| 3 | Mover 7 secrets a variables de entorno | ✅ |
+| 4 | Proteger endpoints debug con JWT | ✅ |
+| 5 | Proteger endpoints admin con JWT | ✅ |
+| 6 | Headers de seguridad HTTP | ✅ |
+| 7 | Ocultar stack traces en producción | ✅ |
+| 8 | Rate limiting en endpoints públicos | ✅ |
+| 9 | Limpiar URL al cambiar de vista | ✅ |
+
+### Pendiente (baja prioridad)
+
+| # | Tarea | Prioridad |
+|---|-------|-----------|
+| 1 | Auditoría RLS en Supabase | 🟡 BAJO |
+
+---
+
+## URLs DE PRODUCCIÓN
+
+- Frontend: https://getaccess.com.ar
+- Scanner: https://getaccess.com.ar/scanner.html
+- Backend: https://getaccess-d3um.onrender.com
+
+---
+
+*Última sesión: Lunes 18 de Mayo 2026*
