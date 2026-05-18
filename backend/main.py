@@ -816,9 +816,10 @@ async def global_exception_handler(request, exc):
     print(f"Error: {error_msg}")
     print(f"Traceback: {tb}")
     print(f"=================================")
+    is_prod = os.environ.get("RENDER")
     return JSONResponse(
         status_code=500,
-        content={"detail": error_msg},
+        content={"detail": "Error interno del servidor" if is_prod else error_msg},
         headers={
             "Access-Control-Allow-Origin": "*",
             "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
@@ -2858,6 +2859,9 @@ async def debug_entradas_pendientes(
         }
     except Exception as e:
         import traceback
+        is_prod = os.environ.get("RENDER")
+        if is_prod:
+            return {"error": "Error interno del servidor"}
         return {"error": str(e), "trace": traceback.format_exc(), "email": email}
 
 @app.post("/api/debug/procesar-entrada/{entrada_id}")
