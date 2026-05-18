@@ -663,7 +663,7 @@ async def add_security_headers(request: Request, call_next):
         "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://unpkg.com; "
         "style-src 'self' 'unsafe-inline'; "
         "img-src 'self' data: https://images.unsplash.com https://*.supabase.co https://quickchart.io https://getaccess.now.sh; "
-        "connect-src 'self' https://api.mercadopago.com https://api.brevo.com https://*.supabase.co; "
+        "connect-src 'self' https://unpkg.com https://api.mercadopago.com https://api.brevo.com https://*.supabase.co; "
         "font-src 'self'; "
         "frame-ancestors 'none'; "
         "base-uri 'self'; "
