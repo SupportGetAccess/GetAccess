@@ -3302,9 +3302,7 @@ def estadisticas_evento(evento_id: int, db = Depends(get_db), credentials: HTTPA
 
 @app.get("/api/validaciones/historial")
 def historial_validaciones(evento_id: int = None, db = Depends(get_db)):
-    from datetime import datetime, timedelta
-    
-    fecha_limite = (datetime.datetime.now() - timedelta(days=7)).strftime('%Y-%m-%d %H:%M:%S')
+    fecha_limite = (datetime.now() - timedelta(days=7)).strftime('%Y-%m-%d %H:%M:%S')
     
     query = """
         SELECT v.id, v.entrada_id, v.timestamp, v.scanner_id,
