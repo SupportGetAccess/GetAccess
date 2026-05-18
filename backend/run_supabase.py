@@ -3,7 +3,7 @@ import sys
 
 # Forzar modo producción para probar Supabase
 os.environ["RENDER"] = "true"
-os.environ["SUPABASE_URI"] = "postgresql://postgres.xgwbcepopluehupublkz:%40Supabase1982@aws-1-sa-east-1.pooler.supabase.com:5432/postgres"
+os.environ["SUPABASE_URI"] = os.environ.get("SUPABASE_URI")
 
 # Agregar el directorio actual al path
 sys.path.insert(0, os.getcwd())

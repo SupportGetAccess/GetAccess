@@ -99,7 +99,7 @@ import os
 
 # En producción: Supabase PostgreSQL (usar Direct URL para evitar problemas de pooling)
 # Format: postgresql://postgres.xgwbcepopluehupublkz:[PASSWORD]@aws-1-sa-east-1.pooler.supabase.com:5432/postgres
-SUPABASE_URI = os.environ.get("SUPABASE_URI", "postgresql://postgres.xgwbcepopluehupublkz:%40Supabase1982@aws-1-sa-east-1.pooler.supabase.com:5432/postgres")
+SUPABASE_URI = os.environ.get("SUPABASE_URI")
 
 # Supabase Storage (para imágenes)
 SUPABASE_URL = "https://xgwbcepopluehupublkz.supabase.co"

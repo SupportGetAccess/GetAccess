@@ -2,7 +2,7 @@ import requests
 import os
 
 # Limpiar tokens de reset en producción
-SUPABASE_URI = "postgresql://postgres.xgwbcepopluehupublkz:%40Supabase1982@aws-1-sa-east-1.pooler.supabase.com:5432/postgres"
+import os`nSUPABASE_URI = os.environ.get("SUPABASE_URI")
 
 try:
     import psycopg2

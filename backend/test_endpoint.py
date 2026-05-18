@@ -1,5 +1,5 @@
 import os
-os.environ["SUPABASE_URI"] = "postgresql://postgres.xgwbcepopluehupublkz:%40Supabase1982@aws-1-sa-east-1.pooler.supabase.com:5432/postgres"
+os.environ["SUPABASE_URI"] = os.environ.get("SUPABASE_URI")
 
 import sys
 sys.path.insert(0, 'C:/Users/guill/eventos_tickets_full/backend')

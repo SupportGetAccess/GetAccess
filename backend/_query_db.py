@@ -1,5 +1,6 @@
+import os
 import psycopg2
-conn = psycopg2.connect('postgresql://postgres.xgwbcepopluehupublkz:%40Supabase1982@aws-1-sa-east-1.pooler.supabase.com:5432/postgres')
+conn = psycopg2.connect(os.environ.get("SUPABASE_URI"))
 cur = conn.cursor()
 print('=== ULTIMAS 10 ENTRADAS (todas) ===')
 cur.execute('''SELECT e.id, e.estado, e.preference_id, e.payment_order_id, e.payment_id, e.cantidad, e.total, e.creada_en, u.email FROM entradas e JOIN usuarios u ON e.usuario_id = u.id ORDER BY e.id DESC LIMIT 10''')

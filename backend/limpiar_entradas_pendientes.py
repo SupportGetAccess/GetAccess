@@ -5,7 +5,7 @@ import os
 import psycopg2
 
 # Conectar a Supabase
-SUPABASE_URI = os.environ.get("SUPABASE_URI", "postgresql://postgres.xgwbcepopluehupublkz:%40Supabase1982@aws-1-sa-east-1.pooler.supabase.com:5432/postgres")
+SUPABASE_URI = os.environ.get("SUPABASE_URI")
 
 def main():
     print(">>> Conectando a la base de datos...")

@@ -1,0 +1,101 @@
+# ====================================================================
+# PLAN DE SEGURIDAD - GETACCESS
+# Fecha: 15 de Mayo 2026
+# Última actualización: Auditoría completa de seguridad
+# ====================================================================
+
+## VULNERABILIDADES CRÍTICAS IDENTIFICADAS
+
+### 1. Credenciales Hardcodeadas (CRÍTICO)
+Archivos con credenciales de Supabase expuestos:
+- setup_supabase.py
+- add_expira_en.py
+- _query_db.py
+- backup.py
+- Y 30+ más
+
+Riesgo: Si alguien accede al repo, tiene tus credenciales de DB.
+
+### 2. Secrets en Código Fuente (CRÍTICO)
+- SECRET_KEY en main.py línea 66
+- BREVO_API_KEY en main.py línea 70  
+- ADMIN_SECRET en main.py línea 3015
+
+### 3. Endpoints Admin con Secret en Body (ALTO)
+- /api/admin/hacer-admin
+- /api/admin/limpiar-tokens
+
+### 4. Endpoints Debug Expuestos (ALTO)
+- /api/debug/entradas-pendientes/{email}
+- /api/debug/procesar-entrada/{entrada_id}
+
+---
+
+## PLAN DE REMEDIACIÓN
+
+### INMEDIATO (Esta semana)
+
+1. 🔴 ROTAR CREDENCIALES SUPABASE
+   - Ir a: supabase.com/dashboard → Settings → Database
+   - Resetear password del usuario postgres
+   - Actualizar en variables de entorno de Render
+   - Alternativa: Usar credenciales anon/service_role
+
+2. 🔴 MOVER ADMIN_SECRET A VARIABLE DE ENTORNO
+   - Cambiar en main.py línea 3015
+   - Usar: os.environ.get("ADMIN_SECRET", "fallback")
+
+3. 🔴 OCULTAR ENDPOINTS DEBUG EN PRODUCCIÓN
+   - Comentar o proteger /api/debug/*
+
+### CORTO PLAZO (Próximas 2 semanas)
+
+4. 🟠 MOVER SECRET_KEY A VARIABLE DE ENTORNO
+5. 🟠 MOVER BREVO_API_KEY A VARIABLE DE ENTORNO
+6. 🟠 AGREGAR HEADERS DE SEGURIDAD (CSP, X-Frame-Options)
+7. 🟠 OCULTAR STACK TRACES EN ERRORES
+
+### MEDIANO PLAZO (Próximo mes)
+
+8. 🟡 IMPLEMENTAR LOGGING DE SEGURIDAD
+9. 🟡 AGREGAR AUDITORÍA DE ACCESOS
+10. 🟡 TEST DE PENTESTING (OWASP ZAP)
+11. 🟡 REVISAR POLÍTICAS RLS EN SUPABASE
+
+---
+
+## CONFIGURACIÓN DE SEGURIDAD ACTUAL (OK)
+
+✅ Rate limiting implementado
+✅ CORS restrictivo (solo orígenes permitidos)
+✅ Password hashing (bcrypt)
+✅ JWT con expiry
+✅ Validación fuerte de passwords
+
+---
+
+## ESTADÍSTICAS AMENAZAS - ARGENTINA 2025
+
+- 5.700 millones de intentos de ataque
+- Ransomware en aumento
+- Phishing el ataque más frecuente
+- 70% de ataques dirigidos a PYMES
+
+---
+
+## PRÓXIMOS PASOS SUGERIDOS
+
+1. Rotar credenciales de Supabase (prioridad máxima)
+2. Mover secrets a variables de entorno
+3. Hacer pentesting básico
+4. Implementar fixes de seguridad
+
+---
+
+## CONTACTO DE EMERGENCIA
+
+- Email desarrollo: A CONFIGURAR
+- Panel Supabase: https://supabase.com/dashboard
+- Render: https://dashboard.render.com
+
+======================================================================
