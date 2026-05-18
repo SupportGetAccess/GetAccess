@@ -2981,11 +2981,20 @@ def recuperar_password(datos: dict, request: Request, db = Depends(get_db)):
     return {"message": "Si el email existe, recibirás un enlace de recuperación"}
 
 @app.post("/api/admin/limpiar-tokens")
-def limpiar_tokens(secret: str = None, db = Depends(get_db)):
-    if not secret:
-        raise HTTPException(status_code=401, detail="Secret requerido en header X-Admin-Secret")
-    if secret != ADMIN_SECRET:
-        raise HTTPException(status_code=401, detail="No autorizado")
+def limpiar_tokens(
+    credentials: HTTPAuthorizationCredentials = Depends(security),
+    db = Depends(get_db)
+):
+    """Eliminar tokens de recuperación - Solo admin"""
+    try:
+        payload = jwt.decode(credentials.credentials, SECRET_KEY, algorithms=[ALGORITHM])
+        user_id = int(payload.get("sub"))
+    except:
+        raise HTTPException(status_code=401, detail="Token inválido")
+    
+    if not es_admin(db, user_id):
+        raise HTTPException(status_code=403, detail="Admin requerido")
+    
     db.execute("DELETE FROM password_reset")
     db.commit()
     return {"message": "Tokens de recuperación eliminados"}
@@ -3039,13 +3048,22 @@ def restablecer_password(datos: dict, db = Depends(get_db)):
 # === ADMIN ===
 
 @app.post("/api/admin/hacer-admin")
-def hacer_admin(datos: dict, db = Depends(get_db)):
-    secret = datos.get("secret")
+def hacer_admin(
+    datos: dict,
+    credentials: HTTPAuthorizationCredentials = Depends(security),
+    db = Depends(get_db)
+):
+    """Hacer admin a un usuario - Solo admin"""
+    try:
+        payload = jwt.decode(credentials.credentials, SECRET_KEY, algorithms=[ALGORITHM])
+        user_id = int(payload.get("sub"))
+    except:
+        raise HTTPException(status_code=401, detail="Token inválido")
+    
+    if not es_admin(db, user_id):
+        raise HTTPException(status_code=403, detail="Admin requerido")
+    
     email = datos.get("email")
-    
-    if secret != ADMIN_SECRET:
-        raise HTTPException(status_code=403, detail="Secret inválido")
-    
     if not email:
         raise HTTPException(status_code=400, detail="Email requerido")
     
