@@ -1840,7 +1840,10 @@ def confirmar_pago_entrada(entrada_id: int, credentials: HTTPAuthorizationCreden
         raise HTTPException(status_code=500, detail="Error al confirmar pago")
 
 @app.get("/api/entradas/buscar")
-def buscar_entradas(q: str, db = Depends(get_db)):
+def buscar_entradas(q: str, request: Request, db = Depends(get_db)):
+    client_id = get_client_ip(request)
+    if not check_rate_limit(client_id, db):
+        raise HTTPException(status_code=429, detail="Demasiadas solicitudes. Intenta más tarde.")
     cursor = db.execute("""
         SELECT e.id, e.evento_id, e.usuario_id, e.cantidad, e.total, e.estado, e.preference_id,
                ev.nombre, ev.fecha, ev.lugar, 
@@ -3997,7 +4000,10 @@ class ContactoRequest(BaseModel):
     mensaje: str
 
 @app.post("/api/contacto/enviar")
-def enviar_mensaje_contacto(datos: ContactoRequest, db = Depends(get_db)):
+def enviar_mensaje_contacto(datos: ContactoRequest, request: Request, db = Depends(get_db)):
+    client_id = get_client_ip(request)
+    if not check_rate_limit(client_id, db):
+        raise HTTPException(status_code=429, detail="Demasiadas solicitudes. Intenta más tarde.")
     try:
         html_content = f"""
         <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; padding: 30px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.1);">
