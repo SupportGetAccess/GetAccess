@@ -2782,8 +2782,21 @@ async def cancelar_qr_pago(qr_order_id: str, db = Depends(get_db)):
     return {"success": True, "entrada_ids": entrada_ids}
 
 @app.get("/api/debug/entradas-pendientes/{email}")
-async def debug_entradas_pendientes(email: str, db = Depends(get_db)):
-    """Endpoint de debug para buscar entradas pendientes de un usuario"""
+async def debug_entradas_pendientes(
+    email: str,
+    db = Depends(get_db),
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """Endpoint de debug para buscar entradas pendientes de un usuario - Solo admin"""
+    try:
+        payload = jwt.decode(credentials.credentials, SECRET_KEY, algorithms=[ALGORITHM])
+        user_id = int(payload.get("sub"))
+    except:
+        raise HTTPException(status_code=401, detail="Token inválido")
+    
+    if not es_admin(db, user_id):
+        raise HTTPException(status_code=403, detail="Admin requerido")
+    
     try:
         cursor = db.execute("""
             SELECT e.id, e.evento_id, e.estado, e.preference_id, e.creada_en, ev.nombre
@@ -2813,8 +2826,21 @@ async def debug_entradas_pendientes(email: str, db = Depends(get_db)):
         return {"error": str(e), "trace": traceback.format_exc(), "email": email}
 
 @app.post("/api/debug/procesar-entrada/{entrada_id}")
-async def debug_procesar_entrada(entrada_id: int, db = Depends(get_db)):
-    """Procesar una entrada pendiente y marcarla como pagada"""
+async def debug_procesar_entrada(
+    entrada_id: int,
+    db = Depends(get_db),
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """Procesar una entrada pendiente y marcarla como pagada - Solo admin"""
+    try:
+        payload = jwt.decode(credentials.credentials, SECRET_KEY, algorithms=[ALGORITHM])
+        user_id = int(payload.get("sub"))
+    except:
+        raise HTTPException(status_code=401, detail="Token inválido")
+    
+    if not es_admin(db, user_id):
+        raise HTTPException(status_code=403, detail="Admin requerido")
+    
     cursor = db.execute("SELECT id, evento_id, estado, preference_id, usuario_id FROM entradas WHERE id = ?", (entrada_id,))
     entrada = cursor.fetchone()
     
