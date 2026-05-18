@@ -18,7 +18,7 @@ try:
     BREVO_SENDER_NAME = config.BREVO_SENDER_NAME
 except ImportError:
     BREVO_API_URL = "https://api.brevo.com/v3/smtp/email"
-    BREVO_API_KEY = os.environ.get("BREVO_API_KEY", "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")
+    BREVO_API_KEY = os.environ.get("BREVO_API_KEY")
     BREVO_SENDER_EMAIL = os.environ.get("BREVO_SENDER_EMAIL", "soporte@getaccess.com.ar")
     BREVO_SENDER_NAME = "Get Access"
 

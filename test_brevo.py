@@ -1,6 +1,7 @@
+import os
 import requests
 
-api_key = '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'
+api_key = 'os.environ.get("BREVO_API_KEY")'
 
 url = 'https://api.brevo.com/v3/smtp/email'
 headers = {'api-key': api_key, 'Content-Type': 'application/json'}

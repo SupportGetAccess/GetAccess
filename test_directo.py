@@ -1,3 +1,4 @@
+import os
 import requests
 
 # Simular lo que hace la función
@@ -5,7 +6,7 @@ email = "guilles10@yahoo.com.ar"
 codigo = "123456"
 nombre = "Willy"
 
-BREVO_API_KEY = "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"
+BREVO_API_KEY = "os.environ.get("BREVO_API_KEY")"
 BREVO_SENDER_EMAIL = "aantoniaa1982@gmail.com"
 BREVO_SENDER_NAME = "Access ON"
 

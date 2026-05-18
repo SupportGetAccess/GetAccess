@@ -63,11 +63,11 @@ try:
     ADMIN_SECRET = config.ADMIN_SECRET
 except ImportError:
     # Fallback si no existe config.py
-    SECRET_KEY = os.environ.get("SECRET_KEY", "access_on_super_secret_key_2026_fallback")
+    SECRET_KEY = os.environ.get("SECRET_KEY")
     ALGORITHM = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES = 30
     ALLOWED_ORIGINS = os.environ.get("ALLOWED_ORIGINS", "http://localhost:3000,https://192.168.1.40:3443").split(",")
-    BREVO_API_KEY = os.environ.get("BREVO_API_KEY", "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")
+    BREVO_API_KEY = os.environ.get("BREVO_API_KEY")
     BREVO_SENDER_EMAIL = os.environ.get("BREVO_SENDER_EMAIL", "soporte@getaccess.com.ar")
     BREVO_SENDER_NAME = "Get Access"
     DATABASE_URL = "access_on.db"
@@ -78,10 +78,10 @@ except ImportError:
     DEV_URLS = ["http://localhost:3000", "https://192.168.1.40:3443"]
     BREVO_API_URL = "https://api.brevo.com/v3/smtp/email"
     MERCADOPAGO_API_URL = "https://api.mercadopago.com"
-    MERCADOPAGO_ACCESS_TOKEN = "APP_USR-2888302331727804-031609-eb4c51fc6c1654d701d4a5f3b24fbcd7-1921694"
+    MERCADOPAGO_ACCESS_TOKEN = os.environ.get("MERCADO_PAGO_ACCESS_TOKEN")
     MERCADOPAGO_QR_EXTERNAL_POS_ID = "GETACCESSQRD01"
     MERCADOPAGO_QR_USER_ID = "1921694"
-    MERCADOPAGO_QR_ACCESS_TOKEN = "APP_USR-8630460408704267-051114-265c7321f63af4a028d5d2d7e37e3f3f-1921694"
+    MERCADOPAGO_QR_ACCESS_TOKEN = os.environ.get("MERCADO_PAGO_QR_ACCESS_TOKEN")
     QUICKCHART_URL = "https://quickchart.io/qr"
     EMAIL_LOGO_URL = "https://getaccess.now.sh/logo.png"
     DEFAULT_EVENT_IMAGES = [
@@ -384,7 +384,7 @@ def check_rate_limit(client_id: str, db) -> bool:
     return True
 
 # MercadoPago Webhook Secret
-MERCADO_PAGO_WEBHOOK_SECRET = os.environ.get("MERCADO_PAGO_WEBHOOK_SECRET", "access_on_webhook_secret_2026")
+MERCADO_PAGO_WEBHOOK_SECRET = os.environ.get("MERCADO_PAGO_WEBHOOK_SECRET")
 
 # Logo base64 para emails
 LOGO_DATA = """data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48ZGVmcz48bGluZWFyR3JhZGllbnQgaWQ9ImxvZ28iIHgxPSIwJSIgeTE9IjAlIiB4Mj0iMTAwJSIgeTI9IjEwMCUiPjxzdG9wIHN0b3AtY29sb3I9IiM2MzY2ZjEiLz48c3RvcCBvZmZzZXQ9IjEwMCUiIHN0b3AtY29sb3I9IiNlYzQ4OWEiLz48L2xpbmVhckdyYWRpZW50PjwvZGVmcz48cmVjdCB4PSI1MCIgeT0iMjUiIHdpZHRoPSI4MCIgaGVpZ2h0PSI1NSIgcng9IjgiIGZpbGw9InVybCgjbG9nbykiLz48Y2lyY2xlIGN4PSIzMCIgY3k9IjUyIiByPSIyMCIgZmlsbD0iIzY4NjhGRiIvPjxjaXJjbGUgY3g9IjcwIiBjeT0iNTIiIHI9IjIwIiBmaWxsPSIjNjg2OEZGIi8+PHJlY3QgeD0iNDgiIHk9IjQ4IiB3aWR0aD0iMjQiIGhlaWdodD0iOCIgcng9IjIiIGZpbGw9IiM2ODY4RkYiLz48cmVjdCB4PSI0NSIgeT0iMTUiIHdpZHRoPSIzMCIgaGVpZ2h0PSIxNSIgcng9IjQiIGZpbGw9InVybCgjbG9nbykiLz48L3N2Zz4="""
@@ -2327,7 +2327,7 @@ def get_transferencias(entrada_id: int, credentials: HTTPAuthorizationCredential
 
 # === PAGOS (MercadoPago) ===
 
-MERCADO_PAGO_ACCESS_TOKEN = os.environ.get("MERCADO_PAGO_ACCESS_TOKEN", "APP_USR-2888302331727804-031609-eb4c51fc6c1654d701d4a5f3b24fbcd7-1921694")
+MERCADO_PAGO_ACCESS_TOKEN = os.environ.get("MERCADO_PAGO_ACCESS_TOKEN")
 
 def limpiar_entradas_pendientes_expiradas(db, minutos=20):
     """Limpia entradas pendientes expiradas: marca como expirada y restaura stock del evento"""
@@ -3011,8 +3011,6 @@ def restablecer_password(datos: dict, db = Depends(get_db)):
     return {"message": "Contraseña restablecida correctamente"}
 
 # === ADMIN ===
-
-ADMIN_SECRET = "access_on_admin_secret_2026"
 
 @app.post("/api/admin/hacer-admin")
 def hacer_admin(datos: dict, db = Depends(get_db)):

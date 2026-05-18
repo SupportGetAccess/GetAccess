@@ -36,23 +36,23 @@ FRONTEND_HTTPS_PORT = 3443
 
 # Brevo (Email)
 BREVO_API_URL = "https://api.brevo.com/v3/smtp/email"
-BREVO_API_KEY = os.environ.get("BREVO_API_KEY", "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")
+BREVO_API_KEY = os.environ.get("BREVO_API_KEY")
 BREVO_SENDER_EMAIL = os.environ.get("BREVO_SENDER_EMAIL", "soporte@getaccess.com.ar")
 BREVO_SENDER_NAME = "Get Access"
 
 # MercadoPago
 MERCADOPAGO_API_URL = "https://api.mercadopago.com"
-MERCADOPAGO_ACCESS_TOKEN = os.environ.get("MERCADO_PAGO_ACCESS_TOKEN", "APP_USR-2888302331727804-031609-eb4c51fc6c1654d701d4a5f3b24fbcd7-1921694")
+MERCADOPAGO_ACCESS_TOKEN = os.environ.get("MERCADO_PAGO_ACCESS_TOKEN")
 MERCADOPAGO_WEBHOOK_SECRET = os.environ.get("MERCADO_PAGO_WEBHOOK_SECRET", "webhook_secret_fallback")
 
 # MercadoPago QR (Cobros con Código QR) - App GetAccessQR
 MERCADOPAGO_QR_USER_ID = os.environ.get("MERCADO_PAGO_QR_USER_ID", "1921694")
 MERCADOPAGO_QR_EXTERNAL_POS_ID = os.environ.get("MERCADO_PAGO_QR_EXTERNAL_POS_ID", "GETACCESSQRD01")
 MERCADOPAGO_QR_WEBHOOK_URL = os.environ.get("MERCADO_PAGO_QR_WEBHOOK_URL", f"{RENDER_URL}/api/pagos/webhook")
-MERCADOPAGO_QR_ACCESS_TOKEN = os.environ.get("MERCADO_PAGO_QR_ACCESS_TOKEN", "APP_USR-8630460408704267-051114-265c7321f63af4a028d5d2d7e37e3f3f-1921694")
+MERCADOPAGO_QR_ACCESS_TOKEN = os.environ.get("MERCADO_PAGO_QR_ACCESS_TOKEN")
 
 # Admin
-ADMIN_SECRET = "access_on_admin_secret_2026"
+ADMIN_SECRET = os.environ.get("ADMIN_SECRET")
 
 # QuickChart (QR codes)
 QUICKCHART_URL = "https://quickchart.io/qr"
@@ -76,7 +76,7 @@ DEFAULT_EVENT_IMAGES = [
 # SEGURIDAD
 # ============================================
 
-SECRET_KEY = os.environ.get("SECRET_KEY", "access_on_super_secret_key_2026_fallback")
+SECRET_KEY = os.environ.get("SECRET_KEY")
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
 
@@ -103,7 +103,7 @@ SUPABASE_URI = os.environ.get("SUPABASE_URI")
 
 # Supabase Storage (para imágenes)
 SUPABASE_URL = "https://xgwbcepopluehupublkz.supabase.co"
-SUPABASE_SERVICE_KEY = os.environ.get("SUPABASE_SERVICE_KEY", "sb_secret_g7jXnewkLz-v6Jzu7Gci1Q_J3_mGb5L")
+SUPABASE_SERVICE_KEY = os.environ.get("SUPABASE_SERVICE_KEY")
 STORAGE_BUCKET = "eventos-images"
 
 if os.environ.get("RENDER"):

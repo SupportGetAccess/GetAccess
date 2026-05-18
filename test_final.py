@@ -1,3 +1,4 @@
+import os
 import requests
 import sqlite3
 
@@ -22,7 +23,7 @@ conn.close()
 
 # Enviar email directo
 import requests as req
-api_key = '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'
+api_key = 'os.environ.get("BREVO_API_KEY")'
 
 html = f"""<!DOCTYPE html><html><body style="background:#0a0a1a;color:#fff;padding:40px;text-align:center;font-family:Segoe UI;">
 <h1 style="background:linear-gradient(135deg,#6366f1,#ec4899);padding:20px;border-radius:10px;">ACCESS ON</h1>

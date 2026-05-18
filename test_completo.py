@@ -1,3 +1,4 @@
+import os
 import requests
 import sqlite3
 import json
@@ -24,7 +25,7 @@ conn.close()
 # Ahora enviar email directamente
 import requests
 
-api_key = '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'
+api_key = 'os.environ.get("BREVO_API_KEY")'
 codigo = '999999'
 
 html = f"""<!DOCTYPE html><html><body style="background:#0a0a1a;color:#fff;padding:40px;text-align:center;">
