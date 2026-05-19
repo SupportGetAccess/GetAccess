@@ -3771,12 +3771,15 @@
             const [abierto, setAbierto] = useState(false);
             const [nombre, setNombre] = useState('');
             const [mensaje, setMensaje] = useState('');
+            const { showToast } = useContext(AuthContext);
 
             const enviarWhatsApp = () => {
-                const nombreTexto = nombre.trim() || 'Usuario';
-                const mensajeTexto = mensaje.trim() || 'Hola GetAccess, necesito información sobre sus servicios';
-                const textoCompleto = 'Hola GetAccess, soy ' + nombreTexto + '. ' + mensajeTexto;
-                const url = 'https://wa.me/5492616524481?text=' + encodeURIComponent(textoCompleto);
+                if (!nombre.trim() || !mensaje.trim()) {
+                    showToast('Completá todos los campos', 'error');
+                    return;
+                }
+                const textoCompleto = 'Hola GetAccess, soy ' + nombre.trim() + '. ' + mensaje.trim();
+                const url = 'https://wa.me/5492615362993?text=' + encodeURIComponent(textoCompleto);
                 window.open(url, '_blank');
                 setAbierto(false);
                 setNombre('');
@@ -3797,11 +3800,11 @@
                                 </div>
                                 <div className="wa-chat-form">
                                     <div className="form-group">
-                                        <label>👤 Tu nombre</label>
+                                        <label>👤 Tu nombre *</label>
                                         <input type="text" value={nombre} onChange={e => setNombre(e.target.value)} placeholder="Cómo te llamás" />
                                     </div>
                                     <div className="form-group">
-                                        <label>💬 Mensaje</label>
+                                        <label>💬 Mensaje *</label>
                                         <textarea value={mensaje} onChange={e => setMensaje(e.target.value)} placeholder="¿En qué podemos ayudarte?" rows={3} />
                                     </div>
                                     <button className="btn-send" onClick={enviarWhatsApp}>📱 Enviar por WhatsApp</button>
