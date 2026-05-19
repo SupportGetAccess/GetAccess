@@ -3131,11 +3131,10 @@
                         </button>
                         {qrData && (
                             <div className="modal-overlay" onClick={cancelarQr}>
-                                <div className="modal" onClick={e => e.stopPropagation()} style={{maxWidth: '400px', textAlign: 'center', maxHeight: '90vh', overflowY: 'auto'}}>
-                                    <h3>📱 Escanea el QR</h3>
-                                    <p style={{marginBottom: '1rem'}}>Total: ${qrData.total.toLocaleString('es-AR')}</p>
-                                    <img src={qrData.qr_code} alt="QR de pago" style={{maxWidth: '250px', borderRadius: '12px'}} />
-                                    <p style={{marginTop: '1rem', marginBottom: '1rem', fontSize: '13px', color: 'var(--text-muted)', lineHeight: '1.5'}}>
+                                <div className="modal" onClick={e => e.stopPropagation()} style={{maxWidth: '400px', textAlign: 'center'}}>
+                                    <h3>📱 Escanea el QR · Total: ${qrData.total.toLocaleString('es-AR')}</h3>
+                                    <img src={qrData.qr_code} alt="QR de pago" style={{maxWidth: '200px', borderRadius: '12px'}} />
+                                    <p style={{marginTop: '0.75rem', marginBottom: '0.5rem', fontSize: '13px', color: 'var(--text-muted)', lineHeight: '1.5'}}>
                                         ¿Estás en tu celular? Sacale screenshot y escanealo desde tu app bancaria.
                                     </p>
                                     <a href={`https://wa.me/?text=${encodeURIComponent('Te envío el QR para pagar tu entrada en Get Access. Abrí este link y escanealo con tu app bancaria: ' + qrData.qr_code)}`} target="_blank" rel="noopener noreferrer" className="btn" style={{display: 'block', width: '100%', marginTop: '0.5rem', background: '#25d366', marginBottom: '0.5rem'}}>
@@ -3144,11 +3143,11 @@
                                     <button className="btn btn-secondary" style={{width: '100%', marginBottom: '0.5rem'}} onClick={descargarQR}>
                                         📸 Descargar QR
                                     </button>
-                                    <div style={{borderTop: '1px solid rgba(255,255,255,0.1)', margin: '1rem 0'}}></div>
-                                    <p style={{fontSize: '14px', color: 'var(--text-muted)'}}>
+                                    <div style={{borderTop: '1px solid rgba(255,255,255,0.1)', margin: '0.75rem 0'}}></div>
+                                    <p style={{fontSize: '13px', color: 'var(--text-muted)', margin: '0.5rem 0'}}>
                                         Tiempo restante: {formatCountdown(qrCountdown)}
                                     </p>
-                                    <button className="btn" style={{width: '100%', marginTop: '0.75rem'}} onClick={verificarPagoQr}>
+                                    <button className="btn" style={{width: '100%', marginTop: '0.5rem'}} onClick={verificarPagoQr}>
                                         🔄 Verificar Pago
                                     </button>
                                     <button className="btn btn-secondary" style={{width: '100%', marginTop: '0.5rem'}} onClick={cancelarQr}>
