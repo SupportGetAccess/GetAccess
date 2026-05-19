@@ -2684,14 +2684,14 @@
             const [metodoPago, setMetodoPago] = useState('qr');  // 'qr' o 'link'
             const [qrData, setQrData] = useState(null);
             const [qrTimer, setQrTimer] = useState(null);
-            const [qrCountdown, setQrCountdown] = useState(300);
+            const [qrCountdown, setQrCountdown] = useState(900);
             const [verificarPagoTimer, setVerificarPagoTimer] = useState(null);
             const [pagoExitoso, setPagoExitoso] = useState(false);
             
             // Estado para verificar pago desde URL (invitados)
             const [verificarPagoUrl, setVerificarPagoUrl] = useState(null);
             const [verificarPagoData, setVerificarPagoData] = useState(null);
-            const [verificarPagoCountdown, setVerificarPagoCountdown] = useState(600);
+            const [verificarPagoCountdown, setVerificarPagoCountdown] = useState(900);
             
             // Datos del comprador (para compra sin registro)
             const [datosComprador, setDatosComprador] = useState({
@@ -2823,7 +2823,7 @@
                         if (metodoPago === 'qr') {
                             if (data.qr_code) {
                                 setQrData(data);
-                                setQrCountdown(600);
+                                setQrCountdown(900);
                                 setProcesando(false);
                                 const interval = setInterval(() => {
                                     setQrCountdown(prev => {
@@ -2879,7 +2879,7 @@
                             const qr = await qrRes.json();
                             if (qrRes.ok && qr.qr_code) {
                                 setQrData(qr);
-                                setQrCountdown(600);
+                                setQrCountdown(900);
                                 setProcesando(false);
                                 const interval = setInterval(() => {
                                     setQrCountdown(prev => {
@@ -2923,6 +2923,23 @@
                     }
                 } catch (err) { showToast(err.message, 'error'); }
                 setProcesando(false);
+            };
+            
+            const descargarQR = async () => {
+                try {
+                    const res = await fetch(qrData.qr_code);
+                    const blob = await res.blob();
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = 'qr-getaccess.png';
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+                } catch (e) {
+                    window.open(qrData.qr_code, '_blank');
+                }
             };
             
             const cerrarQrModal = () => {
@@ -3118,10 +3135,19 @@
                                     <h3>📱 Escanea el QR</h3>
                                     <p style={{marginBottom: '1rem'}}>Total: ${qrData.total.toLocaleString('es-AR')}</p>
                                     <img src={qrData.qr_code} alt="QR de pago" style={{maxWidth: '250px', borderRadius: '12px'}} />
-                                    <p style={{marginTop: '1rem', fontSize: '14px', color: '#666'}}>
+                                    <p style={{marginTop: '1rem', fontSize: '13px', color: 'var(--text-muted)'}}>
+                                        ¿Estás en tu celular? Sacale screenshot y escanealo desde tu app bancaria.
+                                    </p>
+                                    <a href={`https://wa.me/?text=${encodeURIComponent('Te envío el QR para pagar tu entrada en Get Access. Abrí este link y escanealo con tu app bancaria: ' + qrData.qr_code)}`} target="_blank" rel="noopener noreferrer" className="btn" style={{width: '100%', marginTop: '0.75rem', background: '#25d366'}}>
+                                        📱 Enviar link por WhatsApp
+                                    </a>
+                                    <button className="btn btn-secondary" style={{width: '100%', marginTop: '0.5rem'}} onClick={descargarQR}>
+                                        📸 Descargar QR
+                                    </button>
+                                    <p style={{marginTop: '0.75rem', fontSize: '14px', color: '#666'}}>
                                         Tiempo restante: {formatCountdown(qrCountdown)}
                                     </p>
-                                    <button className="btn" style={{width: '100%', marginTop: '1rem'}} onClick={verificarPagoQr}>
+                                    <button className="btn" style={{width: '100%', marginTop: '0.5rem'}} onClick={verificarPagoQr}>
                                         🔄 Verificar Pago
                                     </button>
                                     <button className="btn btn-secondary" style={{width: '100%', marginTop: '0.5rem'}} onClick={cancelarQr}>

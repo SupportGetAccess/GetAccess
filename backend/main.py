@@ -2091,7 +2091,7 @@ async def crear_qr_invitado(req: EntradaInvitadoRequest, request: Request, db = 
                 "total_amount": str(total),
                 "description": f"GetAccess - {len(entrada_ids)} entrada(s)",
                 "external_reference": qr_order_id,
-                "expiration_time": "PT10M",
+                "expiration_time": "PT15M",
                 "config": {
                     "qr": {
                         "external_pos_id": MERCADOPAGO_QR_EXTERNAL_POS_ID,
@@ -2734,7 +2734,7 @@ async def crear_pago_qr(datos: dict, credentials: HTTPAuthorizationCredentials =
                 "total_amount": str(total),
                 "description": f"GetAccess - {len(entradas)} entrada(s)",
                 "external_reference": qr_order_id,
-                "expiration_time": "PT5M",
+                "expiration_time": "PT15M",
                 "config": {
                     "qr": {
                         "external_pos_id": MERCADOPAGO_QR_EXTERNAL_POS_ID,
