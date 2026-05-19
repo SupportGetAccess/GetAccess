@@ -911,6 +911,58 @@
         .lightbox-nav:hover { background: rgba(255,255,255,0.2); }
         .lightbox-prev { left: 20px; }
         .lightbox-next { right: 20px; }
+
+        /* Bar Chart - Visitas Panel */
+        .bar-chart {
+            display: flex;
+            align-items: flex-end;
+            gap: 4px;
+            height: 200px;
+            padding: 0.5rem 0;
+            overflow-x: auto;
+            overflow-y: hidden;
+        }
+        .bar-container {
+            flex: 1;
+            min-width: 20px;
+            max-width: 40px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            height: 100%;
+        }
+        .bar {
+            width: 100%;
+            background: var(--gradient);
+            border-radius: 4px 4px 0 0;
+            display: flex;
+            align-items: flex-start;
+            justify-content: center;
+            transition: opacity 0.2s;
+            position: relative;
+            min-height: 5%;
+        }
+        .bar:hover { opacity: 0.8; }
+        .bar-value {
+            font-size: 0.65rem;
+            color: white;
+            font-weight: 700;
+            padding-top: 2px;
+            white-space: nowrap;
+        }
+        .bar-label {
+            font-size: 0.65rem;
+            color: var(--text-dim);
+            margin-top: 4px;
+            text-align: center;
+            white-space: nowrap;
+        }
+        @media (max-width: 768px) {
+            .bar-chart { height: 150px; }
+            .bar-container { min-width: 16px; }
+            .bar-value { font-size: 0.55rem; }
+            .bar-label { font-size: 0.55rem; }
+        }
     </style>
 </head>
 <body>
@@ -3323,6 +3375,196 @@
             );
         }
 
+        function VisitasPanel({ token }) {
+            const [visitasData, setVisitasData] = useState(null);
+            const [ipData, setIpData] = useState(null);
+            const [loading, setLoading] = useState(true);
+            const [error, setError] = useState(null);
+            const [dias, setDias] = useState(30);
+
+            useEffect(() => {
+                cargarDatos();
+            }, [dias]);
+
+            const cargarDatos = async () => {
+                setLoading(true);
+                setError(null);
+                try {
+                    const [visitasRes, ipRes] = await Promise.all([
+                        fetch(API_URL + '/api/visitas/?dias=' + dias, {
+                            headers: { 'Authorization': 'Bearer ' + token }
+                        }),
+                        fetch(API_URL + '/api/visitas/ip/?dias=' + dias, {
+                            headers: { 'Authorization': 'Bearer ' + token }
+                        })
+                    ]);
+
+                    if (visitasRes.ok && ipRes.ok) {
+                        const visitasJson = await visitasRes.json();
+                        const ipJson = await ipRes.json();
+                        setVisitasData(visitasJson);
+                        setIpData(ipJson);
+                    } else {
+                        setError('No se pudieron cargar las estadísticas');
+                    }
+                } catch (err) {
+                    console.error(err);
+                    setError('Error de conexión');
+                }
+                setLoading(false);
+            };
+
+            const ocultarIP = (ip) => {
+                const partes = ip.split('.');
+                if (partes.length === 4) {
+                    return partes[0] + '.' + partes[1] + '.x.x';
+                }
+                return ip.substring(0, ip.length - 4) + '****';
+            };
+
+            const formatCountdown = (seconds) => {
+                const mins = Math.floor(seconds / 60);
+                const secs = seconds % 60;
+                return `${mins}:${secs.toString().padStart(2, '0')}`;
+            };
+
+            if (loading) return <div className="loading">Cargando estadísticas...</div>;
+            if (error) return (
+                <div className="empty-state">
+                    <span>❌</span>
+                    <p>{error}</p>
+                    <button className="btn" onClick={cargarDatos}>Reintentar</button>
+                </div>
+            );
+            if (!visitasData || !ipData) return null;
+
+            const detalle = visitasData.detalle || [];
+            const ips = ipData.ip || [];
+            const totalVisitas = visitasData.total_visitas || 0;
+            const ipsUnicas = visitasData.ips_unicas || 0;
+            const visitasHoy = detalle.length > 0 ? detalle[0].visitas : 0;
+            const promedioDia = dias > 0 ? Math.round(totalVisitas / dias) : 0;
+            const maxVisitas = Math.max(...detalle.map(d => d.visitas), 1);
+
+            return (
+                <div style={{maxWidth: '1200px', margin: '0 auto'}}>
+                    <h2 style={{fontSize: '1.5rem', marginBottom: '1.5rem'}}>📈 Estadísticas de Visitas</h2>
+
+                    <div style={{display: 'flex', gap: '0.5rem', marginBottom: '1.5rem', flexWrap: 'wrap'}}>
+                        {[7, 14, 30, 90].map(d => (
+                            <button
+                                key={d}
+                                onClick={() => setDias(d)}
+                                style={{
+                                    background: dias === d ? 'var(--gradient)' : 'rgba(255,255,255,0.1)',
+                                    border: 'none',
+                                    color: 'white',
+                                    padding: '0.6rem 1.2rem',
+                                    borderRadius: '10px',
+                                    cursor: 'pointer',
+                                    fontWeight: '600',
+                                    fontSize: '0.85rem',
+                                    boxShadow: dias === d ? 'var(--glow)' : 'none'
+                                }}
+                            >
+                                {d} días
+                            </button>
+                        ))}
+                        <button className="btn btn-secondary" onClick={cargarDatos} style={{marginLeft: 'auto', padding: '0.6rem 1.2rem', fontSize: '0.85rem'}}>🔄 Actualizar</button>
+                    </div>
+
+                    <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '1rem', marginBottom: '2rem'}}>
+                        <div style={{background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)', padding: '1.5rem', borderRadius: '16px', color: 'white'}}>
+                            <div style={{fontSize: '2.2rem', fontWeight: 'bold'}}>{totalVisitas.toLocaleString('es-AR')}</div>
+                            <div style={{opacity: 0.9, fontSize: '0.9rem'}}>Total Visitas</div>
+                        </div>
+                        <div style={{background: 'linear-gradient(135deg, #10b981 0%, #34d399 100%)', padding: '1.5rem', borderRadius: '16px', color: 'white'}}>
+                            <div style={{fontSize: '2.2rem', fontWeight: 'bold'}}>{ipsUnicas.toLocaleString('es-AR')}</div>
+                            <div style={{opacity: 0.9, fontSize: '0.9rem'}}>IPs Únicas</div>
+                        </div>
+                        <div style={{background: 'linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%)', padding: '1.5rem', borderRadius: '16px', color: 'white'}}>
+                            <div style={{fontSize: '2.2rem', fontWeight: 'bold'}}>{visitasHoy.toLocaleString('es-AR')}</div>
+                            <div style={{opacity: 0.9, fontSize: '0.9rem'}}>Visitas Hoy</div>
+                        </div>
+                        <div style={{background: 'linear-gradient(135deg, #ec4899 0%, #f472b6 100%)', padding: '1.5rem', borderRadius: '16px', color: 'white'}}>
+                            <div style={{fontSize: '2.2rem', fontWeight: 'bold'}}>{promedioDia.toLocaleString('es-AR')}</div>
+                            <div style={{opacity: 0.9, fontSize: '0.9rem'}}>Promedio / Día</div>
+                        </div>
+                    </div>
+
+                    {detalle.length > 0 && (
+                        <div style={{background: 'var(--bg-card)', padding: '1.5rem', borderRadius: '16px', marginBottom: '2rem'}}>
+                            <h3 style={{marginBottom: '1rem', fontSize: '1.1rem'}}>📊 Visitas por Día</h3>
+                            <div className="bar-chart">
+                                {detalle.slice().reverse().map((d, i) => {
+                                    const height = Math.max((d.visitas / maxVisitas) * 100, 5);
+                                    const fecha = new Date(d.fecha + 'T12:00:00');
+                                    return (
+                                        <div key={i} className="bar-container" title={fecha.toLocaleDateString('es-AR') + ': ' + d.visitas + ' visitas'}>
+                                            <div className="bar" style={{height: height + '%'}}>
+                                                <span className="bar-value">{d.visitas}</span>
+                                            </div>
+                                            <div className="bar-label">{fecha.getDate()}/{fecha.getMonth() + 1}</div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    )}
+
+                    <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))', gap: '1.5rem'}}>
+                        <div style={{background: 'var(--bg-card)', padding: '1.5rem', borderRadius: '16px'}}>
+                            <h3 style={{marginBottom: '1rem', fontSize: '1.1rem'}}>📅 Detalle Diario</h3>
+                            <div style={{maxHeight: '400px', overflowY: 'auto'}}>
+                                <table style={{width: '100%', borderCollapse: 'collapse', fontSize: '0.9rem'}}>
+                                    <thead>
+                                        <tr style={{borderBottom: '2px solid rgba(255,255,255,0.1)'}}>
+                                            <th style={{textAlign: 'left', padding: '0.5rem', color: 'var(--text-muted)', fontWeight: '600'}}>Fecha</th>
+                                            <th style={{textAlign: 'right', padding: '0.5rem', color: 'var(--text-muted)', fontWeight: '600'}}>Visitas</th>
+                                            <th style={{textAlign: 'right', padding: '0.5rem', color: 'var(--text-muted)', fontWeight: '600'}}>IPs</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {detalle.map((d, i) => (
+                                            <tr key={i} style={{borderBottom: '1px solid rgba(255,255,255,0.05)'}}>
+                                                <td style={{padding: '0.5rem', color: 'var(--text)'}}>{new Date(d.fecha + 'T12:00:00').toLocaleDateString('es-AR')}</td>
+                                                <td style={{padding: '0.5rem', textAlign: 'right', color: 'var(--primary-light)', fontWeight: '600'}}>{d.visitas.toLocaleString('es-AR')}</td>
+                                                <td style={{padding: '0.5rem', textAlign: 'right', color: 'var(--text-muted)'}}>{d.ips}</td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <div style={{background: 'var(--bg-card)', padding: '1.5rem', borderRadius: '16px'}}>
+                            <h3 style={{marginBottom: '1rem', fontSize: '1.1rem'}}>🌐 Top IPs</h3>
+                            <div style={{maxHeight: '400px', overflowY: 'auto'}}>
+                                <table style={{width: '100%', borderCollapse: 'collapse', fontSize: '0.9rem'}}>
+                                    <thead>
+                                        <tr style={{borderBottom: '2px solid rgba(255,255,255,0.1)'}}>
+                                            <th style={{textAlign: 'left', padding: '0.5rem', color: 'var(--text-muted)', fontWeight: '600'}}>IP</th>
+                                            <th style={{textAlign: 'right', padding: '0.5rem', color: 'var(--text-muted)', fontWeight: '600'}}>Visitas</th>
+                                            <th style={{textAlign: 'right', padding: '0.5rem', color: 'var(--text-muted)', fontWeight: '600'}}>Días</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {ips.slice(0, 50).map((item, i) => (
+                                            <tr key={i} style={{borderBottom: '1px solid rgba(255,255,255,0.05)'}}>
+                                                <td style={{padding: '0.5rem', fontFamily: 'monospace', color: 'var(--text)'}}>{ocultarIP(item.ip)}</td>
+                                                <td style={{padding: '0.5rem', textAlign: 'right', color: 'var(--primary-light)', fontWeight: '600'}}>{item.visitas.toLocaleString('es-AR')}</td>
+                                                <td style={{padding: '0.5rem', textAlign: 'right', color: 'var(--text-muted)'}}>{item.dias}</td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
         function AdminPanel() {
             const { user, token, showToast, irADetalle } = useContext(AuthContext);
             const [eventos, setEventos] = useState([]);
@@ -3644,6 +3886,7 @@
                         {user && (user.rol === 'admin' || user.rol === 'organizer') && <button onClick={() => setTab('editar')} style={{background: tab === 'editar' ? 'var(--gradient)' : 'rgba(255,255,255,0.1)', border:'none', color:'white', padding:'0.8rem 1.5rem', borderRadius:'12px', cursor:'pointer', fontWeight:'600', boxShadow: tab === 'editar' ? 'var(--glow)' : 'none'}}>✏️ Editar / Eliminar</button>}
                         {user && (user.rol === 'admin' || user.rol === 'organizer') && <button onClick={() => setTab('scanner')} style={{background: tab === 'scanner' ? 'var(--gradient)' : 'rgba(255,255,255,0.1)', border:'none', color:'white', padding:'0.8rem 1.5rem', borderRadius:'12px', cursor:'pointer', fontWeight:'600', boxShadow: tab === 'scanner' ? 'var(--glow)' : 'none'}}>📷 Scanner QR</button>}
                         <button onClick={() => setTab('analytics')} style={{background: tab === 'analytics' ? 'var(--gradient)' : 'rgba(255,255,255,0.1)', border:'none', color:'white', padding:'0.8rem 1.5rem', borderRadius:'12px', cursor:'pointer', fontWeight:'600', boxShadow: tab === 'analytics' ? 'var(--glow)' : 'none'}}>📊 Analytics</button>
+                        {user && user.rol === 'admin' && <button onClick={() => setTab('visitas')} style={{background: tab === 'visitas' ? 'var(--gradient)' : 'rgba(255,255,255,0.1)', border:'none', color:'white', padding:'0.8rem 1.5rem', borderRadius:'12px', cursor:'pointer', fontWeight:'600', boxShadow: tab === 'visitas' ? 'var(--glow)' : 'none'}}>📈 Visitas</button>}
                         {user && user.rol === 'admin' && <button onClick={async () => { setTab('solicitudes'); cargarSolicitudes(); }} style={{background: tab === 'solicitudes' ? 'var(--gradient)' : 'rgba(255,255,255,0.1)', border:'none', color:'white', padding:'0.8rem 1.5rem', borderRadius:'12px', cursor:'pointer', fontWeight:'600', boxShadow: tab === 'solicitudes' ? 'var(--glow)' : 'none'}}>📋 Solicitudes ({solicitudes.length})</button>}
                     </div>
                     
@@ -3818,6 +4061,8 @@
                     {tab === 'analytics' && (
                         <AnalyticsPanel eventos={eventos} />
                     )}
+
+                    {tab === 'visitas' && <VisitasPanel token={token} />}
 
                     {tab === 'solicitudes' && (
                         <>

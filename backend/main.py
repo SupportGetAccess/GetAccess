@@ -704,9 +704,21 @@ def test_api():
 @app.get("/api/visitas/", tags=["visitas"])
 async def get_estadisticas_visitas(
     request: Request,
+    credentials: HTTPAuthorizationCredentials = Depends(security),
+    db = Depends(get_db),
     dias: int = 30
 ):
-    """Obtener estadísticas de visitas"""
+    """Obtener estadísticas de visitas - Solo admin"""
+    token = credentials.credentials
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        user_id = int(payload.get("sub"))
+    except:
+        raise HTTPException(status_code=401, detail="Token inválido")
+    
+    if not es_admin(db, user_id):
+        raise HTTPException(status_code=403, detail="Solo administradores pueden ver estadísticas")
+    
     ip = get_client_ip(request)
     registrar_visita(ip)
     
@@ -754,9 +766,21 @@ async def get_estadisticas_visitas(
 @app.get("/api/visitas/ip/", tags=["visitas"])
 async def get_visitas_por_ip(
     request: Request,
+    credentials: HTTPAuthorizationCredentials = Depends(security),
+    db = Depends(get_db),
     dias: int = 30
 ):
-    """Obtener visitas por IP"""
+    """Obtener visitas por IP - Solo admin"""
+    token = credentials.credentials
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        user_id = int(payload.get("sub"))
+    except:
+        raise HTTPException(status_code=401, detail="Token inválido")
+    
+    if not es_admin(db, user_id):
+        raise HTTPException(status_code=403, detail="Solo administradores pueden ver estadísticas")
+    
     ip = get_client_ip(request)
     registrar_visita(ip)
     
