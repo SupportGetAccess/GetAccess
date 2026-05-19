@@ -99,6 +99,8 @@ except ImportError:
 RATE_LIMIT_WINDOW = 60  # segundos
 RATE_LIMIT_MAX = 100    # max requests por ventana
 
+security = HTTPBearer()
+
 # Logging de seguridad
 import logging
 security_logger = logging.getLogger("security")
@@ -850,8 +852,6 @@ async def global_exception_handler(request, exc):
             "Access-Control-Allow-Headers": "*",
         }
     )
-
-security = HTTPBearer()
 
 # Pydantic Models
 class UsuarioCreate(BaseModel):
