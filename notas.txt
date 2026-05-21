@@ -1274,4 +1274,41 @@ Ubicaciones en main.py:
 
 ---
 
-*Última sesión: Martes 19 de Mayo 2026*
+---
+
+## SESIÓN JUEVES 21 DE MAYO 2026
+
+### Fix: Endpoints HEAD para UptimeRobot
+
+**Problema**: UptimeRobot gratuito solo usa HEAD requests. Los endpoints `/` y `/health` devolvían **405 Method Not Allowed** porque solo soportaban GET. Como resultado, el monitor mostraba "Down" permanentemente y Render spipeaba down por inactividad (GitHub Actions no pingea cada 5 min reales - delays de ~1-4h en free tier).
+
+**Solución**:
+- Agregado `@app.head("/")` y `@app.head("/health")` en `backend/main.py`
+- Ambos devuelven `Response(status_code=200)` sin body
+- Import agregado: `Response` de `fastapi.responses`
+
+**Verificación**:
+- `HEAD /` → HTTP 200 ✅
+- `HEAD /health` → HTTP 200 ✅
+- GET sigue funcionando igual ✅
+
+**Commit**: 80ed030
+
+### Configurar UptimeRobot
+Crear monitor en UptimeRobot (gratuito):
+- **URL**: `https://getaccess-d3um.onrender.com/`
+- **Tipo**: HTTP (HEAD)
+- **Intervalo**: 5 minutos
+- Debería mostrar "Up" ahora que HEAD responde 200
+
+---
+
+## URLs DE PRODUCCIÓN
+
+- Frontend: https://getaccess.com.ar
+- Scanner: https://getaccess.com.ar/scanner.html
+- Backend: https://getaccess-d3um.onrender.com
+
+---
+
+*Última sesión: Jueves 21 de Mayo 2026*
