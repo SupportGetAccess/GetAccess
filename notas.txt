@@ -1193,3 +1193,85 @@ Ubicaciones en main.py:
 ---
 
 *Última sesión: Lunes 18 de Mayo 2026*
+
+---
+
+## SESIÓN MARTES 19 DE MAYO 2026
+
+### Fix: Espaciado modal QR - botones superpuestos
+
+**Problema**: Los botones "Enviar link por WhatsApp" y "Descargar QR" se superponían entre sí y con el texto de instrucción.
+
+**Solución implementada**:
+1. `display: 'block'` en el `<a>` del botón WhatsApp → márgenes funcionan correctamente
+2. `marginBottom: '0.5rem'` en botón WhatsApp → separa del botón Descargar
+3. `marginBottom: '0.5rem'` en botón Descargar → separa del divider
+4. `maxHeight: '90vh', overflowY: 'auto'` en el modal → scroll en pantallas chicas
+
+**Commits**:
+- 6d2c798 - fix: espaciado modal QR - botones y texto no se superponen
+
+---
+
+### Fix: CSP - Botón "Descargar QR" bloqueado
+
+**Problema**: El botón "Descargar QR" fallaba con error CSP: `connect-src` no incluía `quickchart.io`.
+
+**Causa**: La función `descargarQR` hace `fetch()` a quickchart.io pero el CSP solo permitía `img-src`, no `connect-src`.
+
+**Solución**: Agregado `https://quickchart.io` a la directiva `connect-src` en `backend/main.py`.
+
+**Commits**:
+- 7ab0f8d - fix: QR modal spacing + CSP quickchart.io for download button
+
+---
+
+### Fix: Toast "info" con fondo verde
+
+**Problema**: El toast "Completa los datos del comprador para continuar" no tenía estilo definido (tipo 'info').
+
+**Solución**: Agregado estilo `.toast.info` con fondo `var(--success)` y texto blanco, igual que los demás toasts del sitio.
+
+**Commits**:
+- 3f839b6 - fix: toast info con fondo verde como success
+
+---
+
+### Fix: Compactar modal QR para que entre sin scroll
+
+**Problema**: El modal QR era muy grande y requería scroll en pantallas de móvil.
+
+**Solución implementada**:
+1. Combinar título + total en una línea: `📱 Escanea el QR · Total: $15`
+2. Achicar imagen QR: 250px → 200px (sigue siendo perfectamente escaneable)
+3. Compactar márgenes entre elementos
+4. Eliminar `overflowY: 'auto'` (ya no hace falta)
+
+**Altura estimada**: ~556px → cabe sin scroll en la mayoría de dispositivos
+
+**Commits**:
+- d112366 - fix: compactar modal QR para que entre sin scroll
+
+---
+
+## ESTADO ACTUAL DEL PROYECTO
+
+| Funcionalidad | Estado |
+|---------------|--------|
+| Modal QR sin scroll | ✅ |
+| Botones QR sin superposición | ✅ |
+| CSP quickchart.io | ✅ |
+| Toast info verde | ✅ |
+| Seguridad completa (9/10) | ✅ |
+
+---
+
+## URLs DE PRODUCCIÓN
+
+- Frontend: https://getaccess.com.ar
+- Scanner: https://getaccess.com.ar/scanner.html
+- Backend: https://getaccess-d3um.onrender.com
+
+---
+
+*Última sesión: Martes 19 de Mayo 2026*

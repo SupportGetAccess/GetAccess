@@ -1,7 +1,7 @@
 from fastapi import FastAPI, Depends, HTTPException, status, Request, Form, UploadFile, File
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse, HTMLResponse
+from fastapi.responses import FileResponse, HTMLResponse, Response
 from fastapi.staticfiles import StaticFiles
 
 # File upload support - updated for event images
@@ -689,6 +689,11 @@ print(f"DEBUG: FRONTEND_DIR = {FRONTEND_DIR}")
 print(f"DEBUG: FRONTEND_DIR exists = {FRONTEND_DIR.exists()}")
 if FRONTEND_DIR.exists():
     print(f"DEBUG: index.html exists = {(FRONTEND_DIR / 'index.html').exists()}")
+
+@app.head("/")
+@app.head("/health")
+async def handle_head():
+    return Response(status_code=200)
 
 @app.get("/")
 async def serve_index():
