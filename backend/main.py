@@ -1386,7 +1386,10 @@ def listar_eventos(categoria: str = None, busqueda: str = None, mis_eventos: boo
             except:
                 raise HTTPException(status_code=401, detail="Token inválido")
         
-        query = "SELECT id, nombre, descripcion, fecha, lugar, precio, capacidad, vendidos, COALESCE(imagen, '') as imagen, COALESCE(categoria, '') as categoria, COALESCE(comision, 0) as comision, COALESCE(public_id, '') as public_id FROM eventos WHERE 1=1"
+        query = """SELECT e.id, e.nombre, e.descripcion, e.fecha, e.lugar, e.precio, e.capacidad, e.vendidos, 
+            COALESCE(NULLIF(e.imagen, ''), (SELECT ei.url FROM evento_imagenes ei WHERE ei.evento_id = e.id ORDER BY ei.orden, ei.id LIMIT 1), '') as imagen, 
+            COALESCE(e.categoria, '') as categoria, COALESCE(e.comision, 0) as comision, COALESCE(e.public_id, '') as public_id 
+            FROM eventos e WHERE 1=1"""
         params = []
         
         # Ocultar evento ID=3 del frontend público
@@ -1451,10 +1454,12 @@ def buscar_eventos(q: str = None, limite: int = 10, db = Depends(get_db)):
     q_search = f"%{q}%"
     
     query = f"""
-        SELECT id, nombre, fecha, lugar, precio, COALESCE(imagen, '') as imagen, COALESCE(categoria, '') as categoria 
-        FROM eventos 
-        WHERE nombre ILIKE '{q_search}' OR descripcion ILIKE '{q_search}' OR lugar ILIKE '{q_search}'
-        ORDER BY fecha
+        SELECT e.id, e.nombre, e.fecha, e.lugar, e.precio, 
+            COALESCE(NULLIF(e.imagen, ''), (SELECT ei.url FROM evento_imagenes ei WHERE ei.evento_id = e.id ORDER BY ei.orden, ei.id LIMIT 1), '') as imagen, 
+            COALESCE(e.categoria, '') as categoria 
+        FROM eventos e
+        WHERE e.nombre ILIKE '{q_search}' OR e.descripcion ILIKE '{q_search}' OR e.lugar ILIKE '{q_search}'
+        ORDER BY e.fecha
         LIMIT {limite}
     """
     
@@ -1488,7 +1493,10 @@ def obtener_evento(evento_id: int, db = Depends(get_db)):
         if time.time() - cached_time < CACHE_TTL:
             return cached_data
     
-    cursor = db.execute("SELECT id, nombre, descripcion, fecha, lugar, precio, capacidad, vendidos, COALESCE(imagen, '') as imagen, COALESCE(categoria, '') as categoria, COALESCE(comision, 0) as comision, COALESCE(public_id, '') as public_id FROM eventos WHERE id = ?", (evento_id,))
+    cursor = db.execute("""SELECT e.id, e.nombre, e.descripcion, e.fecha, e.lugar, e.precio, e.capacidad, e.vendidos, 
+        COALESCE(NULLIF(e.imagen, ''), (SELECT ei.url FROM evento_imagenes ei WHERE ei.evento_id = e.id ORDER BY ei.orden, ei.id LIMIT 1), '') as imagen, 
+        COALESCE(e.categoria, '') as categoria, COALESCE(e.comision, 0) as comision, COALESCE(e.public_id, '') as public_id 
+        FROM eventos e WHERE e.id = ?""", (evento_id,))
     row = cursor.fetchone()
     
     if not row:
@@ -1760,7 +1768,10 @@ async def actualizar_evento(evento_id: int,
     db.execute(f"UPDATE eventos SET {', '.join(updates)} WHERE id = ?", params)
     db.commit()
     
-    cursor = db.execute("SELECT id, nombre, descripcion, fecha, lugar, precio, capacidad, vendidos, COALESCE(imagen, '') as imagen, COALESCE(categoria, '') as categoria, COALESCE(comision, 0) as comision FROM eventos WHERE id = ?", (evento_id,))
+    cursor = db.execute("""SELECT e.id, e.nombre, e.descripcion, e.fecha, e.lugar, e.precio, e.capacidad, e.vendidos, 
+        COALESCE(NULLIF(e.imagen, ''), (SELECT ei.url FROM evento_imagenes ei WHERE ei.evento_id = e.id ORDER BY ei.orden, ei.id LIMIT 1), '') as imagen, 
+        COALESCE(e.categoria, '') as categoria, COALESCE(e.comision, 0) as comision 
+        FROM eventos e WHERE e.id = ?""", (evento_id,))
     row = cursor.fetchone()
     
     return {

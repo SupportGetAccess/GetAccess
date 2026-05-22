@@ -24,7 +24,7 @@ export interface Evento {
   vendidos: number;
   disponibles: number;
   imagen: string;
-  imagenes?: string[];
+  imagenes?: { id: number; url: string; orden: number }[];
   categoria: string;
   comision: number;
   public_id: string;

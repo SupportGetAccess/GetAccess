@@ -1,16 +1,21 @@
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView, ActivityIndicator, Alert, Image } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView, ActivityIndicator, Alert, Image, Dimensions } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import { eventosApi } from '../../api/eventos';
 import { colors } from '../../theme';
 import { formatPrecio, parseFecha, getImageUrl } from '../../utils/format';
 import { useCartStore } from '../../stores/cartStore';
 
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
+const IMAGE_HEIGHT = 200;
+
 export default function EventoDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const [cantidad, setCantidad] = useState(1);
+  const [imgIndex, setImgIndex] = useState(0);
+  const scrollRef = useRef<ScrollView>(null);
   const addItem = useCartStore((s) => s.addItem);
 
   const { data: evento, isLoading } = useQuery({
@@ -35,6 +40,11 @@ export default function EventoDetailScreen() {
     );
   }
 
+  const imagenes = [
+    ...(evento.imagenes?.length ? evento.imagenes.map((i) => i.url) : []),
+    ...(getImageUrl(evento.imagen) ? [getImageUrl(evento.imagen)!] : []),
+  ];
+
   const disponibles = evento.capacidad - evento.vendidos;
   const agotado = disponibles <= 0;
   const precioConComision = evento.precio * (1 + (evento.comision || 0) / 100);
@@ -54,8 +64,30 @@ export default function EventoDetailScreen() {
         <Ionicons name="arrow-back" size={24} color={colors.text} />
       </TouchableOpacity>
       <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
-        {getImageUrl(evento.imagen) ? (
-          <Image source={{ uri: getImageUrl(evento.imagen)! }} style={styles.image} resizeMode="cover" />
+        {imagenes.length > 0 ? (
+          <View>
+            <ScrollView
+              ref={scrollRef}
+              horizontal
+              pagingEnabled
+              showsHorizontalScrollIndicator={false}
+              onMomentumScrollEnd={(e) => {
+                const idx = Math.round(e.nativeEvent.contentOffset.x / SCREEN_WIDTH);
+                setImgIndex(idx);
+              }}
+            >
+              {imagenes.map((url, i) => (
+                <Image key={i} source={{ uri: url }} style={[styles.image, { width: SCREEN_WIDTH - 32 }]} resizeMode="cover" />
+              ))}
+            </ScrollView>
+            {imagenes.length > 1 && (
+              <View style={styles.dotsRow}>
+                {imagenes.map((_, i) => (
+                  <View key={i} style={[styles.dot, i === imgIndex && styles.dotActive]} />
+                ))}
+              </View>
+            )}
+          </View>
         ) : (
           <View style={styles.imagePlaceholder}>
             <Ionicons name="calendar" size={48} color={colors.textMuted} />
@@ -127,7 +159,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 20,
   },
-  image: { width: '100%', height: 200, borderRadius: 12, marginBottom: 20 },
+  image: { width: '100%', height: IMAGE_HEIGHT, borderRadius: 12, marginBottom: 0 },
+  dotsRow: { flexDirection: 'row', justifyContent: 'center', gap: 6, marginTop: 8, marginBottom: 20 },
+  dot: { width: 8, height: 8, borderRadius: 4, backgroundColor: colors.border },
+  dotActive: { backgroundColor: colors.primary, width: 10, height: 10, borderRadius: 5 },
   nombre: { fontSize: 24, fontWeight: 'bold', color: colors.text, marginBottom: 8 },
   categoriaBadge: {
     alignSelf: 'flex-start',
