@@ -14,14 +14,14 @@ export function getImageUrl(imagen?: string | null): string | null {
     try {
       const parsed = JSON.parse(imagen.trim());
       if (Array.isArray(parsed)) {
-        const url = parsed.find((u) => u && typeof u === 'string' && (u.startsWith('http://') || u.startsWith('https://')));
+        const url = parsed.find((u) => u && typeof u === 'string' && (u.startsWith('http://') || u.startsWith('https://') || u.startsWith('data:')));
         if (url) return url;
       }
-      if (typeof parsed === 'string' && (parsed.startsWith('http://') || parsed.startsWith('https://'))) return parsed;
+      if (typeof parsed === 'string' && (parsed.startsWith('http://') || parsed.startsWith('https://') || parsed.startsWith('data:'))) return parsed;
     } catch {}
   }
 
-  if (imagen.startsWith('http://') || imagen.startsWith('https://')) return imagen;
+  if (imagen.startsWith('http://') || imagen.startsWith('https://') || imagen.startsWith('data:')) return imagen;
   return `${API_URL}${imagen.startsWith('/') ? '' : '/'}${imagen}`;
 }
 
