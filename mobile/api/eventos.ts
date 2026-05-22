@@ -2,7 +2,7 @@ import api from './client';
 import { Evento } from '../types';
 
 export const eventosApi = {
-  listar: (params?: { categoria?: string; busqueda?: string }) =>
+  listar: (params?: { categoria?: string; busqueda?: string; mis_eventos?: boolean }) =>
     api.get<Evento[]>('/api/eventos/', { params }),
 
   obtener: (id: number) =>
@@ -16,4 +16,17 @@ export const eventosApi = {
 
   categorias: () =>
     api.get<string[]>('/api/eventos/categorias'),
+
+  crear: (data: FormData) =>
+    api.post<Evento>('/api/eventos/', data, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    }),
+
+  actualizar: (id: number, data: FormData) =>
+    api.put<Evento>(`/api/eventos/${id}`, data, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    }),
+
+  eliminar: (id: number) =>
+    api.delete<{ message: string }>(`/api/eventos/${id}`),
 };

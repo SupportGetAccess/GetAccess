@@ -67,6 +67,11 @@ export default function PerfilScreen() {
           <Text style={styles.menuText}>Contacto</Text>
           <Ionicons name="chevron-forward" size={20} color={colors.textMuted} />
         </TouchableOpacity>
+        <TouchableOpacity style={styles.menuItem} onPress={() => router.push('/transferencias-pendientes')}>
+          <Ionicons name="swap-horizontal-outline" size={22} color={colors.info} />
+          <Text style={styles.menuText}>Transferencias Pendientes</Text>
+          <Ionicons name="chevron-forward" size={20} color={colors.textMuted} />
+        </TouchableOpacity>
       </View>
       <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
         <Ionicons name="log-out-outline" size={22} color={colors.error} />

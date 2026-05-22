@@ -8,9 +8,9 @@
     "userInterfaceStyle": "dark",
     "scheme": "getaccess",
     "splash": {
-      "image": "./assets/splash.png",
+      "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
-      "backgroundColor": "#1a1a2e"
+      "backgroundColor": "#FF6B35"
     },
     "ios": {
       "supportsTablet": true,
@@ -21,13 +21,15 @@
     },
     "android": {
       "adaptiveIcon": {
-        "backgroundColor": "#1a1a2e",
+        "backgroundColor": "#FF6B35",
         "foregroundImage": "./assets/android-icon-foreground.png",
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
       "package": "com.getaccess.app",
-      "permissions": ["android.permission.CAMERA"],
+      "permissions": [
+        "android.permission.CAMERA"
+      ],
       "predictiveBackGestureEnabled": false
     },
     "web": {
@@ -44,16 +46,15 @@
           "cameraPermission": "La cámara se usa para escanear códigos QR de entradas."
         }
       ],
-      [
-        "expo-notifications",
-        {
-          "icon": "./assets/notification-icon.png",
-          "color": "#FF6B35"
-        }
-      ]
+      "expo-notifications"
     ],
     "extra": {
-      "apiUrl": "https://getaccess.com.ar"
-    }
+      "apiUrl": "https://getaccess.com.ar",
+      "router": {},
+      "eas": {
+        "projectId": "0eca26e5-55e8-496c-9076-a91bf45563bd"
+      }
+    },
+    "owner": "getaccess-app"
   }
 }

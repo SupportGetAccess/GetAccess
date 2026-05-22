@@ -1,11 +1,11 @@
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView, ActivityIndicator, Alert } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView, ActivityIndicator, Alert, Image } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import { eventosApi } from '../../api/eventos';
 import { colors } from '../../theme';
-import { formatPrecio, parseFecha } from '../../utils/format';
+import { formatPrecio, parseFecha, getImageUrl } from '../../utils/format';
 import { useCartStore } from '../../stores/cartStore';
 
 export default function EventoDetailScreen() {
@@ -54,9 +54,13 @@ export default function EventoDetailScreen() {
         <Ionicons name="arrow-back" size={24} color={colors.text} />
       </TouchableOpacity>
       <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
-        <View style={styles.imagePlaceholder}>
-          <Ionicons name="calendar" size={48} color={colors.textMuted} />
-        </View>
+        {getImageUrl(evento.imagen) ? (
+          <Image source={{ uri: getImageUrl(evento.imagen)! }} style={styles.image} resizeMode="cover" />
+        ) : (
+          <View style={styles.imagePlaceholder}>
+            <Ionicons name="calendar" size={48} color={colors.textMuted} />
+          </View>
+        )}
         <Text style={styles.nombre}>{evento.nombre}</Text>
         {evento.categoria && (
           <View style={styles.categoriaBadge}>
@@ -123,6 +127,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 20,
   },
+  image: { width: '100%', height: 200, borderRadius: 12, marginBottom: 20 },
   nombre: { fontSize: 24, fontWeight: 'bold', color: colors.text, marginBottom: 8 },
   categoriaBadge: {
     alignSelf: 'flex-start',

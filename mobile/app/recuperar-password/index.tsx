@@ -1,14 +1,17 @@
 import { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ActivityIndicator } from 'react-native';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../../theme';
 import { authApi } from '../../api/auth';
 
 export default function RecuperarPasswordScreen() {
+  const { token } = useLocalSearchParams<{ token: string }>();
   const [email, setEmail] = useState('');
+  const [nuevaPassword, setNuevaPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [sent, setSent] = useState(false);
+  const [resetDone, setResetDone] = useState(false);
 
   const handleRecuperar = async () => {
     if (!email) { Alert.alert('Error', 'Ingresá tu email'); return; }
@@ -22,6 +25,48 @@ export default function RecuperarPasswordScreen() {
       setLoading(false);
     }
   };
+
+  const handleReset = async () => {
+    if (nuevaPassword.length < 8) { Alert.alert('Error', 'Mínimo 8 caracteres'); return; }
+    setLoading(true);
+    try {
+      await authApi.restablecerPassword(token!, nuevaPassword);
+      setResetDone(true);
+    } catch (err: any) {
+      Alert.alert('Error', err.response?.data?.detail || 'Error al restablecer');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (token) {
+    return (
+      <View style={styles.container}>
+        <TouchableOpacity style={styles.back} onPress={() => router.back()}>
+          <Ionicons name="arrow-back" size={24} color={colors.text} />
+        </TouchableOpacity>
+        {resetDone ? (
+          <>
+            <Ionicons name="checkmark-circle" size={48} color={colors.success} />
+            <Text style={styles.title}>Contraseña Restablecida</Text>
+            <Text style={styles.subtitle}>Ya podés iniciar sesión con tu nueva contraseña</Text>
+            <TouchableOpacity style={styles.button} onPress={() => router.push('/(auth)/login')}>
+              <Text style={styles.buttonText}>Iniciar Sesión</Text>
+            </TouchableOpacity>
+          </>
+        ) : (
+          <>
+            <Text style={styles.title}>Nueva Contraseña</Text>
+            <Text style={styles.subtitle}>Ingresá tu nueva contraseña</Text>
+            <TextInput style={styles.input} placeholder="••••••••" placeholderTextColor={colors.textMuted} value={nuevaPassword} onChangeText={setNuevaPassword} secureTextEntry />
+            <TouchableOpacity style={styles.button} onPress={handleReset} disabled={loading}>
+              {loading ? <ActivityIndicator color={colors.white} /> : <Text style={styles.buttonText}>Restablecer</Text>}
+            </TouchableOpacity>
+          </>
+        )}
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>

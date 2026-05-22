@@ -1,4 +1,5 @@
-import { View, Text, FlatList, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
+import { useState, useCallback } from 'react';
+import { View, Text, FlatList, TouchableOpacity, StyleSheet, ActivityIndicator, RefreshControl } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -8,12 +9,19 @@ import { useAuthStore } from '../../stores/authStore';
 import { formatPrecio, parseFecha } from '../../utils/format';
 
 export default function MisEntradasScreen() {
+  const [refreshing, setRefreshing] = useState(false);
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
-  const { data: entradas, isLoading } = useQuery({
+  const { data: entradas, isLoading, refetch } = useQuery({
     queryKey: ['mis-entradas'],
     queryFn: () => entradasApi.listar().then((r) => r.data),
     enabled: isAuthenticated,
   });
+
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await refetch();
+    setRefreshing(false);
+  }, [refetch]);
 
   if (!isAuthenticated) {
     return (
@@ -80,6 +88,7 @@ export default function MisEntradasScreen() {
           </View>
         }
         contentContainerStyle={styles.list}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />}
       />
     </View>
   );

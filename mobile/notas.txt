@@ -1,0 +1,140 @@
+# App Mobile Get Access
+
+## SESIÓN JUEVES 21 DE MAYO 2026
+
+### APK generada por primera vez
+- Build exitoso con EAS Build (perfil `preview`)
+- **APK**: `https://expo.dev/accounts/getaccess-app/projects/getaccess/builds/45643581-29c1-4429-8883-200d37e60762`
+- Cuenta Expo: **getaccess** (token de acceso configurado)
+- Project ID: `0eca26e5-55e8-496c-9076-a91bf45563bd`
+
+---
+
+## ESTADO ACTUAL DE LA APP
+
+### Pantallas implementadas (✅ funcionales)
+
+| Pantalla | Archivo | Estado |
+|----------|---------|--------|
+| Eventos (lista) | `app/(tabs)/eventos.tsx` | ✅ |
+| Detalle de evento | `app/evento/[id].tsx` | ✅ |
+| Carrito (tab) | `app/(tabs)/carrito.tsx` | ✅ |
+| Checkout (pago) | `app/carrito/index.tsx` | ✅ (QR + Link, con invitado) |
+| Mis Entradas | `app/(tabs)/entradas.tsx` | ✅ |
+| Detalle de entrada + QR | `app/entrada/[id].tsx` | ✅ |
+| Buscar entradas por email | `app/buscar-entradas/index.tsx` | ✅ |
+| Login | `app/(auth)/login.tsx` | ✅ |
+| Registro + verificación | `app/(auth)/register.tsx` | ✅ |
+| Recuperar contraseña | `app/recuperar-password/index.tsx` | ✅ |
+| Perfil | `app/(tabs)/perfil.tsx` | ✅ |
+| Editar perfil | `app/editar-perfil/index.tsx` | ✅ |
+| Scanner QR | `app/scanner/index.tsx` | ✅ |
+| Panel Admin (menú) | `app/admin/index.tsx` | ✅ |
+| Contacto | `app/contacto/index.tsx` | ✅ |
+
+### Pantallas placeholder (⚠️ sin implementar)
+
+| Pantalla | Archivo | Estado |
+|----------|---------|--------|
+| Dashboard admin | `app/admin/dashboard/index.tsx` | ⚠️ Placeholder |
+| Mis Eventos (organizer) | `app/admin/mis-eventos/index.tsx` | ⚠️ Placeholder |
+| Crear Evento | `app/admin/crear-evento/index.tsx` | ⚠️ Placeholder |
+| Solicitudes Organizer | `app/admin/solicitudes/index.tsx` | ⚠️ Placeholder |
+| Validaciones | `app/admin/validaciones/index.tsx` | ⚠️ Placeholder |
+
+### Stores (Zustand)
+
+| Store | Archivo | Funcionalidad |
+|-------|---------|---------------|
+| authStore | `stores/authStore.ts` | Login, register, verify, logout, loadStoredAuth, updateUser |
+| cartStore | `stores/cartStore.ts` | Items, cantidad, total, comprador data |
+
+### API (axios + interceptors)
+
+| Módulo | Archivo | Endpoints |
+|--------|---------|-----------|
+| client | `api/client.ts` | Axios instance + Bearer token interceptor + 401 handler |
+| auth | `api/auth.ts` | login, register, verify, me, updateProfile, solicitarOrganizer, recuperarPassword, restablecerPassword |
+| eventos | `api/eventos.ts` | listar, obtener, obtenerPorPublicId, buscar, categorias |
+| entradas | `api/entradas.ts` | listar, pendientes, crear, crearInvitado, buscar, confirmarPago, transferir, aceptarTransferencia, transferenciasPendientes |
+| pagos | `api/pagos.ts` | qr, qrInvitado, qrStatus, qrCancelar, linkCarrito, linkCarritoInvitado |
+
+### Configuración
+
+- **API URL**: `https://getaccess.com.ar` (desde `app.json` extra.apiUrl)
+- **EAS profiles**: development (dev client), preview (APK), production (AAB)
+- **Owner**: `getaccess-app`
+- **Tema**: dark (`#1a1a2e` background, `#FF6B35` primary)
+
+---
+
+## PRÓXIMOS PASOS SUGERIDOS
+
+1. Implementar pantallas placeholder del admin
+2. Mejorar la carga de imágenes de eventos
+3. Probar el circuito completo de compra (QR + Link) en la app
+4. Agregar deep linking para recuperar contraseña
+5. Configurar notificaciones push (expo-notifications ya está instalado)
+6. Probar scanner QR en dispositivo real
+
+---
+
+## URLs de Producción
+
+- Frontend web: https://getaccess.com.ar
+- Backend API: https://getaccess-d3um.onrender.com
+- Scanner web: https://getaccess.com.ar/scanner.html
+
+---
+
+### Fase 6 completada (21/5 — continuacion)
+
+**Pantallas admin implementadas:**
+
+| Pantalla | Archivo | Estado |
+|----------|---------|--------|
+| Dashboard | `app/admin/dashboard/index.tsx` | ✅ Stats: ventas, ingresos, top eventos, categorías |
+| Crear Evento | `app/admin/crear-evento/index.tsx` | ✅ Formulario completo con imágenes |
+| Mis Eventos | `app/admin/mis-eventos/index.tsx` | ✅ Lista con editar y eliminar |
+| Solicitudes Organizer | `app/admin/solicitudes/index.tsx` | ✅ Aprobar/rechazar (admin only) |
+| Validaciones | `app/admin/validaciones/index.tsx` | ✅ Historial últimos 7 días |
+
+**Nuevas dependencias:** `expo-image-picker` (para subir imágenes en crear evento)
+
+**Nuevo API module:** `api/admin.ts` (dashboard, solicitudes, validaciones)
+
+**PLAN.md** actualizado con estado de Fase 6 completada.
+
+---
+
+## SESIÓN VIERNES 22 DE MAYO 2026 — FASE 7 COMPLETADA
+
+### Tareas implementadas:
+
+| # | Tarea | Detalle |
+|---|-------|---------|
+| 7.1 | Imágenes de eventos | Reemplazado placeholder por imagen real desde backend en lista y detalle |
+| 7.2 | Pull-to-refresh | Agregado RefreshControl a eventos.tsx y entradas.tsx |
+| 7.3 | Deep linking | Manejo de links `getaccess://recuperar-password?token=X` en layout |
+| 7.4 | Push notifications | Utilidad `utils/notifications.ts` con registro y envío de push token |
+| 7.5 | Offline support | React Query persist con AsyncStorage + `PersistQueryClientProvider` |
+| 7.6 | Transferencia de entradas | Modal de transferir en detalle de entrada + pantalla de transferencias pendientes |
+| 7.8 | Splash screen | Corregida referencia a splash-icon.png, fondo #FF6B35 |
+
+### Nuevos archivos:
+- `utils/notifications.ts` — registro de push notifications
+- `app/transferencias-pendientes/index.tsx` — pantalla para aceptar transferencias
+- `utils/format.ts` — agregada función `getImageUrl()`
+
+### Dependencias agregadas:
+- `@tanstack/react-query-persist-client`
+- `@tanstack/query-async-storage-persister`
+- `@react-native-async-storage/async-storage`
+
+### Pendiente:
+- Backend necesita endpoint `POST /api/auth/push-token` para guardar push tokens
+- Backend necesita endpoint para enviar notificaciones push vía Expo API
+
+---
+
+*Última sesión: Viernes 22 de Mayo 2026 (Fase 7 completa)*

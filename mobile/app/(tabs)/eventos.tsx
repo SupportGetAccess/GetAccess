@@ -1,15 +1,17 @@
-import { View, Text, FlatList, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
+import { useState, useCallback } from 'react';
+import { View, Text, FlatList, TouchableOpacity, StyleSheet, ActivityIndicator, Image, RefreshControl } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { eventosApi } from '../../api/eventos';
 import { colors } from '../../theme';
-import { formatPrecio, parseFechaCorta } from '../../utils/format';
+import { formatPrecio, parseFechaCorta, getImageUrl } from '../../utils/format';
 import { Evento } from '../../types';
 
 function EventoCard({ evento }: { evento: Evento }) {
   const disponibles = evento.capacidad - evento.vendidos;
   const agotado = disponibles <= 0;
+  const imageUrl = getImageUrl(evento.imagen);
 
   return (
     <TouchableOpacity
@@ -17,6 +19,9 @@ function EventoCard({ evento }: { evento: Evento }) {
       onPress={() => router.push(`/evento/${evento.id}`)}
       activeOpacity={0.7}
     >
+      {imageUrl && (
+        <Image source={{ uri: imageUrl }} style={styles.cardImage} resizeMode="cover" />
+      )}
       <View style={styles.cardContent}>
         <View style={styles.cardHeader}>
           <Text style={styles.cardTitle} numberOfLines={2}>{evento.nombre}</Text>
@@ -46,10 +51,17 @@ function EventoCard({ evento }: { evento: Evento }) {
 }
 
 export default function EventosScreen() {
-  const { data: eventos, isLoading, error } = useQuery({
+  const [refreshing, setRefreshing] = useState(false);
+  const { data: eventos, isLoading, error, refetch } = useQuery({
     queryKey: ['eventos'],
     queryFn: () => eventosApi.listar().then((r) => r.data),
   });
+
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await refetch();
+    setRefreshing(false);
+  }, [refetch]);
 
   if (isLoading) {
     return (
@@ -82,6 +94,7 @@ export default function EventosScreen() {
         renderItem={({ item }) => <EventoCard evento={item} />}
         contentContainerStyle={styles.list}
         showsVerticalScrollIndicator={false}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />}
       />
     </View>
   );
@@ -108,6 +121,7 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   cardAgotado: { opacity: 0.6 },
+  cardImage: { width: '100%', height: 140 },
   cardContent: { padding: 16 },
   cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 },
   cardTitle: { flex: 1, fontSize: 16, fontWeight: '600', color: colors.text, marginRight: 8 },
