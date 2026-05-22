@@ -1,4 +1,4 @@
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView, ActivityIndicator, Alert, Image, Dimensions } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView, ActivityIndicator, Alert, Image, Dimensions, SafeAreaView } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
 import { useRef, useState } from 'react';
@@ -132,7 +132,7 @@ export default function EventoDetailScreen() {
         )}
       </ScrollView>
       {!agotado && !finalizado && (
-        <View style={styles.footer}>
+        <SafeAreaView style={styles.footer}>
           <View style={styles.cantidadRow}>
             <TouchableOpacity onPress={() => setCantidad(Math.max(1, cantidad - 1))} style={styles.qtyBtn}>
               <Ionicons name="remove" size={20} color={colors.text} />
@@ -145,7 +145,7 @@ export default function EventoDetailScreen() {
           <TouchableOpacity style={styles.addButton} onPress={handleAgregar}>
             <Text style={styles.addText}>Agregar · {formatPrecio(total)}</Text>
           </TouchableOpacity>
-        </View>
+        </SafeAreaView>
       )}
     </View>
   );

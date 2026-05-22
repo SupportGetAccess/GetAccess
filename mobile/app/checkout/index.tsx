@@ -157,7 +157,7 @@ export default function CheckoutScreen() {
         <Text style={styles.qrTotal}>Total: {formatPrecio(total)}</Text>
         <View style={styles.qrContainer}>
           {qrCode ? (
-            <Image source={{ uri: `https://quickchart.io/qr?size=250&text=${encodeURIComponent(qrCode)}` }} style={styles.qrImage} />
+            <Image source={{ uri: qrCode }} style={styles.qrImage} />
           ) : (
             <ActivityIndicator size="large" color={colors.primary} />
           )}

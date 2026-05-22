@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { View, Text, FlatList, TouchableOpacity, StyleSheet, ActivityIndicator, Image, RefreshControl } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
 import { router } from 'expo-router';
@@ -7,6 +7,7 @@ import { eventosApi } from '../../api/eventos';
 import { colors } from '../../theme';
 import { formatPrecio, parseFechaCorta, getImageUrl, isEventoFinalizado } from '../../utils/format';
 import { Evento } from '../../types';
+import { useAuthStore } from '../../stores/authStore';
 
 function EventoCard({ evento }: { evento: Evento }) {
   const disponibles = evento.capacidad - evento.vendidos;
@@ -60,6 +61,20 @@ export default function EventosScreen() {
     queryFn: () => eventosApi.listar().then((r) => r.data),
   });
 
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  const eventosOrdenados = useMemo(
+    () => (eventos ? [...eventos].sort((a, b) => {
+      const fa = new Date(a.fecha).getTime();
+      const fb = new Date(b.fecha).getTime();
+      const ahora = Date.now();
+      const aPasado = fa < ahora;
+      const bPasado = fb < ahora;
+      if (aPasado !== bPasado) return aPasado ? 1 : -1;
+      return fa - fb;
+    }) : []),
+    [eventos],
+  );
+
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
     await refetch();
@@ -87,15 +102,15 @@ export default function EventosScreen() {
     <View style={styles.container}>
       <View style={styles.header}>
         <View style={styles.headerLeft}>
-          <Image source={require('../../assets/icon.png')} style={styles.logo} resizeMode="contain" />
+          <Image source={require('../../Logo PNG transparencia.png')} style={styles.logo} resizeMode="contain" />
           <Text style={styles.title}>Get Access</Text>
         </View>
-        <TouchableOpacity onPress={() => router.push('/(auth)/login')}>
-          <Ionicons name="person-circle-outline" size={28} color={colors.primary} />
+        <TouchableOpacity onPress={() => router.push(isAuthenticated ? '/(tabs)/perfil' : '/(auth)/login')}>
+          <Text style={{ fontSize: 24 }}>👤</Text>
         </TouchableOpacity>
       </View>
       <FlatList
-        data={eventos || []}
+        data={eventosOrdenados}
         keyExtractor={(item) => String(item.id)}
         renderItem={({ item }) => <EventoCard evento={item} />}
         contentContainerStyle={styles.list}

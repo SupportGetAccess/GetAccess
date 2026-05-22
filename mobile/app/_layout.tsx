@@ -99,6 +99,7 @@ function RootLayoutContent() {
       <Stack.Screen name="scanner/index" />
       <Stack.Screen name="admin/index" />
       <Stack.Screen name="transferencias-pendientes/index" />
+      <Stack.Screen name="privacidad/index" />
     </Stack>
   );
 }
