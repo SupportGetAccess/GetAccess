@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Depends, HTTPException, status, Request, Form, UploadFile, File
+from fastapi import FastAPI, Depends, HTTPException, status, Request, Form, UploadFile, File, BackgroundTasks
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, HTMLResponse, Response
@@ -665,7 +665,7 @@ async def add_security_headers(request: Request, call_next):
         "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://unpkg.com; "
         "style-src 'self' 'unsafe-inline'; "
         "img-src 'self' data: https://images.unsplash.com https://*.supabase.co https://quickchart.io https://getaccess.now.sh; "
-        "connect-src 'self' https://unpkg.com https://api.mercadopago.com https://api.brevo.com https://*.supabase.co https://quickchart.io; "
+        "connect-src 'self' https://unpkg.com https://api.mercadopago.com https://api.brevo.com https://*.supabase.co https://quickchart.io https://exp.host; "
         "font-src 'self'; "
         "frame-ancestors 'none'; "
         "base-uri 'self'; "
@@ -1301,6 +1301,42 @@ def mi_solicitud_organizer(credentials: HTTPAuthorizationCredentials = Depends(s
             "motivo_rechazo": row[2],
             "created_at": str(row[3])
         }
+
+# === PUSH NOTIFICATIONS ===
+
+class PushTokenRequest(BaseModel):
+    push_token: str
+
+@app.post("/api/auth/push-token")
+def guardar_push_token(datos: PushTokenRequest, credentials: HTTPAuthorizationCredentials = Depends(security), db = Depends(get_db)):
+    token = credentials.credentials
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        user_id = int(payload.get("sub"))
+    except:
+        raise HTTPException(status_code=401, detail="Token inválido")
+    
+    db.execute("UPDATE usuarios SET push_token = ? WHERE id = ?", (datos.push_token, user_id))
+    db.commit()
+    return {"message": "Push token guardado"}
+
+EXPO_PUSH_API = "https://exp.host/--/api/v2/push/send"
+
+def enviar_push_notificacion(push_token: str, title: str, body: str):
+    if not push_token:
+        return
+    try:
+        data = {
+            "to": push_token,
+            "title": title,
+            "body": body,
+            "sound": "default",
+            "priority": "high",
+        }
+        response = requests.post(EXPO_PUSH_API, json=data, timeout=15)
+        print(f">>> PUSH ENVIADO a {push_token[:20]}...: {response.status_code}")
+    except Exception as e:
+        print(f">>> ERROR ENVIANDO PUSH: {e}")
 
 @app.get("/health")
 def health_check():
@@ -2423,7 +2459,7 @@ def limpiar_entradas_pendientes_expiradas(db, minutos=20):
         return 0
 
 def procesar_entrada_pagada(entrada_id, db):
-    """Procesa una entrada como pagada: genera código GA y envía email"""
+    """Procesa una entrada como pagada: genera código GA, envía email y push"""
     db.execute("UPDATE entradas SET estado = 'pagada' WHERE id = ?", (entrada_id,))
     db.commit()
     
@@ -2436,7 +2472,8 @@ def procesar_entrada_pagada(entrada_id, db):
         SELECT COALESCE(u.email, e.email_comprador) as email, 
                COALESCE(u.nombre, e.nombre_comprador) as nombre,
                COALESCE(u.apellido, e.apellido_comprador) as apellido,
-               ev.nombre, ev.fecha, ev.lugar, e.cantidad, e.total
+               ev.nombre, ev.fecha, ev.lugar, e.cantidad, e.total,
+               u.push_token
         FROM entradas e
         LEFT JOIN usuarios u ON e.usuario_id = u.id
         JOIN eventos ev ON e.evento_id = ev.id
@@ -2444,7 +2481,15 @@ def procesar_entrada_pagada(entrada_id, db):
     """, (entrada_id,))
     row = cursor_info.fetchone()
     if row:
-        enviar_ticket_email(row[0], row[1], row[2], row[3], row[4], row[5], row[6], row[7], entrada_id, codigo)
+        email, nombre, apellido, ev_nombre, fecha, lugar, cantidad, total, push_token = row
+        enviar_ticket_email(email, nombre, apellido, ev_nombre, fecha, lugar, cantidad, total, entrada_id, codigo)
+        if push_token:
+            import threading
+            threading.Thread(
+                target=enviar_push_notificacion,
+                args=(push_token, "Compra confirmada", f"Tu entrada para {ev_nombre} está lista. Código: {codigo}"),
+                daemon=True
+            ).start()
     return codigo
 
 @app.post("/api/pagos/webhook")
@@ -4087,7 +4132,8 @@ if __name__ == "__main__":
                 password TEXT NOT NULL,
                 verificado INTEGER DEFAULT 0,
                 codigo_verificacion TEXT,
-                rol TEXT DEFAULT 'usuario'
+                rol TEXT DEFAULT 'usuario',
+                push_token TEXT
             )
         """)
         
@@ -4165,7 +4211,7 @@ if __name__ == "__main__":
             CREATE TABLE IF NOT EXISTS entradas (
                 id SERIAL PRIMARY KEY,
                 evento_id INTEGER NOT NULL,
-                usuario_id INTEGER NOT NULL,
+                usuario_id INTEGER,
                 cantidad INTEGER NOT NULL,
                 total REAL NOT NULL,
                 estado TEXT DEFAULT 'comprada',
@@ -4173,8 +4219,13 @@ if __name__ == "__main__":
                 payment_id TEXT,
                 payment_order_id TEXT,
                 creada_en TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                expira_en TIMESTAMP,
                 usada INTEGER DEFAULT 0,
                 transferida INTEGER DEFAULT 0,
+                email_comprador TEXT,
+                nombre_comprador TEXT,
+                apellido_comprador TEXT,
+                telefono_comprador TEXT,
                 FOREIGN KEY (evento_id) REFERENCES eventos(id),
                 FOREIGN KEY (usuario_id) REFERENCES usuarios(id)
             )
@@ -4262,6 +4313,26 @@ if __name__ == "__main__":
             pass
         try:
             cur.execute("CREATE INDEX IF NOT EXISTS idx_entradas_estado ON entradas(estado)")
+        except:
+            pass
+        
+        # Migraciones para columnas faltantes en entradas
+        for col_stmt in [
+            "ALTER TABLE entradas ADD COLUMN IF NOT EXISTS email_comprador TEXT",
+            "ALTER TABLE entradas ADD COLUMN IF NOT EXISTS nombre_comprador TEXT",
+            "ALTER TABLE entradas ADD COLUMN IF NOT EXISTS apellido_comprador TEXT",
+            "ALTER TABLE entradas ADD COLUMN IF NOT EXISTS telefono_comprador TEXT",
+            "ALTER TABLE entradas ADD COLUMN IF NOT EXISTS expira_en TIMESTAMP",
+            "ALTER TABLE entradas ALTER COLUMN usuario_id DROP NOT NULL",
+        ]:
+            try:
+                cur.execute(col_stmt)
+            except:
+                pass
+        
+        # Agregar columna push_token a usuarios
+        try:
+            cur.execute("ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS push_token TEXT")
         except:
             pass
         
@@ -4395,6 +4466,12 @@ if __name__ == "__main__":
                     contador INTEGER DEFAULT 1,
                     UNIQUE(ip, fecha)
             """)
+            conn.commit()
+        
+        cursor = conn.execute("PRAGMA table_info(usuarios)")
+        columns = [col[1] for col in cursor.fetchall()]
+        if 'push_token' not in columns:
+            conn.execute("ALTER TABLE usuarios ADD COLUMN push_token TEXT")
             conn.commit()
         
         cursor = conn.execute("PRAGMA table_info(eventos)")
