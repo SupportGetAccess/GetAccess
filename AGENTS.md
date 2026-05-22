@@ -107,6 +107,14 @@
 
 4. **Contraseñas**: Usar bcrypt con salt para hash (ya implementado)
 
+## 📱 REGLA: DEPLOY ANTES DE APK
+
+**Cada vez que se haga un build de APK con `eas build`:**
+1. Primero commit + push de TODOS los cambios (backend + mobile)
+2. Esperar a que Render deployee (verificar en https://dashboard.render.com)
+3. **REGIÉN después** ejecutar `eas build -p android --profile preview`
+4. Excepción: cambios solo en `mobile/` (sin backend) no requieren deploy previo
+
 ## 📱 REGLA: MODIFICACIONES AL SCANNER QR
 Cada vez que se modifique el scanner (scanner.html), DEBO enviar las URLs de producción al usuario:
 - **Producción**: https://getaccess.com.ar/scanner.html
