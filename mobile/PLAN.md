@@ -354,6 +354,21 @@ git push
 
 ---
 
-*Documento generado: 21 de Mayo 2026*
+## 6. COMPARATIVA WEB VS MOBILE — PENDIENTES
+
+Funcionalidades del frontend web (`frontend/index.html`) que faltan en la app mobile, priorizadas por esfuerzo:
+
+| # | Tarea | Archivos afectados | Esfuerzo | Prioridad |
+|---|-------|-------------------|----------|-----------|
+| 6.1 | Buscar eventos por texto + filtro categorías | `app/(tabs)/eventos.tsx` | 1h | Alta |
+| 6.2 | Solicitar ser Organizer desde Perfil | `app/(tabs)/perfil.tsx` | 30min | Alta |
+| 6.3 | Reenviar ticket por email | `app/(tabs)/entradas.tsx` + `api/entradas.ts` | 30min | Media |
+| 6.4 | Carrusel de imágenes en detalle de evento | `app/evento/[id].tsx` | 1h | Media |
+| 6.5 | Admin imágenes desde detalle evento (subir/eliminar) | `app/evento/[id].tsx` | 1h | Baja |
+| 6.6 | Panel de visitas (admin) | `app/admin/visitas/index.tsx` + `api/admin.ts` + `app/admin/index.tsx` | 1h | Baja |
+
+---
+
+*Documento generado: 22 de Mayo 2026*
 *Metodología: Spec-Driven Development (SDD)*
 *Proyecto: Get Access — App Mobile*
