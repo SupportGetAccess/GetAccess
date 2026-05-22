@@ -94,7 +94,7 @@ function RootLayoutContent() {
       <Stack.Screen name="(tabs)" />
       <Stack.Screen name="(auth)" options={{ animation: 'slide_from_bottom' }} />
       <Stack.Screen name="evento/[id]" />
-      <Stack.Screen name="carrito/index" />
+      <Stack.Screen name="checkout" />
       <Stack.Screen name="entrada/[id]" />
       <Stack.Screen name="scanner/index" />
       <Stack.Screen name="admin/index" />

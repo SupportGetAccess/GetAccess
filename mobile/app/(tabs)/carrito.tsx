@@ -68,7 +68,7 @@ export default function CarritoTab() {
       <View style={styles.footer}>
         <TouchableOpacity
           style={styles.pagarButton}
-          onPress={() => router.push('/carrito/index')}
+          onPress={() => router.push('/checkout')}
         >
           <Text style={styles.pagarText}>Continuar al Pago</Text>
           <Ionicons name="arrow-forward" size={20} color={colors.white} />

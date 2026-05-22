@@ -5,7 +5,7 @@ import { useRef, useState } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import { eventosApi } from '../../api/eventos';
 import { colors } from '../../theme';
-import { formatPrecio, parseFecha, getImageUrl } from '../../utils/format';
+import { formatPrecio, parseFecha, getImageUrl, isEventoFinalizado } from '../../utils/format';
 import { useCartStore } from '../../stores/cartStore';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -47,6 +47,7 @@ export default function EventoDetailScreen() {
 
   const disponibles = evento.capacidad - evento.vendidos;
   const agotado = disponibles <= 0;
+  const finalizado = isEventoFinalizado(evento.fecha);
   const precioConComision = evento.precio * (1 + (evento.comision || 0) / 100);
   const total = precioConComision * cantidad;
 
@@ -116,7 +117,12 @@ export default function EventoDetailScreen() {
         {evento.descripcion && (
           <Text style={styles.descripcion}>{evento.descripcion}</Text>
         )}
-        {agotado ? (
+        {finalizado ? (
+          <View style={styles.finalizadoBanner}>
+            <Ionicons name="flag" size={20} color={colors.textSecondary} />
+            <Text style={styles.finalizadoText}>Evento finalizado</Text>
+          </View>
+        ) : agotado ? (
           <View style={styles.agotadoBanner}>
             <Ionicons name="close-circle" size={20} color={colors.error} />
             <Text style={styles.agotadoText}>Entradas agotadas</Text>
@@ -125,7 +131,7 @@ export default function EventoDetailScreen() {
           <Text style={styles.disponibles}>{disponibles} disponibles</Text>
         )}
       </ScrollView>
-      {!agotado && (
+      {!agotado && !finalizado && (
         <View style={styles.footer}>
           <View style={styles.cantidadRow}>
             <TouchableOpacity onPress={() => setCantidad(Math.max(1, cantidad - 1))} style={styles.qtyBtn}>
@@ -186,6 +192,15 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   agotadoText: { color: colors.error, fontSize: 14, fontWeight: '600' },
+  finalizadoBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.cardLight,
+    padding: 14,
+    borderRadius: 10,
+    gap: 8,
+  },
+  finalizadoText: { color: colors.textSecondary, fontSize: 14, fontWeight: '600' },
   disponibles: { color: colors.success, fontSize: 14, fontWeight: '500', marginBottom: 20 },
   footer: {
     flexDirection: 'row',

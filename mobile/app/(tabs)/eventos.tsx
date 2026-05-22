@@ -5,17 +5,18 @@ import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { eventosApi } from '../../api/eventos';
 import { colors } from '../../theme';
-import { formatPrecio, parseFechaCorta, getImageUrl } from '../../utils/format';
+import { formatPrecio, parseFechaCorta, getImageUrl, isEventoFinalizado } from '../../utils/format';
 import { Evento } from '../../types';
 
 function EventoCard({ evento }: { evento: Evento }) {
   const disponibles = evento.capacidad - evento.vendidos;
   const agotado = disponibles <= 0;
+  const finalizado = isEventoFinalizado(evento.fecha);
   const imageUrl = getImageUrl(evento.imagen);
 
   return (
     <TouchableOpacity
-      style={[styles.card, agotado && styles.cardAgotado]}
+      style={[styles.card, (agotado || finalizado) && styles.cardAgotado]}
       onPress={() => router.push(`/evento/${evento.id}`)}
       activeOpacity={0.7}
     >
@@ -34,7 +35,9 @@ function EventoCard({ evento }: { evento: Evento }) {
           <Text style={styles.cardMetaText} numberOfLines={1}>{evento.lugar}</Text>
         </View>
         <View style={styles.cardFooter}>
-          {agotado ? (
+          {finalizado ? (
+            <Text style={styles.finalizadoTag}>FINALIZADO</Text>
+          ) : agotado ? (
             <Text style={styles.agotadoTag}>AGOTADO</Text>
           ) : (
             <Text style={styles.disponiblesText}>{disponibles} disponibles</Text>
@@ -83,7 +86,10 @@ export default function EventosScreen() {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.title}>Get Access</Text>
+        <View style={styles.headerLeft}>
+          <Image source={require('../../assets/icon.png')} style={styles.logo} resizeMode="contain" />
+          <Text style={styles.title}>Get Access</Text>
+        </View>
         <TouchableOpacity onPress={() => router.push('/(auth)/login')}>
           <Ionicons name="person-circle-outline" size={28} color={colors.primary} />
         </TouchableOpacity>
@@ -112,6 +118,8 @@ const styles = StyleSheet.create({
     paddingBottom: 16,
     backgroundColor: colors.backgroundLight,
   },
+  headerLeft: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  logo: { width: 28, height: 28 },
   title: { fontSize: 24, fontWeight: 'bold', color: colors.primary },
   list: { padding: 12 },
   card: {
@@ -129,6 +137,16 @@ const styles = StyleSheet.create({
   cardMeta: { flexDirection: 'row', alignItems: 'center', marginBottom: 12 },
   cardMetaText: { color: colors.textSecondary, fontSize: 13, marginLeft: 4 },
   cardFooter: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  finalizadoTag: {
+    backgroundColor: colors.textMuted,
+    color: colors.white,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 4,
+    fontSize: 11,
+    fontWeight: 'bold',
+    overflow: 'hidden',
+  },
   agotadoTag: {
     backgroundColor: colors.error,
     color: colors.white,

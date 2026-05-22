@@ -8,8 +8,29 @@ const API_URL = Constants.expoConfig?.extra?.apiUrl || 'https://getaccess.com.ar
 
 export function getImageUrl(imagen?: string | null): string | null {
   if (!imagen) return null;
+
+  // El backend puede devolver un JSON array string: '["https://..."]' o '["url1","url2"]'
+  if (typeof imagen === 'string' && (imagen.trim().startsWith('[') || imagen.trim().startsWith('"'))) {
+    try {
+      const parsed = JSON.parse(imagen.trim());
+      if (Array.isArray(parsed)) {
+        const url = parsed.find((u) => u && typeof u === 'string' && (u.startsWith('http://') || u.startsWith('https://')));
+        if (url) return url;
+      }
+      if (typeof parsed === 'string' && (parsed.startsWith('http://') || parsed.startsWith('https://'))) return parsed;
+    } catch {}
+  }
+
   if (imagen.startsWith('http://') || imagen.startsWith('https://')) return imagen;
   return `${API_URL}${imagen.startsWith('/') ? '' : '/'}${imagen}`;
+}
+
+export function isEventoFinalizado(fechaStr: string): boolean {
+  try {
+    return new Date(fechaStr) < new Date();
+  } catch {
+    return false;
+  }
 }
 
 export function parseFecha(fechaStr: string): string {
