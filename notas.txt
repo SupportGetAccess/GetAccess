@@ -1311,4 +1311,53 @@ Crear monitor en UptimeRobot (gratuito):
 
 ---
 
-*Última sesión: Jueves 21 de Mayo 2026*
+*Última sesión: Jueves 21 de Mayo 2026
+
+---
+
+## SESIÓN VIERNES 22 DE MAYO 2026 — FASE 7 COMPLETADA
+
+### Cambios implementados (7 items)
+
+| # | Cambio | Archivos |
+|---|--------|----------|
+| 1 | Logo transparente (`Logo PNG transparencia.png`) en header + emoji 👤 para perfil + auth routing (perfil si auth, login si no) + sort eventos (futuros primero, pasados al final) | `app/(tabs)/eventos.tsx` |
+| 2 | Fix QR: usa `qrCode` directo sin doble wrapping por QuickChart | `app/checkout/index.tsx` |
+| 3 | SafeArea footer (botón "Agregar") | `app/evento/[id].tsx` |
+| 4 | SafeArea footer (botón "Continuar al Pago") | `app/(tabs)/carrito.tsx` |
+| 5 | Nueva screen Política de Privacidad con contenido de web | `app/privacidad/index.tsx` |
+| 6 | Ruta `privacidad/index` agregada | `app/_layout.tsx` |
+| 7 | Item "Política de Privacidad" en menú perfil | `app/(tabs)/perfil.tsx` |
+
+### TypeScript check
+- `npx tsc --noEmit` ✅ sin errores
+
+### Commits
+- `b4a8919` — Fase 7: logo transparente, emoji avatar, auth routing, sort eventos, fix QR, SafeArea footers, politica de privacidad
+
+### Build
+- EAS Build enviado (build ID: `948ed650-6ef0-4f0c-9b49-be2192a27131`)
+- Pendiente verificar que el APK descargue e instale correctamente
+
+### Notas
+- AGENTS.md → PLAN.md se actualizó con 4 nuevas subtareas (7.8 a 7.11)
+- Se usó `useAuthStore` para isAuthenticated en el header de eventos
+- Se usó `useMemo` para sort de eventos (fecha ascendente, futuros primero)
+- Política de Privacidad replica exactamente el contenido de `frontend/privacidad.html`
+- QR ahora se renderiza directo sin envolver en URL de QuickChart (ya viene como base64)
+
+### Pendiente
+- [ ] Verificar APK build exitoso
+- [ ] Siguiente iteración: Fase 8 (features que faltan de web)
+
+---
+
+## URLs DE PRODUCCIÓN
+
+- Frontend: https://getaccess.com.ar
+- Scanner: https://getaccess.com.ar/scanner.html
+- Backend: https://getaccess-d3um.onrender.com
+
+---
+
+*Última sesión: Viernes 22 de Mayo 2026*

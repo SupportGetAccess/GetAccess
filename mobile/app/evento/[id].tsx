@@ -1,7 +1,8 @@
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView, ActivityIndicator, Alert, Image, Dimensions, SafeAreaView } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView, ActivityIndicator, Alert, Image, Dimensions } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
 import { useRef, useState } from 'react';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { eventosApi } from '../../api/eventos';
 import { colors } from '../../theme';
@@ -16,6 +17,7 @@ export default function EventoDetailScreen() {
   const [cantidad, setCantidad] = useState(1);
   const [imgIndex, setImgIndex] = useState(0);
   const scrollRef = useRef<ScrollView>(null);
+  const insets = useSafeAreaInsets();
   const addItem = useCartStore((s) => s.addItem);
 
   const { data: evento, isLoading } = useQuery({
@@ -132,7 +134,7 @@ export default function EventoDetailScreen() {
         )}
       </ScrollView>
       {!agotado && !finalizado && (
-        <SafeAreaView style={styles.footer}>
+        <View style={[styles.footer, { paddingBottom: insets.bottom + 12 }]}>
           <View style={styles.cantidadRow}>
             <TouchableOpacity onPress={() => setCantidad(Math.max(1, cantidad - 1))} style={styles.qtyBtn}>
               <Ionicons name="remove" size={20} color={colors.text} />
@@ -145,7 +147,7 @@ export default function EventoDetailScreen() {
           <TouchableOpacity style={styles.addButton} onPress={handleAgregar}>
             <Text style={styles.addText}>Agregar · {formatPrecio(total)}</Text>
           </TouchableOpacity>
-        </SafeAreaView>
+        </View>
       )}
     </View>
   );

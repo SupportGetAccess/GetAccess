@@ -98,6 +98,11 @@ function RootLayoutContent() {
       <Stack.Screen name="entrada/[id]" />
       <Stack.Screen name="scanner/index" />
       <Stack.Screen name="admin/index" />
+      <Stack.Screen name="admin/dashboard/index" />
+      <Stack.Screen name="admin/mis-eventos/index" />
+      <Stack.Screen name="admin/crear-evento/index" />
+      <Stack.Screen name="admin/solicitudes/index" />
+      <Stack.Screen name="admin/validaciones/index" />
       <Stack.Screen name="transferencias-pendientes/index" />
       <Stack.Screen name="privacidad/index" />
     </Stack>

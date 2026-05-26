@@ -103,7 +103,7 @@ export default function EventosScreen() {
       <View style={styles.header}>
         <View style={styles.headerLeft}>
           <Image source={require('../../Logo PNG transparencia.png')} style={styles.logo} resizeMode="contain" />
-          <Text style={styles.title}>Get Access</Text>
+          <Text style={styles.title}>GET ACCESS</Text>
         </View>
         <TouchableOpacity onPress={() => router.push(isAuthenticated ? '/(tabs)/perfil' : '/(auth)/login')}>
           <Text style={{ fontSize: 24 }}>👤</Text>
@@ -131,11 +131,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingTop: 60,
     paddingBottom: 16,
-    backgroundColor: colors.backgroundLight,
+    backgroundColor: 'rgba(30, 30, 63, 0.85)',
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(99, 102, 241, 0.2)',
   },
   headerLeft: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   logo: { width: 28, height: 28 },
-  title: { fontSize: 24, fontWeight: 'bold', color: colors.primary },
+  title: { fontSize: 24, fontWeight: '800', color: '#6366f1', letterSpacing: -0.5 },
   list: { padding: 12 },
   card: {
     backgroundColor: colors.card,

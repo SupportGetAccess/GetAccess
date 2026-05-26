@@ -56,7 +56,7 @@ export default function PerfilScreen() {
           </TouchableOpacity>
         )}
         {(user?.rol === 'admin' || user?.rol === 'organizer') && (
-          <TouchableOpacity style={styles.menuItem} onPress={() => router.push('/scanner/index')}>
+          <TouchableOpacity style={styles.menuItem} onPress={() => router.push('/scanner')}>
             <Ionicons name="qr-code-outline" size={22} color={colors.success} />
             <Text style={styles.menuText}>Escanear Entradas</Text>
             <Ionicons name="chevron-forward" size={20} color={colors.textMuted} />

@@ -1,11 +1,13 @@
-import { View, Text, FlatList, TouchableOpacity, StyleSheet, SafeAreaView } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, StyleSheet } from 'react-native';
 import { router } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../../theme';
 import { useCartStore } from '../../stores/cartStore';
 import { formatPrecio } from '../../utils/format';
 
 export default function CarritoTab() {
+  const insets = useSafeAreaInsets();
   const items = useCartStore((s) => s.items);
   const total = useCartStore((s) => s.total);
 
@@ -65,7 +67,7 @@ export default function CarritoTab() {
         )}
         contentContainerStyle={styles.list}
       />
-      <SafeAreaView style={styles.footer}>
+      <View style={[styles.footer, { paddingBottom: insets.bottom + 12 }]}>
         <TouchableOpacity
           style={styles.pagarButton}
           onPress={() => router.push('/checkout')}
@@ -73,7 +75,7 @@ export default function CarritoTab() {
           <Text style={styles.pagarText}>Continuar al Pago</Text>
           <Ionicons name="arrow-forward" size={20} color={colors.white} />
         </TouchableOpacity>
-      </SafeAreaView>
+      </View>
     </View>
   );
 }

@@ -233,7 +233,10 @@ Root Layout (Stack)
 | 7.5 | Offline support (React Query persist) | `app/_layout.tsx` + `@tanstack/react-query-persist-client` | ✅ |
 | 7.6 | Transferencia de entradas | `app/entrada/[id].tsx`, `app/transferencias-pendientes/index.tsx`, `app/(tabs)/perfil.tsx` | ✅ |
 | 7.7 | Modo oscuro consistente | Ya implementado | ✅ |
-| 7.8 | Splash screen personalizado | `app.json`, `app/_layout.tsx` | ✅ |
+| 7.8 | Logo transparente, emoji avatar, auth routing, sort eventos | `app/(tabs)/eventos.tsx` | ✅ |
+| 7.9 | Fix QR doble wrapping | `app/checkout/index.tsx` | ✅ |
+| 7.10 | SafeArea footers (evento + carrito + checkout) | `app/evento/[id].tsx`, `app/(tabs)/carrito.tsx` | ✅ |
+| 7.11 | Política de Privacidad — screen + ruta + menu item | `app/privacidad/index.tsx`, `app/_layout.tsx`, `app/(tabs)/perfil.tsx` | ✅ |
 
 ### Nuevos paquetes instalados
 - `@tanstack/react-query-persist-client` — persistencia de React Query
@@ -242,6 +245,7 @@ Root Layout (Stack)
 
 ### Nuevas pantallas
 - `app/transferencias-pendientes/index.tsx` — aceptar/rechazar transferencias entrantes
+- `app/privacidad/index.tsx` — política de privacidad
 
 ### Nuevos módulos API
 - `POST /api/auth/push-token` — registro de push token (requiere implementación en backend)
