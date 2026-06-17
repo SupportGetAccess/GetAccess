@@ -137,4 +137,31 @@
 
 ---
 
-*Última sesión: Viernes 22 de Mayo 2026 (Fase 7 completa)*
+---
+
+## SESIÓN MARTES 26 DE MAYO 2026 — FASE 8 INICIADA
+
+### Cambios implementados
+
+| # | Cambio | Archivos |
+|---|--------|----------|
+| 1 | **Footer SafeArea fix** — botón "Agregar" ya no se solapa con nav bar del dispositivo | `app/evento/[id].tsx`, `app/(tabs)/carrito.tsx` |
+| 2 | **Header "GET ACCESS" estilo web** — color `#6366f1` (indigo), uppercase, weight 800, background `rgba(30,30,63,0.85)` + border sutil | `app/(tabs)/eventos.tsx` |
+| 3 | **Admin sub-routes fix** — registradas 5 rutas faltantes en Stack (dashboard, mis-eventos, crear-evento, solicitudes, validaciones) | `app/_layout.tsx` |
+| 4 | **Scanner route fix** — cambiada navegación de `/scanner/index` a `/scanner` | `app/(tabs)/perfil.tsx` |
+
+### Commits
+- `b02e3ad` — fix: footer safearea, header GET ACCESS estilo web, admin routes, scanner route
+- `0cf6e8f` — fix: admin routes name sin /index
+
+### Build
+- ID: `69363019-0d1c-4818-b3fb-6b69aed4292f` (procesando en EAS)
+
+### Pendiente
+- [ ] Verificar APK build exitoso
+- [ ] Probar Admin Panel completo (Dashboard, Mis Eventos, Crear Evento, Solicitudes, Validaciones)
+- [ ] Probar Scanner de entradas
+- [ ] Probar footer botón "Agregar" en dispositivo real
+- [ ] Probar header "GET ACCESS" con nuevo estilo
+
+*Última sesión: Martes 26 de Mayo 2026*
