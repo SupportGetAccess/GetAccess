@@ -1037,7 +1037,7 @@ Ubicaciones en main.py:
 
 **Solución**:
 1. Rotar password en Supabase Dashboard → Settings → Database
-2. Nueva password: `@PanchitoyPiccolino1982`
+2. Nueva password configurada en variable de entorno `SUPABASE_URI` (no guardar en archivos)
 3. Variable de entorno `SUPABASE_URI` configurada en Render
 4. Variable de entorno configurada en sistema local (Windows)
 5. Eliminados todos los fallbacks hardcodeados en 51 archivos
@@ -1395,3 +1395,39 @@ Crear monitor en UptimeRobot (gratuito):
 ---
 
 *Última sesión: Martes 26 de Mayo 2026*
+
+---
+
+## SESIÓN MIÉRCOLES 17 DE JUNIO 2026
+
+### Fix: Babel standalone version unpinned
+
+**Problema**: `https://unpkg.com/@babel/standalone/babel.min.js` sin versión fija resolvió a una versión reciente que rompió la transpilación JSX. Error en consola: `Cannot use import statement outside a module` en `transformScriptTags.ts:114`.
+
+**Causa**: La versión más reciente de `@babel/standalone` probablemente cambió el formato de salida (ES modules) o el comportamiento por defecto, generando código con `import` que el navegador rechaza al hacer `appendChild`.
+
+**Solución**: Pinear `@babel/standalone` a la versión estable `7.25.0`.
+
+**Archivos modificados**:
+- `frontend/index.html` línea 10
+- `frontend/scanner.html` línea 10
+
+**Commit**: f8c04ce
+
+**Verificación pendiente**:
+- [ ] Recargar https://getaccess.com.ar (cache limpio)
+- [ ] Verificar que no haya error en consola
+- [ ] Verificar que los eventos se rendericen correctamente
+- [ ] Verificar que el scanner QR funcione
+
+---
+
+## URLs DE PRODUCCIÓN
+
+- Frontend: https://getaccess.com.ar
+- Scanner: https://getaccess.com.ar/scanner.html
+- Backend: https://getaccess-d3um.onrender.com
+
+---
+
+*Última sesión: Miércoles 17 de Junio 2026*
