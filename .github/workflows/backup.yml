@@ -27,15 +27,9 @@ jobs:
       
       - name: Run backup
         env:
-          SUPABASE_URI: postgresql://postgres.xgwbcepopluehupublkz:%40Supabase1982@aws-1-sa-east-1.pooler.supabase.com:5432/postgres
-        run: python backend/backup.py > output.log 2>&1 || true
+          SUPABASE_URI: ${{ secrets.SUPABASE_URI }}
+        run: python backend/backup.py
 
-      - name: Upload logs
-        uses: actions/upload-artifact@v4
-        with:
-          name: backup-logs
-          path: output.log
-      
       - name: Commit backup
         run: |
           git config --local user.email "backup@getaccess.com"
