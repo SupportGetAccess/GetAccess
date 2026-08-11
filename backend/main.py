@@ -1453,18 +1453,19 @@ def buscar_eventos(q: str = None, limite: int = 10, db = Depends(get_db)):
     
     q_search = f"%{q}%"
     
-    query = f"""
+    query = """
         SELECT e.id, e.nombre, e.fecha, e.lugar, e.precio, 
             COALESCE(NULLIF(e.imagen, ''), (SELECT ei.url FROM evento_imagenes ei WHERE ei.evento_id = e.id ORDER BY ei.orden, ei.id LIMIT 1), '') as imagen, 
             COALESCE(e.categoria, '') as categoria 
         FROM eventos e
-        WHERE e.nombre ILIKE '{q_search}' OR e.descripcion ILIKE '{q_search}' OR e.lugar ILIKE '{q_search}'
+        WHERE e.nombre ILIKE ? OR e.descripcion ILIKE ? OR e.lugar ILIKE ?
         ORDER BY e.fecha
-        LIMIT {limite}
+        LIMIT ?
     """
+    params = [q_search, q_search, q_search, limite]
     
     try:
-        eventos = fetch_all(db, query)
+        eventos = fetch_all(db, query, params)
         print(f"DEBUG: {eventos}")
         return {"eventos": eventos, "recintos": []}
     except Exception as e:
