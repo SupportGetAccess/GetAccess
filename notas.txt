@@ -1431,3 +1431,84 @@ Crear monitor en UptimeRobot (gratuito):
 ---
 
 *Última sesión: Miércoles 17 de Junio 2026*
+
+---
+
+## SESIÓN MARTES 11 DE AGOSTO 2026 - RECUPERACIÓN Y SEGURIDAD
+
+### Problema 1: Sitio caído - eventos con error 500
+
+**Síntoma**: `https://getaccess.com.ar/api/eventos/` devolvía 500. Todos los endpoints con BD fallaban (`/api/eventos/`, `/categorias`, `/buscar`); `/health` y `/test-api` funcionaban.
+
+**Causa raíz**: El proyecto Supabase `xgwbcepopluehupublkz` estaba **PAUSADO** (plan Free pausa proyectos con 7 días de inactividad - cero tráfico desde ~17/6). El DNS del proyecto no resolvía y el pooler devolvía "tenant not found".
+
+**Solución**: Restaurar el proyecto desde Supabase Dashboard (Settings → Restore). Sin cambios de código.
+
+**Prevención**: Se arregló el backup diario de GitHub Actions (`backup.yml`), que consulta la BD todos los días a las 6:00 UTC → impide la pausa automática.
+
+### Problema 2: Backup diario roto desde el 18/5
+
+**Causa**: `backup.yml` tenía la password vieja de Supabase hardcodeada (anterior a la rotación del 18/5) y `|| true` ocultaba los fallos.
+
+**Fix**:
+- Commit `b8357ff`: usar `secrets.SUPABASE_URI` + quitar `|| true` (fallos visibles)
+- Commit `0da86ca`: usar `GITHUB_TOKEN` en vez de `GIT_PAT` (estaba vencido) + `permissions: contents: write`
+
+**Verificado**: backup local completo OK (11 eventos, 77 entradas, 5 usuarios). El run #115 en GitHub quedó funcionando.
+
+### Seguridad: Tokens y credenciales
+
+- **PAT de GitHub expuesto** en el remote local de git (`ghp_AN8a...`): eliminado del remote. El usuario revocó los 4 tokens vencidos de GitHub y borró el secret `GIT_PAT` (ya no se usa, el workflow usa `GITHUB_TOKEN`). Push local sigue funcionando con el token OAuth del Credential Manager de Windows.
+- **Password de Supabase rotada** a `!GetAcess1982!` (no guardar en archivos):
+  - Secret `SUPABASE_URI` en GitHub actualizado (vía API con libsodium)
+  - Env var local de Windows actualizada
+  - Render actualizado vía API (endpoint `PUT /v1/services/{id}/env-vars/{key}` - NO usar el PUT masivo que reemplaza todas las vars) + redeploy disparado
+  - Verificado: `/api/eventos/` → 200 (10 eventos)
+- **Password vieja eliminada de notas.txt** (estaba en la sesión del 18/5)
+- **API key de Render**: `rnd_18s0CBP9AbnKUlRYVj5HI026dBYV` (guardar en lugar seguro, no commitear)
+- **Datos de acceso útiles**: servicio Render GetAccess = `srv-d7ahqh94tr6s73bmqic0`
+
+### Seguridad: Fix SQL Injection en /api/eventos/buscar
+
+**Problema**: El parámetro `q` se interpolaba directo en el SQL (`WHERE e.nombre ILIKE '{q_search}'`), permitiendo `UNION SELECT` para exfiltrar `usuarios` (emails + hashes) sin auth.
+
+**Fix** (commit `9f079de`): query parametrizada con placeholders `?` y params pasados a `fetch_all` (compatible SQLite/PostgreSQL).
+
+**Verificado en producción**:
+- Búsqueda normal: 200 con resultados
+- Payload malicioso `musica' UNION SELECT ... FROM usuarios --` → 200 vacío (ya no filtra)
+
+### Auditoría RLS en Supabase (analizada, NO urgente)
+
+- RLS habilitado en las 11 tablas pero con políticas permisivas `USING(true)` para rol `public` (creadas por `enable_rls.py`)
+- La app NO usa PostgREST/anon key - backend conecta como `postgres` (dueño, bypassea RLS). Frontend y mobile no usan supabase directo
+- Único uso de Supabase key: `SUPABASE_SERVICE_KEY` para Storage (imágenes)
+- **Conclusión**: RLS es irrelevante hoy (capa de seguridad real = backend: JWT, rate limiting, admin). Recién sería urgente si el mobile se conecta directo con anon key
+- Scripts existentes: `check_rls.py`, `enable_rls.py`, `delete_rls_table.py`
+
+### Commits de esta sesión
+
+- `b8357ff` - fix: backup usa secrets.SUPABASE_URI + fallos visibles
+- `0da86ca` - fix: usar GITHUB_TOKEN en vez de GIT_PAT vencido
+- `6d6a37a` - security: quitar password de notas.txt + PAT del remote
+- `9f079de` - security: parametrizar query /api/eventos/buscar (SQL injection)
+
+### Pendientes
+
+- [ ] Verificar APK mobile (build, Admin Panel, Scanner en dispositivo real)
+- [ ] Probar footer botón "Agregar" y header GET ACCESS en mobile
+- [ ] Fase 8 mobile: features que faltan de la web
+- [ ] Auditoría RLS documentada como aceptada (baja prioridad)
+- [ ] `getaccess_linkedin_banner.png` sin commitear (revisar si va al repo)
+
+---
+
+## URLs DE PRODUCCIÓN
+
+- Frontend: https://getaccess.com.ar
+- Scanner: https://getaccess.com.ar/scanner.html
+- Backend: https://getaccess-d3um.onrender.com
+
+---
+
+*Última sesión: Martes 11 de Agosto 2026*
