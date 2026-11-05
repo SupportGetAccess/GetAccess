@@ -1,0 +1,6 @@
+id,email,nombre,apellido,password,verificado,codigo_verificacion,rol
+5,test5052@test.com,Test,User,$2b$12$aRY6oZAvz78.nJCsGynVCOHTyLCeZf3DBre4xrlKOg3AkrAgrW.Cu,0,962554,usuario
+6,maurobonus@hotmail.com,MAURO,DUCRET,$2b$12$.E0A3G7auqb9yrYvW4OLyeV01/Vqk0NhyYcybCV/o9P8n8HTU/8Yu,0,084134,usuario
+7,maurobonus@gmail.com,Matias,DUCRET,$2b$12$11rOXy7PeNNJAv/M02bure5iJdZntxTqsEQFrqnQJU/0mAl/7Ul3m,1,,usuario
+2,aantoniaa1982@gmail.com,Antoñita,Del Jardincito,$2b$12$tYJHUMjw2YYpVw/ddfTwt.//rIOyq6rxYZWUSHRf6A9OxeNZ/obIO,1,,organizer
+1,guilles10@yahoo.com.ar,Willy,De Quiró,$2b$12$.qCKq32QKqf6kwXXyRjWYemdrnlt6MdrjBKqzcGPoNqKWj4/1sm9q,1,,admin
